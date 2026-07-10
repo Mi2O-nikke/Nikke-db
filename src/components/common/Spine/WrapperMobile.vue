@@ -6,7 +6,6 @@
       id="mobileCogL2d"
       @click="showCogModal()"
     />
-    <BackgroundColor v-show="false" />
     <n-modal v-model:show="isCogModalVisible" id="cogModal">
       <n-card title="Options" :bordered="false" size="huge" role="dialog">
         <template #header-extra>
@@ -42,9 +41,6 @@
 
           <n-tab-pane name="tools" tab="Tools" class="options">
             <div>
-              <BackgroundColor />
-            </div>
-            <div>
               <Screenshot />
               It is extremely recommended for mobile users to pause the frame
               they want to screenshot before pressing the button, as the pop up
@@ -71,7 +67,6 @@ import { ref, watch } from 'vue'
 import CharacterList from './CharacterList.vue'
 import { useMarket } from '@/stores/market'
 import PoseSelector from '@/components/common/Spine/Tools/PoseSelector.vue'
-import BackgroundColor from './Tools/BackgroundColor.vue'
 import Screenshot from './Tools/Screenshot.vue'
 
 const market = useMarket()

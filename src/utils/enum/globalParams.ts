@@ -8,6 +8,7 @@ enum globalParams {
   PATH_L2D = NIKKE_DB + 'l2d/',
   PATH_L2D_AIM = 'aim/',
   PATH_L2D_COVER = 'cover/',
+  PATH_L2D_SKILLCUT = 'skill/',
   PATH_SPRITE_1 = 'images/sprite/si_',
   PATH_SPRITE_2 = '_00_s.png',
   BUILD_PATH = 'chibi/Build/',

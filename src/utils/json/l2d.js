@@ -827,8 +827,12 @@ const customZoomSettings = {
   'c352_02': { zoom: 0.24, offsetY: -50 },
   'c361': { zoom: 0.23 },
   'c380': { zoom: 0.27 },
-  'c450_02': { zoom: 0.25, offsetY: -70 },
-  'c451_03': { zoom: 0.23, offsetY: -30 },
+  'c450_02': { fb: { zoom: 0.25, offsetY: -70 } },
+  'c451_03': { zoom: 0.23, offsetY: -30 }, 
+  'c511': { fb: { zoom: 0.25, offsetX: 100 }, sc: { zoom: 0.25, offsetY: 40 } },
+  'c511_01': { fb: { zoom: 0.23, offsetY: 20 }, sc: { zoom: 0.22, offsetY: 20 } },
+  'c513_01': { fb: { zoom: 0.28, offsetY: 20 }, sc: { zoom: 0.3, offsetY: -40 } },
+  'c515': { sc: { zoom: 0.37, offsetY: -40 } },
   'c571': { zoom: 0.23, offsetY: -40 },
   'c850_03': { zoom: 0.25 },
   'favorite_c030': { zoom: 0.24, offsetX: 60 },
@@ -873,47 +877,65 @@ const voiceGroupOverrides = {
   'c851': ['c851_01'], 
 }
 
-export const charactersWithoutAimAndCover = [
-  'c350_old', 
-  'c560', 'c561', 'c562', 'c563', 'c570_99', 'c571', 'c572',
-  'c853',
-  'c940', 'c943', 'c966', 'c989', 'c990', 'c992', 'c994', 'c996', 'c998',
-  'c8006', 'c9019', 'c9028', 'c9034', 'c9035', 'c9036', 'c9037',
-  'favorite_c030', 'favorite_c032', 'favorite_c072', 
-  'favorite_c100', 'favorite_c101', 'favorite_c112', 'favorite_c141', 'favorite_c142', 'favorite_c150', 'favorite_c192',
-  'favorite_c210', 
-  'favorite_c352',
-  'favorite_c550',
-]
+export const charactersWithoutAimAndCover = []
 
 const setCustomZoom = (characterId, canvas, transformScale, currentPose) => {
-  const zoomKey = currentPose === 'fb' ? characterId : `${characterId}_${currentPose}`
-
-  if (customZoomSettings[zoomKey]) {
-    const settings = customZoomSettings[zoomKey] ?? 1
-    transformScale = settings.zoom * 1.4
-
+  // Get the zoom settings for this character
+  let characterSettings = customZoomSettings[characterId]
+  
+  // If variant doesn't have settings, try base character ONLY for skillcut
+  if (!characterSettings && characterId.includes('_') && currentPose === 'skillcut') {
+    const baseCharacterId = characterId.split('_')[0]
+    characterSettings = customZoomSettings[baseCharacterId]
+  }
+  
+  if (!characterSettings) {
     if (canvas) {
-      canvas.style.transform = 'scale(' +  transformScale + ')'
-
-      if (!canvas.dataset.baseLeft) {
-        canvas.dataset.baseLeft = canvas.style.left || '0px'
-        canvas.dataset.baseTop = canvas.style.top || '0px'
-      }
-
-      const baseLeft = parseInt(canvas.dataset.baseLeft.replaceAll('px', '')) || 0
-      const baseTop = parseInt(canvas.dataset.baseTop.replaceAll('px', '')) || 0
-
-      canvas.style.left = (baseLeft + (settings.offsetX || 0)) + 'px'
-      canvas.style.top = (baseTop + (settings.offsetY || 0)) + 'px'
+      canvas.dataset.baseLeft = ''
+      canvas.dataset.baseTop = ''
     }
-
     return transformScale
   }
 
+  // Handle new format: { fb: {...}, sc: {...}, a: {...}, c: {...} }
+  let settings
+  if (characterSettings.fb || characterSettings.sc || characterSettings.a || characterSettings.c) {
+    // New format with pose-specific settings
+    let poseKey = currentPose
+    // Map pose names to short keys
+    if (currentPose === 'skillcut') poseKey = 'sc'
+    else if (currentPose === 'aim') poseKey = 'a'
+    else if (currentPose === 'cover') poseKey = 'c'
+    
+    settings = characterSettings[poseKey]
+  } else {
+    // Old format: direct settings (assumed to be fullbody)
+    settings = characterSettings
+  }
+
+  if (!settings) {
+    if (canvas) {
+      canvas.dataset.baseLeft = ''
+      canvas.dataset.baseTop = ''
+    }
+    return transformScale
+  }
+
+  transformScale = settings.zoom * 1.4
+
   if (canvas) {
-    canvas.dataset.baseLeft = ''
-    canvas.dataset.baseTop = ''
+    canvas.style.transform = 'scale(' + transformScale + ')'
+
+    if (!canvas.dataset.baseLeft) {
+      canvas.dataset.baseLeft = canvas.style.left || '0px'
+      canvas.dataset.baseTop = canvas.style.top || '0px'
+    }
+
+    const baseLeft = parseInt(canvas.dataset.baseLeft.replaceAll('px', '')) || 0
+    const baseTop = parseInt(canvas.dataset.baseTop.replaceAll('px', '')) || 0
+
+    canvas.style.left = (baseLeft + (settings.offsetX || 0)) + 'px'
+    canvas.style.top = (baseTop + (settings.offsetY || 0)) + 'px'
   }
 
   return transformScale
@@ -928,20 +950,43 @@ const voiceMap = {}
 const generateVoiceUrls = (voiceFolderId) => {
   const normal = []
   const cover = []
+  const skillcut = []
   
   // Normal voices: Generate URLs for lines 1-6 (standard normal voices)
   // The actual files may be less, the error handler will skip missing ones
   for (let i = 1; i <= 6; i++) {
-    normal.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_${i}.mp3`)
+    let voiceName = `${voiceFolderId}_${i}.ogg`
+    
+    // Special naming for c515: convert _1 to _Lobby_Touch_1, etc.
+    if (voiceFolderId === 'c515') {
+      if (i <= 3) {
+        voiceName = `${voiceFolderId}_Lobby_Touch_${i}.ogg`
+      } else if (i > 3 && i <= 6) {
+        voiceName = `${voiceFolderId}_Lobby_Touch_Love_${i - 3}.ogg`
+      }
+    }
+    
+    normal.push(`/assets/voice/${voiceFolderId}/${voiceName}`)
   }
   
-  // Cover/aim pose voices: Start from 7 onwards (covers lines 7-20)
+  // Cover/aim pose voices: Start from 7 onwards (covers lines 7-9)
   // The actual files may be less, the error handler will skip missing ones
   for (let i = 7; i <= 9; i++) {
-    cover.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_${i}.mp3`)
+    let voiceName = `${voiceFolderId}_${i}.ogg`
+    
+    // Special naming for c515: convert _7 to _Reload_1, etc.
+    if (voiceFolderId === 'c515') {
+      voiceName = `${voiceFolderId}_Reload_${i - 6}.ogg`
+    }
+    
+    cover.push(`/assets/voice/${voiceFolderId}/${voiceName}`)
   }
   
-  return { normal, cover }
+  // Skillcut voices: Line 10
+  // The actual file may not exist, the error handler will skip if missing
+  skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`)
+  
+  return { normal, cover, skillcut }
 }
 
 // Build voiceMap from l2dData with dynamic URL construction
@@ -961,7 +1006,8 @@ l2dData.forEach((character) => {
   const voices = generateVoiceUrls(voiceFolderId)
   voiceMap[characterId] = {
     normal: voices.normal,
-    cover: voices.cover
+    cover: voices.cover,
+    skillcut: voices.skillcut
   }
 })
 

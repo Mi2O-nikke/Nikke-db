@@ -21,7 +21,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.png') || assetInfo.name.endsWith('.jpg') || assetInfo.name.endsWith('.mp3')) {
+          if (assetInfo.name.endsWith('.png') || assetInfo.name.endsWith('.jpg') || assetInfo.name.endsWith('.mp3') || assetInfo.name.endsWith('.ogg')) {
             return 'assets/[name]-[hash][extname]'
           }
           return 'assets/[name]-[hash][extname]'

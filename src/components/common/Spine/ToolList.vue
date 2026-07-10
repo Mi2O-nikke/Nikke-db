@@ -33,10 +33,6 @@
         </div>
 
         <div class="toolListDiv">
-          <BackgroundColor />
-        </div>
-
-        <div class="toolListDiv">
           <BackgroundImage />
           <BackgroundImagePack />
         </div>
@@ -66,7 +62,6 @@
 import PoseSelector from './Tools/PoseSelector.vue'
 import ResetCoordinates from './Tools/ResetCoordinates.vue'
 import HideUI from './Tools/HideUI.vue'
-import BackgroundColor from './Tools/BackgroundColor.vue'
 import BackgroundImage from './Tools/BackgroundImage.vue'
 import BackgroundImagePack from './Tools/BackgroundImagePack.vue'
 import Export from './Tools/Export.vue'

@@ -24,17 +24,16 @@ import { AccessibilityTwotone } from '@vicons/material'
 import { h, ref, watch } from 'vue'
 import ManageProtection from '@vicons/carbon/ManageProtection'
 import { globalParams } from '@/utils/enum/globalParams'
-import { charactersWithoutAimAndCover } from '@/utils/json/l2d.js'
-
 const market = useMarket()
 
-const poseAvailability = ref({
+const poseAvailability = ref<Record<string, boolean>>({
   aim: true,
   cover: true,
-  fb: true
+  fb: true,
+  skillcut: true
 })
 
-const poses = [
+const poses = ref<Array<{value: 'fb' | 'aim' | 'cover' | 'skillcut', label: any}>>([
   {
     value: 'aim',
     label: h('div', {
@@ -70,32 +69,87 @@ const poses = [
       }),
       ' Full Body'
     ])
+  },
+  {
+    value: 'skillcut',
+    label: h('div', {
+    }, [
+      h(NIcon, {
+        component: AimOutlined,
+        size: 18,
+        style: 'position:relative; top:3px'
+      }),
+      ' Skillcut'
+    ])
   }
-]
+])
 
-// Characters that don't have aim or cover poses
-const checkCharacterHasPose = (pose: 'aim' | 'cover'): boolean => {
-  const characterId = market.live2d.current_id
-  
-  if (pose === 'aim' && charactersWithoutAimAndCover.includes(characterId)) {
+import { charactersWithoutAimAndCover } from '@/utils/json/l2d.js'
+
+// Check if pose files exist by trying to fetch the skel file
+const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'skillcut'): Promise<boolean> => {
+  try {
+    let url: string
+    
+    switch (pose) {
+      case 'aim':
+        url = `${globalParams.PATH_L2D}${characterId}/aim/${characterId}_aim_00.skel`
+        break
+      case 'cover':
+        url = `${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`
+        break
+      case 'skillcut':
+        // Try character first with _00_skillcut naming
+        url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
+        let response = await fetch(url)
+        console.log(`[PoseSelector] Checking skillcut _00: ${url} - ${response.ok}`)
+        if (response.ok) return true
+        
+        // For c513 variants, try _skillcut naming (without _00 or _01 prefix)
+        if (characterId.startsWith('c513')) {
+          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
+          response = await fetch(url)
+          console.log(`[PoseSelector] Checking skillcut custom: ${url} - ${response.ok}`)
+          if (response.ok) return true
+        }
+        
+        // If variant doesn't have it, try base character
+        const baseId = characterId.split('_')[0]
+        if (baseId !== characterId && baseId !== 'c513') {
+          url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
+          response = await fetch(url)
+          console.log(`[PoseSelector] Checking skillcut base: ${url} - ${response.ok}`)
+          return response.ok
+        }
+        console.log(`[PoseSelector] No skillcut found for ${characterId}`)
+        return false
+    }
+    
+    const response = await fetch(url)
+    return response.ok
+  } catch (error) {
     return false
   }
-  
-  if (pose === 'cover' && charactersWithoutAimAndCover.includes(characterId)) {
-    return false
-  }
-  
-  return true
 }
 
 // Update availability when character changes
 watch(
   () => market.live2d.current_id,
-  () => {
+  async () => {
+    const characterId = market.live2d.current_id
+    
+    // Check all poses concurrently
+    const [aimExists, coverExists, skillcutExists] = await Promise.all([
+      checkPoseExists(characterId, 'aim'),
+      checkPoseExists(characterId, 'cover'),
+      checkPoseExists(characterId, 'skillcut')
+    ])
+    
     poseAvailability.value = {
-      aim: checkCharacterHasPose('aim'),
-      cover: checkCharacterHasPose('cover'),
-      fb: true // fb is always available
+      aim: aimExists,
+      cover: coverExists,
+      fb: true,
+      skillcut: skillcutExists
     }
   },
   { immediate: true }

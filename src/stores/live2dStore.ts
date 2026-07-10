@@ -8,7 +8,7 @@ import l2dData from '@/utils/json/l2d.js'
 export const useLive2dStore = defineStore('live2d', () => {
   const filtered_l2d_Array: Ref<live2d_interface[]> = ref([])
   const current_id = ref('favorite_c112') as Ref<string>
-  const current_pose = ref('fb') as Ref<'fb' | 'aim' | 'cover' | 'temp'>
+  const current_pose = ref('fb') as Ref<'fb' | 'aim' | 'cover' | 'skillcut' | 'temp'>
   const resetPlacement = ref(0)
   const isExportingAnimation = ref(false)
   const exportAnimationTimestamp = ref(0)
@@ -93,6 +93,9 @@ export const useLive2dStore = defineStore('live2d', () => {
       case 'cover':
         skin = getSkinCover()
         break
+      case 'skillcut':
+        skin = getSkinSkillcut()
+        break
       default:
         skin = getSkinFb()
         break
@@ -123,6 +126,13 @@ export const useLive2dStore = defineStore('live2d', () => {
       case 'c233':
       case 'c233_01':
         return 'part_1'
+      default:
+        return 'default'
+    }
+  }
+
+  const getSkinSkillcut = () => {
+    switch (current_id.value) {
       default:
         return 'default'
     }

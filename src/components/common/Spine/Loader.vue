@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithoutAimAndCover } from '@/utils/json/l2d'
+import { specialClickAnimations } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -99,6 +99,40 @@ const handleActionStart = () => {
     
     isAimHolding = true
     spinePlayer.animationState.setAnimation(0, 'aim_hit', true) // true = loop
+    return
+  }
+
+  // Skillcut pose - play skillcut animation
+  if (market.live2d.current_pose === 'skillcut') {
+    // Check if skillcut animation exists
+    const animations = spinePlayer.animationState.data.skeletonData.animations
+    let skillcutAnimation = 'skillcut_0'
+    
+    // Try skillcut_0 first
+    let hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_0')
+    
+    // Fallback to skillcut_1 if skillcut_0 doesn't exist
+    if (!hasSkillcut) {
+      skillcutAnimation = 'skillcut_1'
+      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_1')
+    }
+    
+    // Fallback to skill_cut if neither exists
+    if (!hasSkillcut) {
+      skillcutAnimation = 'skill_cut'
+      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skill_cut')
+    }
+    
+    if (!hasSkillcut) {
+      // Fallback to action if none of the skillcut animations exist
+      handleAction()
+      return
+    }
+    
+    // Play the skillcut animation then loop back to idle
+    spinePlayer.animationState.setAnimation(0, skillcutAnimation, false)
+    spinePlayer.animationState.addAnimation(0, 'idle', true, 0)
+    playVoice()
     return
   }
   
@@ -293,6 +327,8 @@ const playVoice = () => {
   let currentPose = 'normal'
   if (market.live2d.current_pose === 'cover') {
     currentPose = 'cover'
+  } else if (market.live2d.current_pose === 'skillcut') {
+    currentPose = 'skillcut'
   }
   
   // Try to play voice with automatic retry on missing files
@@ -309,6 +345,11 @@ const playVoice = () => {
   // In fullbody mode, also play action sound simultaneously
   if (market.live2d.current_pose === 'fb') {
     playActionSound()
+  }
+  
+  // In skillcut mode, also play skillcut sound simultaneously
+  if (market.live2d.current_pose === 'skillcut') {
+    playSkillcutSound()
   }
 }
 
@@ -333,8 +374,8 @@ const playReloadSound = () => {
   // e.g., 'c271_01' -> 'c271'
   const baseCharacterId = market.live2d.current_id.split('_')[0]
   
-  // Construct reload sound path: /assets/voice/{characterId}/{characterId}_re.mp3
-  const reloadSoundPath = `/assets/voice/${baseCharacterId}/${baseCharacterId}_re.mp3`
+  // Construct reload sound path: /assets/voice/{characterId}/{characterId}_re.ogg
+  const reloadSoundPath = `/assets/voice/${baseCharacterId}/${baseCharacterId}_re.ogg`
   
   // Try to play reload sound
   currentReloadSound = new Audio(reloadSoundPath)
@@ -350,14 +391,26 @@ const playActionSound = () => {
     return
   }
   
-  // Construct action sound path: /assets/voice/{characterId}/{characterId}_ca.mp3
-  const actionSoundPath = `/assets/voice/${market.live2d.current_id}/${market.live2d.current_id}_ca.mp3`
+  // Construct action sound path: /assets/voice/{characterId}/{characterId}_ca.ogg
+  const actionSoundPath = `/assets/voice/${market.live2d.current_id}/${market.live2d.current_id}_ca.ogg`
   
   // Try to play action sound
   currentActionSound = new Audio(actionSoundPath)
   currentActionSound.play().catch((error) => {
     // Silently fail if action sound doesn't exist
     console.debug(`Action sound not found for ${market.live2d.current_id}:`, error.message)
+  })
+}
+
+const playSkillcutSound = () => {
+  // Construct skillcut sound path: /assets/voice/{characterId}/{characterId}_ult_cutscene.ogg
+  const skillcutSoundPath = `/assets/voice/${market.live2d.current_id}/${market.live2d.current_id}_ult_cutscene.ogg`
+  
+  // Try to play skillcut sound
+  currentActionSound = new Audio(skillcutSoundPath)
+  currentActionSound.play().catch((error) => {
+    // Silently fail if skillcut sound doesn't exist
+    console.debug(`Skillcut sound not found for ${market.live2d.current_id}:`, error.message)
   })
 }
 
@@ -424,24 +477,54 @@ const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
 }
 
 const spineLoader = () => {
-  const skelUrl = getPathing('skel')
+  let skelUrl = getPathing('skel')
   const request = new XMLHttpRequest()
 
   request.responseType = 'arraybuffer'
   request.open('GET', skelUrl, true)
   request.send()
   request.onloadend = () => {
+    // If skillcut file not found, try base character's skillcut
+    // Exception: c513 variants (c513_01, c513_02, etc.) have their own skillcut, don't fallback
+    if (request.status !== 200 && market.live2d.current_pose === 'skillcut') {
+      const characterId = market.live2d.current_id
+      const baseCharacterId = characterId.split('_')[0]
+      
+      // Don't fallback for c513 variants - they have their own skillcut
+      const hasOwnSkillcut = baseCharacterId === 'c513'
+      
+      if (baseCharacterId !== characterId && !hasOwnSkillcut) {
+        console.warn(`Skillcut not found for ${characterId}, trying base character ${baseCharacterId}`)
+        const baseSkelUrl = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
+        
+        const baseRequest = new XMLHttpRequest()
+        baseRequest.responseType = 'arraybuffer'
+        baseRequest.open('GET', baseSkelUrl, true)
+        baseRequest.send()
+        baseRequest.onloadend = () => {
+          if (baseRequest.status === 200) {
+            loadSpineWithBuffer(baseRequest.response, baseCharacterId)
+          } else {
+            console.error('Failed to load base character skillcut:', baseRequest.statusText)
+          }
+        }
+        return
+      }
+    }
+    
     if (request.status !== 200) {
       console.error('Failed to load skel file:', request.statusText)
       return
     }
 
-    // convert the ArrayBuffer in the response as a DataUrl for rawDataURIs
-    const buffer = request.response
+    loadSpineWithBuffer(request.response, market.live2d.current_id)
+  }
+}
 
-    const frURL = new FileReader()
-    frURL.readAsDataURL(new Blob([buffer]))
-    frURL.onload = () => {
+const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
+  const frURL = new FileReader()
+  frURL.readAsDataURL(new Blob([buffer]))
+  frURL.onload = () => {
       const skelURL: string | ArrayBuffer | null = frURL.result
 
       const uintArray = new Uint8Array(buffer)
@@ -463,12 +546,21 @@ const spineLoader = () => {
         usedSpine = spine41
       }
 
+      // For skillcut with base character fallback, use the base character's ID in rawDataURIs
+      const skelUrlKey = market.live2d.current_pose === 'skillcut' ? characterId : market.live2d.current_id
+      
+      // Build atlas URL - if it's a fallback skillcut, use base character's atlas
+      let atlasUrl = getPathing('atlas')
+      if (market.live2d.current_pose === 'skillcut' && characterId !== market.live2d.current_id) {
+        atlasUrl = globalParams.PATH_L2D + characterId + '/' + globalParams.PATH_L2D_SKILLCUT + characterId + '_00_skillcut.atlas'
+      }
+
       spineCanvas = new usedSpine.SpinePlayer('player-container', {
-        skelUrl: market.live2d.current_id,
+        skelUrl: skelUrlKey,
         rawDataURIs: {
-          [market.live2d.current_id]: skelURL
+          [skelUrlKey]: skelURL
         },
-        atlasUrl: getPathing('atlas'),
+        atlasUrl: atlasUrl,
         animation: getDefaultAnimation(),
         skin: market.live2d.getSkin(),
         scale: spineScale,
@@ -555,7 +647,6 @@ const spineLoader = () => {
       })
       applyDefaultStyle2Canvas()
     }
-  }
 }
 
 const customSpineLoader = () => {
@@ -624,7 +715,7 @@ const customSpineLoader = () => {
   spineCanvas = new usedSpine.SpinePlayer('player-container', spineCanvasOptions)
 }
 
-const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb') => {
+const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb' | 'skillcut') => {
   let route = globalParams.PATH_L2D + market.live2d.current_id + '/'
 
   const id = market.live2d.current_id
@@ -642,6 +733,16 @@ const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb') => {
     case 'cover':
       route += globalParams.PATH_L2D_COVER
       fileSuffix = '_cover' + fileSuffix
+      break
+    case 'skillcut':
+      route += globalParams.PATH_L2D_SKILLCUT
+      // Variants (c513_01, c511_01, etc.) use just _skillcut naming (without _00 prefix)
+      // Base characters use _00_skillcut
+      if (id.includes('_') || id.startsWith('c513')) {
+        fileSuffix = '_skillcut.'
+      } else {
+        fileSuffix = '_00_skillcut.'
+      }
       break
     default:
       break
@@ -675,30 +776,39 @@ const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
       return 'aim_idle'
     case 'cover':
       return 'cover_idle'
+    case 'skillcut':
+      return 'idle' // fallback to idle for skillcut
     default:
       return ['smol_anis', 'smol_prika', 'smol_mint'].includes(market.live2d.current_id) ? 'pose_idle' : 'idle'
   }
 }
 
-const checkCharacterHasPose = (pose: 'fb' | 'aim' | 'cover' | 'temp'): boolean => {
-  // Characters that don't have aim pose
-  if (pose === 'aim' && charactersWithoutAimAndCover.includes(market.live2d.current_id)) {
-    return false
-  }
-  
-  // Characters that don't have cover pose
-  if (pose === 'cover' && charactersWithoutAimAndCover.includes(market.live2d.current_id)) {
-    return false
-  }
-  
+const checkCharacterHasPose = (pose: 'fb' | 'aim' | 'cover' | 'skillcut' | 'temp'): boolean => {
+  // Auto-detection happens in PoseSelector via file verification
+  // This is just a placeholder for backward compatibility
   return true
 }
 
 // Helper function to verify if a pose file exists
-const verifyPoseFileExists = async (pose: 'aim' | 'cover'): Promise<boolean> => {
+const verifyPoseFileExists = async (pose: 'aim' | 'cover' | 'skillcut'): Promise<boolean> => {
   try {
     const skelUrl = getPathing('skel', pose)
     const response = await fetch(skelUrl, { method: 'HEAD' })
+    
+    // If file not found and it's skillcut, try base character (e.g., c511_01 -> c511)
+    if (!response.ok && pose === 'skillcut') {
+      const characterId = market.live2d.current_id
+      // Extract base character ID (e.g., c511_01 -> c511)
+      const baseCharacterId = characterId.split('_')[0]
+      
+      if (baseCharacterId !== characterId) {
+        // Try the base character's skillcut
+        const baseRoute = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
+        const baseResponse = await fetch(baseRoute, { method: 'HEAD' })
+        return baseResponse.ok
+      }
+    }
+    
     return response.ok
   } catch (error) {
     return false
@@ -820,7 +930,7 @@ watch(
 
 watch(
   () => market.live2d.current_id,
-  () => {
+  async () => {
     // Reset zoom flag when switching to a new character
     if (lastCharacterId !== market.live2d.current_id) {
       hasUserZoomed = false
@@ -839,10 +949,19 @@ watch(
     
     // Play BGM for oldtales
     if (market.live2d.current_id === 'oldtales') {
-      currentBGM = new Audio('/assets/voice/oldtales/oldtales_bgm.mp3')
+      currentBGM = new Audio('/assets/voice/oldtales/oldtales_bgm.ogg')
       currentBGM.loop = true
       currentBGM.volume = 0.5
       currentBGM.play().catch(err => console.log('BGM play failed:', err))
+    }
+    
+    // Check if current pose is available for this character
+    // If not, reset to fullbody before loading
+    if (market.live2d.current_pose !== 'fb') {
+      const poseAvailable = await verifyPoseFileExists(market.live2d.current_pose)
+      if (!poseAvailable) {
+        market.live2d.current_pose = 'fb'
+      }
     }
     
     loadSpineAfterWatcher()
@@ -884,8 +1003,8 @@ watch(
       return
     }
     
-    // For aim and cover poses, verify the file actually exists
-    if (market.live2d.current_pose === 'aim' || market.live2d.current_pose === 'cover') {
+    // For aim, cover, and skillcut poses, verify the file actually exists
+    if (market.live2d.current_pose === 'aim' || market.live2d.current_pose === 'cover' || market.live2d.current_pose === 'skillcut') {
       const fileExists = await verifyPoseFileExists(market.live2d.current_pose)
       if (!fileExists) {
         console.warn(`${market.live2d.current_pose} pose file not found for ${market.live2d.current_id}, falling back to fb`)

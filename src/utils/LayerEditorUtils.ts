@@ -5,16 +5,14 @@ export interface layerEditorImportableInterface {
   description: string,
   date: number,
   cid: string,
-  pose: 'fb' | 'cover' | 'aim' | 'temp',
+  pose: 'fb' | 'cover' | 'aim' | 'skillcut' | 'temp',
   exportVersion: number
   layers: {
       [key: string]: AttachmentItemColorInterface | string
     }[]
-
-
 }
 
-export const getExportableContent = (cid: string, pose: 'fb' | 'cover' | 'aim' | 'temp', layers: AttachmentInterface[]) => {
+export const getExportableContent = (cid: string, pose: 'fb' | 'cover' | 'aim' | 'skillcut' | 'temp', layers: AttachmentInterface[]) => {
   const content: layerEditorImportableInterface = {
     author: 'Default',
     description: 'Layer edition of a character on Nikke-DB. Do not modify a single field besides author and description.',
