@@ -102,26 +102,22 @@ const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'ski
         // Try character first with _00_skillcut naming
         url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
         let response = await fetch(url)
-        console.log(`[PoseSelector] Checking skillcut _00: ${url} - ${response.ok}`)
         if (response.ok) return true
         
-        // For c513 variants, try _skillcut naming (without _00 or _01 prefix)
-        if (characterId.startsWith('c513')) {
+        // For variants, try _skillcut naming (without _00 prefix)
+        if (characterId.includes('_')) {
           url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
           response = await fetch(url)
-          console.log(`[PoseSelector] Checking skillcut custom: ${url} - ${response.ok}`)
           if (response.ok) return true
         }
         
         // If variant doesn't have it, try base character
         const baseId = characterId.split('_')[0]
-        if (baseId !== characterId && baseId !== 'c513') {
+        if (baseId !== characterId) {
           url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
           response = await fetch(url)
-          console.log(`[PoseSelector] Checking skillcut base: ${url} - ${response.ok}`)
           return response.ok
         }
-        console.log(`[PoseSelector] No skillcut found for ${characterId}`)
         return false
     }
     

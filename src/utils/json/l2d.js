@@ -780,6 +780,7 @@ const specialClickAnimations = {
   'c011': ['expression_0'],
   'c490': ['smile'],
   'c491': ['angry'],
+  'c513_03': ['expression_0'],
   'c560': ['special'],
   'c561': ['delight'],
   'c562': ['special'],
@@ -831,6 +832,7 @@ const customZoomSettings = {
   'c451_03': { zoom: 0.23, offsetY: -30 }, 
   'c511': { fb: { zoom: 0.25, offsetX: 100 }, sc: { zoom: 0.25, offsetY: 40 } },
   'c511_01': { fb: { zoom: 0.23, offsetY: 20 }, sc: { zoom: 0.22, offsetY: 20 } },
+  'c513': { sc: { zoom: 0.3, offsetY: 0 } },
   'c513_01': { fb: { zoom: 0.28, offsetY: 20 }, sc: { zoom: 0.3, offsetY: -40 } },
   'c515': { sc: { zoom: 0.37, offsetY: -40 } },
   'c571': { zoom: 0.23, offsetY: -40 },
@@ -874,7 +876,17 @@ const voiceGroupOverrides = {
   'c450': ['c450_01', 'c450_03'],
   'c451': ['c451_01', 'c451_02'],
   'c501': ['c501_01'],
+  'c513': ['c513_02'],
   'c851': ['c851_01'], 
+}
+
+const actionSoundConfig = {
+  'c513': { 1: { overlap: 7 }, 3: { overlap: 8 } },
+  'c513_01': { 1: { delay: 3, overlap: 8 }, 3: { delay: 3, overlap: 8 } },
+  'c513_03': { 1: { overlap: 9 }, 3: { delay: 16, overlap: 15}  },
+}
+
+const reloadSoundConfig = {
 }
 
 export const charactersWithoutAimAndCover = []
@@ -946,44 +958,26 @@ const setCustomZoom = (characterId, canvas, transformScale, currentPose) => {
 const voiceMap = {}
 
 // Helper function to generate voice URLs dynamically
-// URLs are generated for all possible lines and the browser/cache will handle which ones exist
+// Attempts to detect naming patterns by checking files in the voice folder
 const generateVoiceUrls = (voiceFolderId) => {
   const normal = []
   const cover = []
   const skillcut = []
   
-  // Normal voices: Generate URLs for lines 1-6 (standard normal voices)
-  // The actual files may be less, the error handler will skip missing ones
-  for (let i = 1; i <= 6; i++) {
-    let voiceName = `${voiceFolderId}_${i}.ogg`
-    
-    // Special naming for c515: convert _1 to _Lobby_Touch_1, etc.
-    if (voiceFolderId === 'c515') {
-      if (i <= 3) {
-        voiceName = `${voiceFolderId}_Lobby_Touch_${i}.ogg`
-      } else if (i > 3 && i <= 6) {
-        voiceName = `${voiceFolderId}_Lobby_Touch_Love_${i - 3}.ogg`
-      }
-    }
-    
-    normal.push(`/assets/voice/${voiceFolderId}/${voiceName}`)
+  // Normal voices: Lobby/Touch naming
+  // Format: {id}_Lobby_Touch_1-3.ogg, {id}_Lobby_Touch_Love_1-3.ogg
+  for (let i = 1; i <= 3; i++) {
+    normal.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Lobby_Touch_${i}.ogg`)
+    normal.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Lobby_Touch_Love_${i}.ogg`)
   }
   
-  // Cover/aim pose voices: Start from 7 onwards (covers lines 7-9)
-  // The actual files may be less, the error handler will skip missing ones
-  for (let i = 7; i <= 9; i++) {
-    let voiceName = `${voiceFolderId}_${i}.ogg`
-    
-    // Special naming for c515: convert _7 to _Reload_1, etc.
-    if (voiceFolderId === 'c515') {
-      voiceName = `${voiceFolderId}_Reload_${i - 6}.ogg`
-    }
-    
-    cover.push(`/assets/voice/${voiceFolderId}/${voiceName}`)
+  // Cover/aim pose voices: Reload naming
+  // Format: {id}_Reload_1-3.ogg
+  for (let i = 1; i <= 3; i++) {
+    cover.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Reload_${i}.ogg`)
   }
   
-  // Skillcut voices: Line 10
-  // The actual file may not exist, the error handler will skip if missing
+  // Skillcut voices
   skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`)
   
   return { normal, cover, skillcut }
@@ -1011,5 +1005,7 @@ l2dData.forEach((character) => {
   }
 })
 
-export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations }
+
+
+export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig }
 export default l2dData
