@@ -99,29 +99,26 @@ const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'ski
         url = `${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`
         break
       case 'skillcut':
-        // Try character first with _00_skillcut naming
-        url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
-        let response = await fetch(url)
-        if (response.ok) return true
-        
-        // For variants, try _skillcut naming (without _00 prefix)
+        // Variants (c513_01, c511_01, etc.) use _skillcut naming (without _00 prefix)
+        // Base characters use _00_skillcut
         if (characterId.includes('_')) {
           url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
-          response = await fetch(url)
+          let response = await fetch(url).catch(() => ({ ok: false }))
           if (response.ok) return true
-        }
-        
-        // If variant doesn't have it, try base character
-        const baseId = characterId.split('_')[0]
-        if (baseId !== characterId) {
+          
+          // If variant doesn't have its own, fallback to base character
+          const baseId = characterId.split('_')[0]
           url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
-          response = await fetch(url)
+          response = await fetch(url).catch(() => ({ ok: false }))
+          return response.ok
+        } else {
+          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
+          const response = await fetch(url).catch(() => ({ ok: false }))
           return response.ok
         }
-        return false
     }
     
-    const response = await fetch(url)
+    const response = await fetch(url).catch(() => ({ ok: false }))
     return response.ok
   } catch (error) {
     return false

@@ -876,6 +876,7 @@ const voiceGroupOverrides = {
   'c450': ['c450_01', 'c450_03'],
   'c451': ['c451_01', 'c451_02'],
   'c501': ['c501_01'],
+  'c511': ['c511_02'],
   'c513': ['c513_02'],
   'c851': ['c851_01'], 
 }
@@ -977,8 +978,9 @@ const generateVoiceUrls = (voiceFolderId) => {
     cover.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Reload_${i}.ogg`)
   }
   
-  // Skillcut voices
+  // Skillcut voices - primary and cutscene
   skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`)
+  skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_ult_cutscene.ogg`)
   
   return { normal, cover, skillcut }
 }

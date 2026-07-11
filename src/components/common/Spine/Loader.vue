@@ -48,6 +48,21 @@ let usedSpine: any = null
 // BGM tracking
 let currentBGM: HTMLAudioElement | null = null
 
+// Track skillcut overlay sound separately so it can be stopped
+let currentSkillcutOverlaySound: HTMLAudioElement | null = null
+
+// Configuration for characters with non-standard skillcut default animations
+const skillcutAnimationOverrides: { [key: string]: string } = {
+  'c513_03': 'idle_all',
+  // Add more characters here as needed
+}
+
+// Configuration for characters with non-standard idle animations to use after skillcut
+const skillcutIdleAnimationOverrides: { [key: string]: string } = {
+  'c513_03': 'idle_all',
+  // Add more characters here as needed
+}
+
 // Extend window for storing Spine library
 declare global {
   interface Window {
@@ -123,10 +138,16 @@ const handleActionStart = () => {
   if (market.live2d.current_pose === 'skillcut') {
     // Check if skillcut animation exists
     const animations = spinePlayer.animationState.data.skeletonData.animations
-    let skillcutAnimation = 'skillcut_0'
+    let skillcutAnimation = 'skillcut_all'
     
-    // Try skillcut_0 first
-    let hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_0')
+    // Try skillcut_all first
+    let hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_all')
+    
+    // Fallback to skillcut_0 if skillcut_all doesn't exist
+    if (!hasSkillcut) {
+      skillcutAnimation = 'skillcut_0'
+      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_0')
+    }
     
     // Fallback to skillcut_1 if skillcut_0 doesn't exist
     if (!hasSkillcut) {
@@ -146,9 +167,15 @@ const handleActionStart = () => {
       return
     }
     
+    // Determine what idle animation to use after skillcut
+    let idleAnimation = 'idle'
+    if (skillcutIdleAnimationOverrides[market.live2d.current_id]) {
+      idleAnimation = skillcutIdleAnimationOverrides[market.live2d.current_id]
+    }
+    
     // Play the skillcut animation then loop back to idle
     spinePlayer.animationState.setAnimation(0, skillcutAnimation, false)
-    spinePlayer.animationState.addAnimation(0, 'idle', true, 0)
+    spinePlayer.animationState.addAnimation(0, idleAnimation, true, 0)
     playVoice()
     return
   }
@@ -341,18 +368,22 @@ const playVoice = () => {
   const characterData = l2dData.find((a) => a.id === market.live2d.current_id)
   if (!characterData) return
   
+  // Stop any existing sound effects first
+  stopAllSoundEffects()
+  
+  // In skillcut mode, use specialized skillcut sound handler (handles all audio)
+  if (market.live2d.current_pose === 'skillcut') {
+    playSkillcutSound()
+    return
+  }
+  
   let currentPose = 'normal'
   if (market.live2d.current_pose === 'cover') {
     currentPose = 'cover'
-  } else if (market.live2d.current_pose === 'skillcut') {
-    currentPose = 'skillcut'
   }
   
   // Try to play voice with automatic retry on missing files
   playVoiceWithRetry(market.live2d.current_id, currentPose)
-  
-  // Stop any existing sound effects first
-  stopAllSoundEffects()
   
   // In cover mode, also play reload sound simultaneously
   if (market.live2d.current_pose === 'cover') {
@@ -362,11 +393,6 @@ const playVoice = () => {
   // In fullbody mode, also play action sound simultaneously
   if (market.live2d.current_pose === 'fb') {
     playActionSound()
-  }
-  
-  // In skillcut mode, also play skillcut sound simultaneously
-  if (market.live2d.current_pose === 'skillcut') {
-    playSkillcutSound()
   }
 }
 
@@ -383,6 +409,13 @@ const stopAllSoundEffects = () => {
     currentActionSound.pause()
     currentActionSound.currentTime = 0
     currentActionSound = null
+  }
+  
+  // Stop skillcut overlay sound
+  if (currentSkillcutOverlaySound) {
+    currentSkillcutOverlaySound.pause()
+    currentSkillcutOverlaySound.currentTime = 0
+    currentSkillcutOverlaySound = null
   }
   
   // Reset action sound sequence
@@ -637,55 +670,44 @@ const playNextActionSound = (pathAttempt = 0) => {
 }
 
 const playSkillcutSound = () => {
-  // Array of sound paths to try in order
-  const soundPaths = []
-  const baseCharacterId = market.live2d.current_id.split('_')[0]
-  const isVariant = baseCharacterId !== market.live2d.current_id
-  
-  // Try variant paths first (if it's a variant)
-  if (isVariant) {
-    soundPaths.push(`/assets/voice/${market.live2d.current_id}/fx/${market.live2d.current_id}_ult_cutscene.ogg`)
-    soundPaths.push(`/assets/voice/${market.live2d.current_id}/fx/${market.live2d.current_id}_00_ult_cutscene.ogg`)
-    soundPaths.push(`/assets/voice/${market.live2d.current_id}/${market.live2d.current_id}_Ult_Skill_1.ogg`)
+  // Stop any existing skillcut sounds first
+  if (currentActionSound) {
+    currentActionSound.pause()
+    currentActionSound = null
   }
+  if (currentSkillcutOverlaySound) {
+    currentSkillcutOverlaySound.pause()
+    currentSkillcutOverlaySound = null
+  }
+
+  const characterId = market.live2d.current_id
   
-  // Then try base character paths
-  soundPaths.push(`/assets/voice/${baseCharacterId}/fx/${baseCharacterId}_ult_cutscene.ogg`)
-  soundPaths.push(`/assets/voice/${baseCharacterId}/fx/${baseCharacterId}_00_ult_cutscene.ogg`)
-  soundPaths.push(`/assets/voice/${baseCharacterId}/${baseCharacterId}_Ult_Skill_1.ogg`)
-  
-  let attemptIndex = 0
-  
-  const tryPlaySound = () => {
-    if (attemptIndex >= soundPaths.length) {
-      console.debug(`Skillcut sound not found for ${market.live2d.current_id} or base character ${baseCharacterId}`)
-      return
+  // Determine voice folder ID (handles group overrides for fallback)
+  let voiceFolderId = characterId
+  for (const [baseId, variants] of Object.entries(voiceGroupOverrides)) {
+    if (Array.isArray(variants) && variants.includes(characterId)) {
+      voiceFolderId = baseId
+      break
     }
-    
-    const soundPath = soundPaths[attemptIndex]
-    attemptIndex++
-    
-    currentActionSound = new Audio(soundPath)
-    
-    currentActionSound.addEventListener('canplay', () => {
-      // Successfully started playing
-      console.debug(`Playing skillcut sound: ${soundPath}`)
-    }, { once: true })
-    
-    currentActionSound.addEventListener('error', () => {
-      // Try next path
-      tryPlaySound()
-    }, { once: true })
-    
-    currentActionSound.play().catch((error) => {
-      console.debug(`Failed to play skillcut sound: ${soundPath}, trying next...`)
-      // Trigger error handler to try next path
-      tryPlaySound()
-    })
   }
   
-  // Start trying paths
-  tryPlaySound()
+  // Play main sound (Ult_Skill_1)
+  let mainPath = `/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`
+  
+  console.debug(`Playing skillcut main sound: ${mainPath}`)
+  currentActionSound = new Audio(mainPath)
+  currentActionSound.play().catch(() => {
+    console.debug(`Failed to play main skillcut sound: ${mainPath}`)
+  })
+  
+  // Play overlay sound (ult_cutscene)
+  let overlayPath = `/assets/voice/${voiceFolderId}/fx/${voiceFolderId}_ult_cutscene.ogg`
+  
+  console.debug(`Playing skillcut overlay sound: ${overlayPath}`)
+  currentSkillcutOverlaySound = new Audio(overlayPath)
+  currentSkillcutOverlaySound.play().catch(() => {
+    console.debug(`Failed to play overlay skillcut sound: ${overlayPath}`)
+  })
 }
 
 const handleActionEnd = () => {
@@ -721,6 +743,13 @@ function loadOverlaySkeletons() {
       const characterId = market.live2d.current_id
       const charFolder = `assets/l2d/${characterId}`
 
+      // Characters known to have fg/bg overlays (most don't)
+      const charWithOverlays = ['c513_03', 'c515']
+      if (!charWithOverlays.includes(characterId)) {
+        resolve()
+        return
+      }
+
       // Determine the suffix pattern from main skeleton
       // First, try to find what suffix the main skeleton uses by checking common patterns
       let mainSuffix = '_00'
@@ -740,15 +769,21 @@ function loadOverlaySkeletons() {
 
       // Helper function to load overlay with detected suffix
       const tryLoadOverlay = async (overlayType: 'bg' | 'fg'): Promise<boolean> => {
-        // Try with the detected main suffix first, then try without suffix
+        // Determine suffix for overlays based on character ID pattern
+        // Characters with _01, _02, etc don't have _00 suffix for overlays
+        // Characters without variant suffix use _00 for overlays
+        const hasVariant = /_\d{2}$/.test(characterId)
+        const overlaySuffix = hasVariant ? '' : mainSuffix
+        
+        // Try with the appropriate suffix
         const pathPatterns = [
-          { skel: `${charFolder}/${characterId}${mainSuffix}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}${mainSuffix}_${overlayType}.atlas` },
+          { skel: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.atlas` },
           { skel: `${charFolder}/${characterId}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}_${overlayType}.atlas` }
         ]
 
         for (const paths of pathPatterns) {
           try {
-            const checkResponse = await fetch(paths.skel, { method: 'HEAD' })
+            const checkResponse = await fetch(paths.skel, { method: 'HEAD' }).catch(() => ({ ok: false }))
             if (checkResponse.ok) {
               const assetMgr = new SpineLib.AssetManager(spineCanvas.context, '')
               assetMgr.loadBinary(paths.skel)
@@ -910,6 +945,9 @@ const spineLoader = () => {
         baseRequest.responseType = 'arraybuffer'
         baseRequest.open('GET', baseSkelUrl, true)
         baseRequest.send()
+        baseRequest.onerror = () => {
+          console.error('Failed to load base character skillcut: network error')
+        }
         baseRequest.onloadend = () => {
           if (baseRequest.status === 200) {
             loadSpineWithBuffer(baseRequest.response, baseCharacterId)
@@ -967,13 +1005,21 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
         atlasUrl = globalParams.PATH_L2D + characterId + '/' + globalParams.PATH_L2D_SKILLCUT + characterId + '_00_skillcut.atlas'
       }
 
+      let initialAnimation = getDefaultAnimation()
+      let needsSafeAnimationDetection = market.live2d.current_pose === 'skillcut'
+
+      // Check if this character has a non-standard skillcut animation
+      if (needsSafeAnimationDetection && skillcutAnimationOverrides[market.live2d.current_id]) {
+        initialAnimation = skillcutAnimationOverrides[market.live2d.current_id]
+      }
+
       spineCanvas = new usedSpine.SpinePlayer('player-container', {
         skelUrl: skelUrlKey,
         rawDataURIs: {
           [skelUrlKey]: skelURL
         },
         atlasUrl: atlasUrl,
-        animation: getDefaultAnimation(),
+        animation: initialAnimation,
         skin: market.live2d.getSkin(),
         scale: spineScale,
         backgroundColor: '#00000000',
@@ -1003,18 +1049,6 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
 
           spinePlayer = player
           market.live2d.attachments = player.animationState.data.skeletonData.defaultSkin.attachments
-          
-          // Validate that the current animation exists
-          const animations = player.animationState.data.skeletonData.animations
-          const currentAnimation = player.config.animation
-          const animationExists = animations.some((a: { name: string }) => a.name === currentAnimation)
-          
-          if (!animationExists) {
-            // Fallback to 'idle' if current animation doesn't exist
-            console.warn(`Animation '${currentAnimation}' not found, falling back to 'idle'`)
-            player.config.animation = 'idle'
-            player.setAnimation('idle', true)
-          }
           
           // Auto-detect and apply best available skin if in fb pose
           if (market.live2d.current_pose === 'fb') {
