@@ -89,38 +89,45 @@ import { charactersWithoutAimAndCover } from '@/utils/json/l2d.js'
 // Check if pose files exist by trying to fetch the skel file
 const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'skillcut'): Promise<boolean> => {
   try {
-    let url: string
+    let urls: string[] = []
     
     switch (pose) {
       case 'aim':
-        url = `${globalParams.PATH_L2D}${characterId}/aim/${characterId}_aim_00.skel`
+        urls = [`${globalParams.PATH_L2D}${characterId}/aim/${characterId}_aim_00.skel`]
         break
       case 'cover':
-        url = `${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`
+        urls = [`${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`]
         break
       case 'skillcut':
-        // Variants (c513_01, c511_01, etc.) use _skillcut naming (without _00 prefix)
-        // Base characters use _00_skillcut
+        // Variants (c513_01, c511_01, etc.) try variant first, then fall back to base
         if (characterId.includes('_')) {
-          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
-          let response = await fetch(url).catch(() => ({ ok: false }))
-          if (response.ok) return true
-          
-          // If variant doesn't have its own, fallback to base character
           const baseId = characterId.split('_')[0]
-          url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
-          response = await fetch(url).catch(() => ({ ok: false }))
-          return response.ok
+          urls = [
+            `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`,
+            `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
+          ]
         } else {
-          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
-          const response = await fetch(url).catch(() => ({ ok: false }))
-          return response.ok
+          urls = [`${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`]
         }
+        break
     }
     
-    const response = await fetch(url).catch(() => ({ ok: false }))
-    return response.ok
+    // Try each URL in sequence
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) })
+        if (response.ok) {
+          return true
+        }
+      } catch (error) {
+        // Continue to next URL if this one fails
+        continue
+      }
+    }
+    
+    return false
   } catch (error) {
+    console.warn(`Error checking pose ${pose} for ${characterId}:`, error)
     return false
   }
 }
