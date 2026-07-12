@@ -21,7 +21,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.png') || assetInfo.name.endsWith('.jpg') || assetInfo.name.endsWith('.mp3') || assetInfo.name.endsWith('.ogg')) {
+          // Don't hash Live2D files (.skel, .atlas) or audio files as they're referenced by hardcoded paths
+          if (assetInfo.name.endsWith('.skel') || assetInfo.name.endsWith('.atlas') || assetInfo.name.endsWith('.mp3') || assetInfo.name.endsWith('.ogg')) {
+            return 'assets/[name][extname]'
+          }
+          // Hash other assets for cache busting
+          if (assetInfo.name.endsWith('.png') || assetInfo.name.endsWith('.jpg')) {
             return 'assets/[name]-[hash][extname]'
           }
           return 'assets/[name]-[hash][extname]'
