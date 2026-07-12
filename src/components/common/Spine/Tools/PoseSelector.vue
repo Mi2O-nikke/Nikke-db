@@ -115,12 +115,22 @@ const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'ski
     // Try each URL in sequence
     for (const url of urls) {
       try {
-        const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) })
+        // Use GET request instead of HEAD to avoid CORS and server blocking issues
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        
+        const response = await fetch(url, { 
+          method: 'GET',
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        
+        // Accept any successful response (200-299)
         if (response.ok) {
           return true
         }
       } catch (error) {
-        // Continue to next URL if this one fails
+        // Continue to next URL if this one fails (timeout, network error, etc.)
         continue
       }
     }
