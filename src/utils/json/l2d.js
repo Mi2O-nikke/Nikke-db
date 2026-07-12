@@ -776,6 +776,7 @@ const l2dData = [
 
 ]
 
+//click motion
 const specialClickAnimations = {
   'c011': ['expression_0'],
   'c490': ['smile'],
@@ -803,6 +804,7 @@ const specialClickAnimations = {
   'c9028': ['special'],
 }
 
+//zoom fb=fullbody sc=skillcut
 const customZoomSettings = {
   'c017': { zoom: 0.23, offsetY: -50 },
   'c017_01': { zoom: 0.26, offsetY: -80 },
@@ -834,9 +836,11 @@ const customZoomSettings = {
   'c511_01': { fb: { zoom: 0.23, offsetY: 20 }, sc: { zoom: 0.22, offsetY: 20 } },
   'c513': { sc: { zoom: 0.3, offsetY: 0 } },
   'c513_01': { fb: { zoom: 0.28, offsetY: 20 }, sc: { zoom: 0.3, offsetY: -40 } },
-  'c515': { sc: { zoom: 0.37, offsetY: -40 } },
+  'c514': { sc: { zoom: 0.34, offsetY: 100 } },
+  'c515': { fb: { offsetX: 50 }, sc: { zoom: 0.37, offsetY: -40 } },
   'c571': { zoom: 0.23, offsetY: -40 },
   'c850_03': { zoom: 0.25 },
+  'c944': { fb: { zoom: 0.25, offsetX: 100 } },
   'favorite_c030': { zoom: 0.24, offsetX: 60 },
   'favorite_c032': { zoom: 0.3, offsetX: 60 },
   'favorite_c072': { zoom: 0.27, offsetX: 60 },
@@ -848,6 +852,7 @@ const customZoomSettings = {
   'staranis': { zoom: 0.35, offsetX: 100 },
 }
 
+//share voice
 const voiceGroupOverrides = {
   'c010': ['c010_01', 'c010_02', 'c010_03'],
   'c011': ['c011_01'],
@@ -876,19 +881,35 @@ const voiceGroupOverrides = {
   'c450': ['c450_01', 'c450_03'],
   'c451': ['c451_01', 'c451_02'],
   'c501': ['c501_01'],
-  'c511': ['c511_02'],
+  'c511': ['c511_02', 'c944'],
   'c513': ['c513_02'],
   'c851': ['c851_01'], 
 }
 
+//action overlap or delay
 const actionSoundConfig = {
+  'c511': { 3: { overlap: 6 }, 6: { overlap: 3 }, 7: { overlap: 5 } },
+  'c511_02': { 2: { delay: 6 }, 3: { delay: 4 } },
   'c513': { 1: { overlap: 7 }, 3: { overlap: 8 } },
   'c513_01': { 1: { delay: 3, overlap: 8 }, 3: { delay: 3, overlap: 8 } },
   'c513_03': { 1: { overlap: 9 }, 3: { delay: 16, overlap: 15}  },
+  'c514': { 3: { delay: 5 } },
+  'c514_01': { 3: { delay: 5 } },
+  'c515': { 4: { overlap: 6 }, 6: { delay: 5 } },
+  'c944': { 3: { overlap: 6 }, 6: { overlap: 3 }, 7: { overlap: 5 } },
 }
 
+//reload overlap or delay
 const reloadSoundConfig = {
+  'c514': { 2: { overlap: 3 }, 3: { overlap: 3}, 4: { overlap: 3}, 5: { overlap: 6} },
+  'c515': { 2: { overlap: 6 }, 3: { overlap: 3} },
 }
+
+//chara have foreground and background
+const charactersWithFgBgOverlays = [
+  'c513_03', 
+  'c515'
+]
 
 export const charactersWithoutAimAndCover = []
 
@@ -968,19 +989,19 @@ const generateVoiceUrls = (voiceFolderId) => {
   // Normal voices: Lobby/Touch naming
   // Format: {id}_Lobby_Touch_1-3.ogg, {id}_Lobby_Touch_Love_1-3.ogg
   for (let i = 1; i <= 3; i++) {
-    normal.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Lobby_Touch_${i}.ogg`)
-    normal.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Lobby_Touch_Love_${i}.ogg`)
+    normal.push(`/assets/l2d/${voiceFolderId}/voice/${voiceFolderId}_Lobby_Touch_${i}.ogg`)
+    normal.push(`/assets/l2d/${voiceFolderId}/voice/${voiceFolderId}_Lobby_Touch_Love_${i}.ogg`)
   }
   
   // Cover/aim pose voices: Reload naming
-  // Format: {id}_Reload_1-3.ogg
-  for (let i = 1; i <= 3; i++) {
-    cover.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Reload_${i}.ogg`)
+  // Format: {id}_Reload_1-6.ogg
+  for (let i = 1; i <= 6; i++) {
+    cover.push(`/assets/l2d/${voiceFolderId}/voice/${voiceFolderId}_Reload_${i}.ogg`)
   }
   
   // Skillcut voices - primary and cutscene
-  skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`)
-  skillcut.push(`/assets/voice/${voiceFolderId}/${voiceFolderId}_ult_cutscene.ogg`)
+  skillcut.push(`/assets/l2d/${voiceFolderId}/voice/${voiceFolderId}_Ult_Skill_1.ogg`)
+  skillcut.push(`/assets/l2d/${voiceFolderId}/voice/${voiceFolderId}_ult_cutscene.ogg`)
   
   return { normal, cover, skillcut }
 }
@@ -1007,7 +1028,5 @@ l2dData.forEach((character) => {
   }
 })
 
-
-
-export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig }
+export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig, charactersWithFgBgOverlays }
 export default l2dData

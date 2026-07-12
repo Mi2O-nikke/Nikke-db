@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations } from '@/utils/json/l2d'
+import { specialClickAnimations, charactersWithFgBgOverlays } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -373,7 +373,7 @@ const playVoice = () => {
   
   // In skillcut mode, use specialized skillcut sound handler (handles all audio)
   if (market.live2d.current_pose === 'skillcut') {
-    playSkillcutSound()
+    playSkillcutSound().catch(err => console.error('Error playing skillcut sound:', err))
     return
   }
   
@@ -436,13 +436,13 @@ const playReloadSound = () => {
 }
 
 const playNextReloadSound = (baseCharacterId: string) => {
-  // Check if we've reached the end of the sequence (1-4)
-  if (reloadSoundIndex > 4) {
+  // Check if we've reached the end of the sequence (1-6)
+  if (reloadSoundIndex > 6) {
     return
   }
   
   // Construct reload sound path
-  const reloadSoundPath = `/assets/voice/${baseCharacterId}/fx/${baseCharacterId}_reload_${reloadSoundIndex}.ogg`
+  const reloadSoundPath = `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_reload_${reloadSoundIndex}.ogg`
   
   // Get config for this character and reload number
   const characterConfig = reloadSoundConfig[baseCharacterId]
@@ -579,9 +579,9 @@ const playNextActionSound = (pathAttempt = 0) => {
   // For base characters, try original first, then _00 version
   // For variants, just use as-is
   const soundPaths = []
-  soundPaths.push(`/assets/voice/${market.live2d.current_id}/fx/${market.live2d.current_id}_action_${actionSoundIndex}.ogg`)
+  soundPaths.push(`/assets/l2d/${market.live2d.current_id}/voice/fx/${market.live2d.current_id}_action_${actionSoundIndex}.ogg`)
   if (!isVariant) {
-    soundPaths.push(`/assets/voice/${market.live2d.current_id}/fx/${market.live2d.current_id}_00_action_${actionSoundIndex}.ogg`)
+    soundPaths.push(`/assets/l2d/${market.live2d.current_id}/voice/fx/${market.live2d.current_id}_00_action_${actionSoundIndex}.ogg`)
   }
   
   if (pathAttempt >= soundPaths.length) {
@@ -669,7 +669,7 @@ const playNextActionSound = (pathAttempt = 0) => {
   }
 }
 
-const playSkillcutSound = () => {
+const playSkillcutSound = async () => {
   // Stop any existing skillcut sounds first
   if (currentActionSound) {
     currentActionSound.pause()
@@ -682,17 +682,57 @@ const playSkillcutSound = () => {
 
   const characterId = market.live2d.current_id
   
-  // Determine voice folder ID (handles group overrides for fallback)
-  let voiceFolderId = characterId
-  for (const [baseId, variants] of Object.entries(voiceGroupOverrides)) {
-    if (Array.isArray(variants) && variants.includes(characterId)) {
-      voiceFolderId = baseId
-      break
+  // Helper function to get skillcut voice path with fallback
+  const getSkillcutVoicePath = async (charId, soundType) => {
+    // First try the character itself
+    const selfPath = soundType === 'main' 
+      ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg`
+      : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
+    
+    try {
+      const response = await fetch(selfPath, { method: 'HEAD' })
+      if (response.ok) return selfPath
+    } catch (e) {
+      // Continue to fallback
     }
+    
+    // Try base character fallback (for variants like c514_01 -> c514)
+    if (charId.includes('_')) {
+      const baseId = charId.split('_')[0]
+      const basePath = soundType === 'main'
+        ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg`
+        : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
+      
+      try {
+        const response = await fetch(basePath, { method: 'HEAD' })
+        if (response.ok) return basePath
+      } catch (e) {
+        // Continue
+      }
+    }
+    
+    // Try voiceGroupOverrides fallback
+    for (const [baseId, variants] of Object.entries(voiceGroupOverrides)) {
+      if (Array.isArray(variants) && variants.includes(charId)) {
+        const overridePath = soundType === 'main'
+          ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg`
+          : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
+        
+        try {
+          const response = await fetch(overridePath, { method: 'HEAD' })
+          if (response.ok) return overridePath
+        } catch (e) {
+          // Continue
+        }
+      }
+    }
+    
+    // Return self as last resort (will fail gracefully with .catch())
+    return selfPath
   }
   
-  // Play main sound (Ult_Skill_1)
-  let mainPath = `/assets/voice/${voiceFolderId}/${voiceFolderId}_Ult_Skill_1.ogg`
+  // Play main sound (Ult_Skill_1) with fallback
+  const mainPath = await getSkillcutVoicePath(characterId, 'main')
   
   console.debug(`Playing skillcut main sound: ${mainPath}`)
   currentActionSound = new Audio(mainPath)
@@ -700,8 +740,8 @@ const playSkillcutSound = () => {
     console.debug(`Failed to play main skillcut sound: ${mainPath}`)
   })
   
-  // Play overlay sound (ult_cutscene)
-  let overlayPath = `/assets/voice/${voiceFolderId}/fx/${voiceFolderId}_ult_cutscene.ogg`
+  // Play overlay sound (ult_cutscene) with fallback
+  const overlayPath = await getSkillcutVoicePath(characterId, 'overlay')
   
   console.debug(`Playing skillcut overlay sound: ${overlayPath}`)
   currentSkillcutOverlaySound = new Audio(overlayPath)
@@ -744,8 +784,7 @@ function loadOverlaySkeletons() {
       const charFolder = `assets/l2d/${characterId}`
 
       // Characters known to have fg/bg overlays (most don't)
-      const charWithOverlays = ['c513_03', 'c515']
-      if (!charWithOverlays.includes(characterId)) {
+      if (!charactersWithFgBgOverlays.includes(characterId)) {
         resolve()
         return
       }
@@ -938,7 +977,6 @@ const spineLoader = () => {
       const baseCharacterId = characterId.split('_')[0]
       
       if (baseCharacterId !== characterId) {
-        console.warn(`Skillcut not found for ${characterId}, trying base character ${baseCharacterId}`)
         const baseSkelUrl = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
         
         const baseRequest = new XMLHttpRequest()
@@ -1497,7 +1535,7 @@ watch(
     
     // Play BGM for oldtales
     if (market.live2d.current_id === 'oldtales') {
-      currentBGM = new Audio('/assets/voice/oldtales/oldtales_bgm.ogg')
+      currentBGM = new Audio('/assets/l2d/voice/oldtales/oldtales_bgm.ogg')
       currentBGM.loop = true
       currentBGM.volume = 0.5
       currentBGM.play().catch(err => console.log('BGM play failed:', err))
