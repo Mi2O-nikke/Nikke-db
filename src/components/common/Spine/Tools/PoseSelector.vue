@@ -89,55 +89,38 @@ import { charactersWithoutAimAndCover } from '@/utils/json/l2d.js'
 // Check if pose files exist by trying to fetch the skel file
 const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'skillcut'): Promise<boolean> => {
   try {
-    let urls: string[] = []
+    let url: string
     
     switch (pose) {
       case 'aim':
-        urls = [`${globalParams.PATH_L2D}${characterId}/aim/${characterId}_aim_00.skel`]
+        url = `${globalParams.PATH_L2D}${characterId}/aim/${characterId}_aim_00.skel`
         break
       case 'cover':
-        urls = [`${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`]
+        url = `${globalParams.PATH_L2D}${characterId}/cover/${characterId}_cover_00.skel`
         break
       case 'skillcut':
-        // Variants (c513_01, c511_01, etc.) try variant first, then fall back to base
+        // Variants (c513_01, c511_01, etc.) use _skillcut naming (without _00 prefix)
+        // Base characters use _00_skillcut
         if (characterId.includes('_')) {
+          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
+          let response = await fetch(url).catch(() => ({ ok: false }))
+          if (response.ok) return true
+          
+          // If variant doesn't have its own, fallback to base character
           const baseId = characterId.split('_')[0]
-          urls = [
-            `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`,
-            `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
-          ]
+          url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
+          response = await fetch(url).catch(() => ({ ok: false }))
+          return response.ok
         } else {
-          urls = [`${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`]
+          url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
+          const response = await fetch(url).catch(() => ({ ok: false }))
+          return response.ok
         }
-        break
     }
     
-    // Try each URL in sequence
-    for (const url of urls) {
-      try {
-        // Use GET request instead of HEAD to avoid CORS and server blocking issues
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
-        
-        const response = await fetch(url, { 
-          method: 'GET',
-          signal: controller.signal
-        })
-        clearTimeout(timeoutId)
-        
-        // Accept any successful response (200-299)
-        if (response.ok) {
-          return true
-        }
-      } catch (error) {
-        // Continue to next URL if this one fails (timeout, network error, etc.)
-        continue
-      }
-    }
-    
-    return false
+    const response = await fetch(url).catch(() => ({ ok: false }))
+    return response.ok
   } catch (error) {
-    console.warn(`Error checking pose ${pose} for ${characterId}:`, error)
     return false
   }
 }
