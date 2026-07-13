@@ -103,23 +103,44 @@ const checkPoseExists = async (characterId: string, pose: 'aim' | 'cover' | 'ski
         // Base characters use _00_skillcut
         if (characterId.includes('_')) {
           url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_skillcut.skel`
-          let response = await fetch(url).catch(() => ({ ok: false }))
-          if (response.ok) return true
+          let isValid = await validateSkeletonFile(url)
+          if (isValid) return true
           
           // If variant doesn't have its own, fallback to base character
           const baseId = characterId.split('_')[0]
           url = `${globalParams.PATH_L2D}${baseId}/skill/${baseId}_00_skillcut.skel`
-          response = await fetch(url).catch(() => ({ ok: false }))
-          return response.ok
+          return await validateSkeletonFile(url)
         } else {
           url = `${globalParams.PATH_L2D}${characterId}/skill/${characterId}_00_skillcut.skel`
-          const response = await fetch(url).catch(() => ({ ok: false }))
-          return response.ok
+          return await validateSkeletonFile(url)
         }
     }
     
-    const response = await fetch(url).catch(() => ({ ok: false }))
-    return response.ok
+    return await validateSkeletonFile(url)
+  } catch (error) {
+    return false
+  }
+}
+
+// Helper function to validate that a response is actually a skeleton file
+const validateSkeletonFile = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, { method: 'HEAD' }).catch(() => null)
+    
+    if (!response?.ok) {
+      return false
+    }
+    
+    // Check Content-Type header to ensure it's binary data (not HTML error page)
+    const contentType = response.headers.get('content-type')
+    
+    // Valid skel files should be binary (application/octet-stream) or similar
+    // Invalid responses are usually text/html
+    if (contentType && contentType.includes('text/html')) {
+      return false
+    }
+    
+    return true
   } catch (error) {
     return false
   }
