@@ -682,6 +682,31 @@ const playSkillcutSound = async () => {
 
   const characterId = market.live2d.current_id
   
+  // Helper function to validate that a response is a valid OGG audio file (not HTML)
+  const isValidAudioResponse = (response: Response): boolean => {
+    // Check if response is ok
+    if (!response.ok) {
+      return false
+    }
+    
+    // Check Content-Type header to ensure it's audio (not HTML error page)
+    const contentType = response.headers.get('content-type')
+    
+    // If content-type is HTML, it's definitely an error page
+    if (contentType && contentType.includes('text/html')) {
+      return false
+    }
+    
+    // Valid audio files should have audio/* content type or application/ogg
+    if (contentType && (contentType.includes('audio/') || contentType.includes('application/ogg'))) {
+      return true
+    }
+    
+    // If no content-type header, assume it's valid (some servers don't send it)
+    // The file extension in the URL (.ogg) is our best indicator
+    return true
+  }
+
   // Helper function to get skillcut voice path with fallback
   const getSkillcutVoicePath = async (charId, soundType) => {
     // First try the character itself
@@ -691,7 +716,7 @@ const playSkillcutSound = async () => {
     
     try {
       const response = await fetch(selfPath, { method: 'HEAD' })
-      if (response.ok) return selfPath
+      if (isValidAudioResponse(response)) return selfPath
     } catch (e) {
       // Continue to fallback
     }
@@ -705,7 +730,7 @@ const playSkillcutSound = async () => {
       
       try {
         const response = await fetch(basePath, { method: 'HEAD' })
-        if (response.ok) return basePath
+        if (isValidAudioResponse(response)) return basePath
       } catch (e) {
         // Continue
       }
@@ -720,7 +745,7 @@ const playSkillcutSound = async () => {
         
         try {
           const response = await fetch(overridePath, { method: 'HEAD' })
-          if (response.ok) return overridePath
+          if (isValidAudioResponse(response)) return overridePath
         } catch (e) {
           // Continue
         }
