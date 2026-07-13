@@ -963,6 +963,38 @@ const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
   })
 }
 
+// Helper function to validate that a response is a valid skeleton file (binary data, not HTML)
+const isValidSkeletonResponse = (request: XMLHttpRequest): boolean => {
+  // Check status first
+  if (request.status !== 200) {
+    return false
+  }
+  
+  // Check Content-Type header to ensure it's binary data (not HTML error page)
+  const contentType = request.getResponseHeader('content-type')
+  
+  // If content-type is HTML, it's definitely an error page
+  if (contentType && contentType.includes('text/html')) {
+    return false
+  }
+  
+  // Additional validation: check if response buffer looks like a skeleton file
+  // Spine skeleton files have a version header in the first 16 bytes
+  if (request.response && request.response.byteLength > 16) {
+    const uintArray = new Uint8Array(request.response)
+    const firstBytes = uintArray.slice(0, 16)
+    const versionString = new TextDecoder().decode(firstBytes).replace(/\0/g, '')
+    
+    // Skeleton files should have a version like "4.0.xx" or "4.1.xx"
+    // If it's HTML content, this will be gibberish or HTML tags
+    if (/4\.[01]\.\d+/.test(versionString)) {
+      return true
+    }
+  }
+  
+  return false
+}
+
 const spineLoader = () => {
   let skelUrl = getPathing('skel')
   const request = new XMLHttpRequest()
@@ -971,8 +1003,8 @@ const spineLoader = () => {
   request.open('GET', skelUrl, true)
   request.send()
   request.onloadend = () => {
-    // If skillcut file not found, try base character's skillcut
-    if (request.status !== 200 && market.live2d.current_pose === 'skillcut') {
+    // If skillcut file not found or invalid, try base character's skillcut
+    if (!isValidSkeletonResponse(request) && market.live2d.current_pose === 'skillcut') {
       const characterId = market.live2d.current_id
       const baseCharacterId = characterId.split('_')[0]
       
@@ -987,7 +1019,7 @@ const spineLoader = () => {
           console.error('Failed to load base character skillcut: network error')
         }
         baseRequest.onloadend = () => {
-          if (baseRequest.status === 200) {
+          if (isValidSkeletonResponse(baseRequest)) {
             loadSpineWithBuffer(baseRequest.response, baseCharacterId)
           } else {
             console.error('Failed to load base character skillcut:', baseRequest.statusText)
@@ -997,7 +1029,7 @@ const spineLoader = () => {
       }
     }
     
-    if (request.status !== 200) {
+    if (!isValidSkeletonResponse(request)) {
       console.error('Failed to load skel file:', request.statusText)
       return
     }
