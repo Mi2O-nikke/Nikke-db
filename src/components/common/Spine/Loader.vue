@@ -1430,10 +1430,15 @@ const checkCharacterHasPose = (pose: 'fb' | 'aim' | 'cover' | 'skillcut' | 'temp
 const verifyPoseFileExists = async (pose: 'aim' | 'cover' | 'skillcut'): Promise<boolean> => {
   try {
     const skelUrl = getPathing('skel', pose)
-    const response = await fetch(skelUrl, { method: 'HEAD' })
+    const response = await fetch(skelUrl, { method: 'HEAD' }).catch(() => null)
+    
+    // Validate that response is an actual skeleton file (not HTML error page)
+    if (response && isValidSkeletonFileResponse(response)) {
+      return true
+    }
     
     // If file not found and it's skillcut, try base character (e.g., c511_01 -> c511)
-    if (!response.ok && pose === 'skillcut') {
+    if (pose === 'skillcut') {
       const characterId = market.live2d.current_id
       // Extract base character ID (e.g., c511_01 -> c511)
       const baseCharacterId = characterId.split('_')[0]
@@ -1441,15 +1446,35 @@ const verifyPoseFileExists = async (pose: 'aim' | 'cover' | 'skillcut'): Promise
       if (baseCharacterId !== characterId) {
         // Try the base character's skillcut
         const baseRoute = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
-        const baseResponse = await fetch(baseRoute, { method: 'HEAD' })
-        return baseResponse.ok
+        const baseResponse = await fetch(baseRoute, { method: 'HEAD' }).catch(() => null)
+        return baseResponse ? isValidSkeletonFileResponse(baseResponse) : false
       }
     }
     
-    return response.ok
+    return false
   } catch (error) {
     return false
   }
+}
+
+// Helper function to validate that a fetch response is a valid skeleton file (not HTML)
+const isValidSkeletonFileResponse = (response: Response): boolean => {
+  // Check status first
+  if (!response.ok) {
+    return false
+  }
+  
+  // Check Content-Type header to ensure it's binary data (not HTML error page)
+  const contentType = response.headers.get('content-type')
+  
+  // If content-type is HTML, it's definitely an error page
+  if (contentType && contentType.includes('text/html')) {
+    return false
+  }
+  
+  // Valid skeleton files should be binary (application/octet-stream) or not have explicit type
+  // Invalid responses are usually text/html
+  return true
 }
 
 import l2dData, { voiceMap, voiceGroupOverrides, setCustomZoom, actionSoundConfig, reloadSoundConfig } from '@/utils/json/l2d.js'
