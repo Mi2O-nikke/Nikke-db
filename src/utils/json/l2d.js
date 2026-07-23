@@ -218,9 +218,12 @@ const l2dData = [
   { 'group': 'Matis', 'name': 'Drake Maid For Vilian', 'id': 'c101_02' },
   { 'group': 'Matis', 'name': 'Maxwell', 'id': 'c102' },
   { 'group': 'Matis', 'name': 'Maxwell Mechanic White', 'id': 'c102_01' },
-  { 'group': 'Matis', 'name': 'Laplace: Upgrade', 'id': 'c103' },
+  { 'group': 'Matis', 'name': 'Laplace: Ultimate Hero', 'id': 'c103' },
+  { 'group': 'Matis', 'name': 'Laplace: Prototype Hero', 'id': 'c103_01' },
   { 'group': 'Matis', 'name': 'Drake: Upgrade', 'id': 'c104' },
-  { 'group': 'Matis', 'name': 'Maxwell: Upgrade', 'id': 'c105' },
+  { 'group': 'Matis', 'name': 'Maxwell: Ordinary Mechanic', 'id': 'c105' },
+  { 'group': 'Matis', 'name': 'Maxwell: Chief Researcher', 'id': 'c105_01' },
+  { 'group': 'Matis', 'name': 'Laplace: Child', 'id': 'c9029' },
   { 'group': 'Matis', 'name': 'Laplace@Favorite', 'id': 'favorite_c100' },
   { 'group': 'Matis', 'name': 'Drake@Favorite', 'id': 'favorite_c101' },
 
@@ -412,6 +415,7 @@ const l2dData = [
   { 'group': '_Ark', 'name': 'Shifty_old', 'id': 'c907_01' },
   { 'group': '_Ark', 'name': 'Papillon', 'id': 'c908' },
   { 'group': '_Ark', 'name': 'Jein', 'id': 'c973' },
+  { 'group': '_Ark', 'name': 'Jein: Child', 'id': 'c9032' },
 
   { 'group': '_CEO', 'name': 'Ingrid', 'id': 'c900' },
   { 'group': '_CEO', 'name': 'Syuen', 'id': 'c901' },
@@ -419,6 +423,8 @@ const l2dData = [
   { 'group': '_CEO', 'name': 'Mustang (CN)', 'id': 'c902_01' },
   { 'group': '_CEO', 'name': 'Mustang: Origin', 'id': 'c9022' },
   { 'group': '_CEO', 'name': 'Mustang: Hanson', 'id': 'c9023' },
+  { 'group': '_CEO', 'name': 'Enme', 'id': 'c9030' },
+  { 'group': '_CEO', 'name': 'Syuen: Child', 'id': 'c9031' },
 
   { 'group': '_Commander', 'name': 'Andersen', 'id': 'c903' },
   { 'group': '_Commander', 'name': 'Andersen Soaked', 'id': 'c903_01' },
@@ -728,6 +734,7 @@ const l2dData = [
   { 'group': '__Event', 'name': 'B-side Idol', 'id': 'bsideidol' },
   { 'group': '__Event', 'name': 'Bitter Spice', 'id': 'bitterspice' },
   { 'group': '__Event', 'name': 'Ark Ranger', 'id': 'arkranger' },
+  { 'group': '__Event', 'name': 'Project Matis', 'id': 'projectmatis' },
 
   { 'group': '__Story', 'name': 'Story 00-01', 'id': 'story0001' },
   { 'group': '__Story', 'name': 'Story 00-01 no filter', 'id': 'story0001_2' },
@@ -865,6 +872,7 @@ const voiceGroupOverrides = {
   'c091': ['c091_01'],
   'c093': ['c093_01'],
   'c095': ['c095_01'],
+  'c105': ['c105_01'],
   'c111': ['c111_01'],
   'c112': ['c112_01'],
   'c140': ['c140_01', 'c140_02'],
@@ -888,11 +896,15 @@ const voiceGroupOverrides = {
 
 //action overlap or delay
 const actionSoundConfig = {
+  'c103': { 1: { overlap: 8 }, 2: { overlap: 2 }, 3: { overlap: 2 }, 5: { delay: 45 } },
+  'c103_01': { 2: { overlap: 6 } },
+  'c105': { 3: { delay: 15 }, 5: { delay: 5 }, 6: { delay: 5 } },
+  'c105_01': { 3: { delay: 5 } },
   'c511': { 3: { overlap: 6 }, 6: { overlap: 3 }, 7: { overlap: 5 } },
   'c511_02': { 2: { delay: 6 }, 3: { delay: 4 } },
   'c513': { 1: { overlap: 7 }, 3: { overlap: 8 } },
   'c513_01': { 1: { delay: 3, overlap: 8 }, 3: { delay: 3, overlap: 8 } },
-  'c513_03': { 1: { overlap: 9 }, 3: { delay: 16, overlap: 15}  },
+  'c513_03': { 1: { overlap: 9 }, 3: { delay: 16, overlap: 15} },
   'c514': { 3: { delay: 5 } },
   'c514_01': { 3: { delay: 5 } },
   'c515': { 4: { overlap: 6 }, 6: { delay: 5 } },
@@ -901,6 +913,8 @@ const actionSoundConfig = {
 
 //reload overlap or delay
 const reloadSoundConfig = {
+  'c103': { 1: { overlap: 1 }, 2: { overlap: 8} },
+  'c105': { 2: { overlap: 6 } },
   'c514': { 2: { overlap: 3 }, 3: { overlap: 3}, 4: { overlap: 3}, 5: { overlap: 6} },
   'c515': { 2: { overlap: 6 }, 3: { overlap: 3} },
 }
@@ -908,7 +922,8 @@ const reloadSoundConfig = {
 //chara have foreground and background
 const charactersWithFgBgOverlays = [
   'c513_03', 
-  'c515'
+  'c515',
+  'c103', 'c105',
 ]
 
 export const charactersWithoutAimAndCover = []

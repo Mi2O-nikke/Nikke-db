@@ -180,6 +180,7 @@ import newflavor from '@/utils/json/Gallery/newflavor.json'
 import nyanyaparadise from '@/utils/json/Gallery/nyanyaparadise.json'
 import oldtales from '@/utils/json/Gallery/oldtales.json'
 import outerautomata from '@/utils/json/Gallery/outerautomata.json'
+import projectmatis from '@/utils/json/Gallery/projectmatis.json'
 import overthehorizon from '@/utils/json/Gallery/overthehorizon.json'
 import overzone from '@/utils/json/Gallery/overzone.json'
 import rebornevil from '@/utils/json/Gallery/rebornevil.json'
@@ -415,6 +416,7 @@ const buttonListEvents = [
   { data: outerautomata },
   { data: overthehorizon },
   { data: overzone },
+  { data: projectmatis },
   { data: rebornevil },
   { data: recipeforyou },
   { data: redash },
