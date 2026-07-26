@@ -1,18 +1,29 @@
-const convertL2dData = (groups) => Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr]) => {
-  const obj = { group, name, id }
-  if (soundStr && soundStr !== '') {
-    soundStr.split('|').forEach(part => {
-      const [type, values] = part.split(':')
-      if (type === 'ac' && values) obj.ac = values
-      if (type === 're' && values) obj.re = values})}
-  if (zoomStr && typeof zoomStr === 'string') {
-    const zoomConfig = {}
-    zoomStr.split('|').forEach(part => {
-      const [pose, values] = part.split(':')
-      const [zoom, offsetX, offsetY] = values.split(',').map(Number)
-      zoomConfig[pose] = { zoom: zoom || 0.21, offsetX: offsetX || 0, offsetY: offsetY || 0 }})
-    if (Object.keys(zoomConfig).length > 0) obj.zoom = zoomConfig}
-  return obj}))
+const convertL2dData = (groups) => {
+  const allCharacters = Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr]) => {
+    const obj = { group, name, id }
+    if (soundStr && soundStr !== '') {
+      soundStr.split('|').forEach(part => {
+        const [type, values] = part.split(':')
+        if (type === 'ac' && values) obj.ac = values
+        if (type === 're' && values) obj.re = values})}
+    if (zoomStr && typeof zoomStr === 'string') {
+      const zoomConfig = {}
+      zoomStr.split('|').forEach(part => {
+        const [pose, values] = part.split(':')
+        const [zoom, offsetX, offsetY] = values.split(',').map(Number)
+        zoomConfig[pose] = { zoom: zoom || 0.21, offsetX: offsetX || 0, offsetY: offsetY || 0 }})
+      if (Object.keys(zoomConfig).length > 0) obj.zoom = zoomConfig}
+    return obj}))
+
+  const charMap = Object.fromEntries(allCharacters.map(c => [c.id, c]))
+  allCharacters.forEach(char => {
+    const match = char.id.match(/^(.+?)_(\d+|0[0-9a-z]+|old|80)$/)
+    if (match) {
+      const baseChar = charMap[match[1]]
+      if (baseChar?.zoom) {
+        if (!char.zoom) char.zoom = { ...baseChar.zoom }
+        else if (baseChar.zoom.sc && !char.zoom.sc) char.zoom.sc = { ...baseChar.zoom.sc }}}})
+  return allCharacters}
 
 // code, name, actionFx|reloadFx (track, d=delayMs o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
@@ -44,14 +55,14 @@ const l2dGroups = {
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
     ['c091', 'Vesti', 're:1d800,2d400', 'sc:0.23,0,100'],
-    ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40|sc:0.23,0,100'],
+    ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40'],
     ['c092', 'Eunhwa', 'ac:1d5|re:3d500,4d300', 'fb:0.23,0,-50|sc:0.3,0,80'],
     ['c093', 'Emma: Tactical Upgrade', '', 'sc:0.28'],
     ['c093_01', 'Emma: Tactical Upgrade Secret Therapy'],
     ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5'],
     ['c094_01', 'Vesti: Tactical Upgrade Pure Beginner', '', 'fb:0.22,-150,-40'],
     ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|sc:0.3,60'],
-    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30|sc:0.3,60'],
+    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30'],
   ],
 
   'Aegis': [
