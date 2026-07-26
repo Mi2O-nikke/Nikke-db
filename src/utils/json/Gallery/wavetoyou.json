@@ -1,0 +1,56 @@
+{
+  "path": "wavetoyou/",
+  "type": "large",
+  "id": "wavetoyou",
+  "title": "Wave to You",
+  "content": [
+    {
+      "name": "EventScene_wavetoyou_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_04_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_04_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_05_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_05_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_09_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_wavetoyou_09_02.png",
+      "text": ""
+    }
+  ]
+}

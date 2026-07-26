@@ -211,6 +211,7 @@ import story9 from '@/utils/json/Gallery/story9.json'
 import terminusticket from '@/utils/json/Gallery/terminusticket.json'
 import unbreakablesphere from '@/utils/json/Gallery/unbreakablesphere.json'
 import voltroad from '@/utils/json/Gallery/voltroad.json'
+import wavetoyou from '@/utils/json/Gallery/wavetoyou.json'
 import whitememory from '@/utils/json/Gallery/whitememory.json'
 
 const market = useMarket()
@@ -261,7 +262,6 @@ const handleGalleryButtonClick = (data: galleryInterface) => {
   carouselData.value = data
   currentId.value = data.id
   showGridModal.value = true
-  successFeedback()
 }
 
 const openImageModal = (imageIndex: number) => {
@@ -427,6 +427,8 @@ const buttonListEvents = [
   { data: staranis },
   { data: terminusticket },
   { data: unbreakablesphere },
+  { data: voltroad },
+  { data: wavetoyou },
   { data: whitememory }
 ] as buttonInterface[]
 
@@ -447,10 +449,6 @@ const buttonListCommunity = [
   { data: _4koma_kr },
   { data: _4koma_zh }
 ] as buttonInterface[]
-
-const successFeedback = () => {
-  market.message.getMessage().success(messagesEnum.MESSAGE_ASSET_LOADED)
-}
 
 const updateIndex = (newIndex: number) => {
   index.value = newIndex + 1

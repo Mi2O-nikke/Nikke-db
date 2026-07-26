@@ -101,7 +101,8 @@ export const useLive2dStore = defineStore('live2d', () => {
         break
     }
 
-    if (current_id.value === 'c010_01' || current_id.value === 'c907_01' ) {
+    // c010_01 and c907_01 use skin '00' for aim and cover poses, but not for skillcut
+    if ((current_id.value === 'c010_01' || current_id.value === 'c907_01') && (current_pose.value === 'aim' || current_pose.value === 'cover')) {
       skin = '00'
     }
 

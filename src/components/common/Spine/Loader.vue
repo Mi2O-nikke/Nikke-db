@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithFgBgOverlays } from '@/utils/json/l2d'
+import { specialClickAnimations, charactersWithFgBgOverlays, skillcutAnimationOverrides, skillcutConfig } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -50,18 +50,6 @@ let currentBGM: HTMLAudioElement | null = null
 
 // Track skillcut overlay sound separately so it can be stopped
 let currentSkillcutOverlaySound: HTMLAudioElement | null = null
-
-// Configuration for characters with non-standard skillcut default animations
-const skillcutAnimationOverrides: { [key: string]: string } = {
-  'c513_03': 'idle_all',
-  // Add more characters here as needed
-}
-
-// Configuration for characters with non-standard idle animations to use after skillcut
-const skillcutIdleAnimationOverrides: { [key: string]: string } = {
-  'c513_03': 'idle_all',
-  // Add more characters here as needed
-}
 
 // Extend window for storing Spine library
 declare global {
@@ -138,39 +126,38 @@ const handleActionStart = () => {
   if (market.live2d.current_pose === 'skillcut') {
     // Check if skillcut animation exists
     const animations = spinePlayer.animationState.data.skeletonData.animations
-    let skillcutAnimation = 'skillcut_all'
+    let skillcutAnimation = ''
+    let animationCandidates = []
     
-    // Try skillcut_all first
-    let hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_all')
-    
-    // Fallback to skillcut_0 if skillcut_all doesn't exist
-    if (!hasSkillcut) {
-      skillcutAnimation = 'skillcut_0'
-      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_0')
+    // Check if character has custom skillcut config
+    const charConfig = skillcutConfig[market.live2d.current_id]
+    if (charConfig && charConfig.animations && charConfig.animations.length > 0) {
+      // Use custom animation list for this character
+      animationCandidates = charConfig.animations
+    } else {
+      // Default fallback order
+      animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut']
     }
     
-    // Fallback to skillcut_1 if skillcut_0 doesn't exist
-    if (!hasSkillcut) {
-      skillcutAnimation = 'skillcut_1'
-      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skillcut_1')
+    // Try each animation in the candidates list until one is found
+    for (const candidate of animationCandidates) {
+      const hasSkillcut = animations.some((a: { name: string }) => a.name === candidate)
+      if (hasSkillcut) {
+        skillcutAnimation = candidate
+        break
+      }
     }
     
-    // Fallback to skill_cut if neither exists
-    if (!hasSkillcut) {
-      skillcutAnimation = 'skill_cut'
-      hasSkillcut = animations.some((a: { name: string }) => a.name === 'skill_cut')
-    }
-    
-    if (!hasSkillcut) {
-      // Fallback to action if none of the skillcut animations exist
+    if (!skillcutAnimation) {
+      // No skillcut animation found, fallback to action
       handleAction()
       return
     }
     
     // Determine what idle animation to use after skillcut
     let idleAnimation = 'idle'
-    if (skillcutIdleAnimationOverrides[market.live2d.current_id]) {
-      idleAnimation = skillcutIdleAnimationOverrides[market.live2d.current_id]
+    if (skillcutAnimationOverrides[market.live2d.current_id]) {
+      idleAnimation = skillcutAnimationOverrides[market.live2d.current_id]
     }
     
     // Play the skillcut animation then loop back to idle
@@ -335,9 +322,11 @@ const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0)
   currentIndex = (currentIndex + 1) % voices.length
   voiceIndexMap.set(voiceKey, currentIndex)
   
+  // ALWAYS stop the old voice immediately to prevent overlapping audio
   if (currentVoice) {
     currentVoice.pause()
     currentVoice.currentTime = 0
+    currentVoice = null
   }
 
   // Try to play this voice
@@ -397,6 +386,20 @@ const playVoice = () => {
 }
 
 const stopAllSoundEffects = () => {
+  // Cancel all pending timeouts that would continue playing sounds
+  pendingReloadTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+  pendingReloadTimeouts = []
+  
+  pendingActionTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+  pendingActionTimeouts = []
+  
+  // Stop main voice
+  if (currentVoice) {
+    currentVoice.pause()
+    currentVoice.currentTime = 0
+    currentVoice = null
+  }
+  
   // Stop reload sound
   if (currentReloadSound) {
     currentReloadSound.pause()
@@ -430,12 +433,20 @@ const playReloadSound = () => {
   // e.g., 'c271_01' -> 'c271'
   const baseCharacterId = market.live2d.current_id.split('_')[0]
   
+  // Track which character this reload sound belongs to
+  reloadSoundCharacterId = baseCharacterId
+  
   // Reset to start of sequence when new reload sound starts
   reloadSoundIndex = 1
   playNextReloadSound(baseCharacterId)
 }
 
 const playNextReloadSound = (baseCharacterId: string) => {
+  // Stop if this sound sequence belongs to a different character (user switched)
+  if (reloadSoundCharacterId !== baseCharacterId) {
+    return
+  }
+  
   // Check if we've reached the end of the sequence (1-6)
   if (reloadSoundIndex > 6) {
     return
@@ -454,7 +465,8 @@ const playNextReloadSound = (baseCharacterId: string) => {
     if (!eventHandled) {
       eventHandled = true
       reloadSoundIndex++
-      setTimeout(() => playNextReloadSound(baseCharacterId), 50)
+      const timeoutId = setTimeout(() => playNextReloadSound(baseCharacterId), 50)
+      pendingReloadTimeouts.push(timeoutId)
     }
   }
   
@@ -507,12 +519,13 @@ const playNextReloadSound = (baseCharacterId: string) => {
           }
           
           // Start next sound during this one (don't wait for 'ended')
-          setTimeout(() => {
+          const timeoutId = setTimeout(() => {
             if (!eventHandled) {
               reloadSoundIndex++
               playNextReloadSound(baseCharacterId)
             }
           }, overlapStart)
+          pendingReloadTimeouts.push(timeoutId)
         }, { once: true })
       } else {
         // Only add 'ended' listener if NOT using overlap
@@ -547,10 +560,8 @@ const playNextReloadSound = (baseCharacterId: string) => {
 }
 
 const playActionSound = () => {
-  // Favorite characters don't have action sounds
-  if (market.live2d.current_id.includes('favorite')) {
-    return
-  }
+  // Track which character this action sound belongs to
+  actionSoundCharacterId = market.live2d.current_id
   
   // Reset to start of sequence when new action sound starts
   actionSoundIndex = 1
@@ -558,6 +569,11 @@ const playActionSound = () => {
 }
 
 const playNextActionSound = (pathAttempt = 0) => {
+  // Stop if this sound sequence belongs to a different character (user switched)
+  if (actionSoundCharacterId !== market.live2d.current_id) {
+    return
+  }
+  
   // Get config for this character and action number
   const characterConfig = actionSoundConfig[market.live2d.current_id]
   const soundConfig = characterConfig?.[actionSoundIndex] || {}
@@ -603,19 +619,21 @@ const playNextActionSound = (pathAttempt = 0) => {
     if (!eventHandled) {
       eventHandled = true
       actionSoundIndex++
-      setTimeout(() => playNextActionSound(), 50)
+      const timeoutId = setTimeout(() => playNextActionSound(), 50)
+      pendingActionTimeouts.push(timeoutId)
     }
   }
   
   // Set up trim if configured
   if (soundConfig.trimMs) {
     currentActionSound.addEventListener('canplay', () => {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (currentActionSound && currentActionSound.currentTime >= 0) {
           currentActionSound.pause()
           moveToNext()
         }
       }, soundConfig.trimMs)
+      pendingActionTimeouts.push(timeoutId)
     }, { once: true })
   }
   
@@ -635,12 +653,13 @@ const playNextActionSound = (pathAttempt = 0) => {
       }
       
       // Start next sound during this one (don't wait for 'ended')
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (!eventHandled) {
           actionSoundIndex++
           playNextActionSound()
         }
       }, overlapStart)
+      pendingActionTimeouts.push(timeoutId)
     }, { once: true })
   } else {
     // Only add 'ended' listener if NOT using overlap
@@ -1351,12 +1370,11 @@ const customSpineLoader = () => {
 }
 
 const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb' | 'skillcut') => {
-  let route = globalParams.PATH_L2D + market.live2d.current_id + '/'
-
-  const id = market.live2d.current_id
+  let id = market.live2d.current_id
   const isNoSuffix = id === 'tts_c017_02'
 
   let fileSuffix = '_00.'
+  let route = globalParams.PATH_L2D + id + '/'
 
   const targetPose = pose || market.live2d.current_pose
 
@@ -1390,6 +1408,22 @@ const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb' | 'skillcut
 
   route += id + finalSuffix + extension
 
+  return route
+}
+
+// Helper function to get skillcut path with fallback for variants
+const getSkillcutPathing = (extension: string) => {
+  const id = market.live2d.current_id
+  let route = globalParams.PATH_L2D + id + '/' + globalParams.PATH_L2D_SKILLCUT
+  
+  // Try variant naming first (without _00 prefix for variants)
+  if (id.includes('_')) {
+    route += id + '_skillcut.' + extension
+    return route
+  }
+  
+  // Base character: use _00_skillcut naming
+  route += id + '_00_skillcut.' + extension
   return route
 }
 
@@ -1484,6 +1518,10 @@ let currentReloadSound = null as null | HTMLAudioElement
 let currentActionSound = null as null | HTMLAudioElement
 let isAimHolding = false
 
+// Track which character the current sounds belong to
+let reloadSoundCharacterId = ''
+let actionSoundCharacterId = ''
+
 // Track voice index for sequential playback
 const voiceIndexMap = new Map<string, number>()
 
@@ -1495,6 +1533,10 @@ let actionSoundIndex = 1
 
 // Track reload sound sequence - which number (1-3) should play next
 let reloadSoundIndex = 1
+
+// Track pending timeouts so we can cancel them when switching poses
+let pendingReloadTimeouts: number[] = []
+let pendingActionTimeouts: number[] = []
 
 const handleAction = () => {
 
@@ -1608,6 +1650,13 @@ watch(
     // Reset spine visibility - hide until position is applied
     isSpineHidden.value = true
 
+    // Cancel all pending timeouts that would continue playing sounds
+    pendingReloadTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    pendingReloadTimeouts = []
+    
+    pendingActionTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    pendingActionTimeouts = []
+
     // Stop current BGM if playing
     if (currentBGM) {
       currentBGM.pause()
@@ -1622,6 +1671,38 @@ watch(
       currentBGM.volume = 0.5
       currentBGM.play().catch(err => console.log('BGM play failed:', err))
     }
+    
+    // Stop old character's voice when switching to new character
+    if (currentVoice) {
+      currentVoice.pause()
+      currentVoice.currentTime = 0
+      currentVoice = null
+    }
+    
+    // Stop sound effects and clear character tracking
+    if (currentReloadSound) {
+      currentReloadSound.pause()
+      currentReloadSound.currentTime = 0
+      currentReloadSound = null
+    }
+    reloadSoundCharacterId = '' // Clear so pending timeouts know not to play
+    
+    if (currentActionSound) {
+      currentActionSound.pause()
+      currentActionSound.currentTime = 0
+      currentActionSound = null
+    }
+    actionSoundCharacterId = '' // Clear so pending timeouts know not to play
+    
+    if (currentSkillcutOverlaySound) {
+      currentSkillcutOverlaySound.pause()
+      currentSkillcutOverlaySound.currentTime = 0
+      currentSkillcutOverlaySound = null
+    }
+    
+    // Reset sound sequences
+    actionSoundIndex = 1
+    reloadSoundIndex = 1
     
     // Check if current pose is available for this character
     // If not, reset to fullbody before loading
