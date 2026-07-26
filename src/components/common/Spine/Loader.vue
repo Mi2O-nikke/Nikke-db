@@ -332,6 +332,7 @@ const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0)
   // Try to play this voice
   if (voice) {
     currentVoice = new Audio(voice)
+    activeAudioObjects.push(currentVoice) // Track all audio objects
     currentVoice.addEventListener('error', () => {
       voiceExistsCache.set(voice, false)
       console.debug(`Voice file not found: ${voice}`)
@@ -481,6 +482,7 @@ const playNextReloadSound = (baseCharacterId: string) => {
       
       // File exists, proceed with playback
       currentReloadSound = new Audio(soundPath)
+      activeAudioObjects.push(currentReloadSound) // Track all audio objects
       
       // Set up trim if configured
       if (soundConfig.trimMs) {
@@ -520,7 +522,8 @@ const playNextReloadSound = (baseCharacterId: string) => {
           
           // Start next sound during this one (don't wait for 'ended')
           const timeoutId = setTimeout(() => {
-            if (!eventHandled) {
+            // Check if character changed or sequence was cancelled
+            if (!eventHandled && reloadSoundCharacterId === baseCharacterId) {
               reloadSoundIndex++
               playNextReloadSound(baseCharacterId)
             }
@@ -612,6 +615,7 @@ const playNextActionSound = (pathAttempt = 0) => {
   
   // Try to play action sound
   currentActionSound = new Audio(actionSoundPath)
+  activeAudioObjects.push(currentActionSound) // Track all audio objects
   
   let eventHandled = false
   
@@ -654,7 +658,8 @@ const playNextActionSound = (pathAttempt = 0) => {
       
       // Start next sound during this one (don't wait for 'ended')
       const timeoutId = setTimeout(() => {
-        if (!eventHandled) {
+        // Check if character changed or sequence was cancelled
+        if (!eventHandled && actionSoundCharacterId === market.live2d.current_id) {
           actionSoundIndex++
           playNextActionSound()
         }
@@ -1518,6 +1523,9 @@ let currentReloadSound = null as null | HTMLAudioElement
 let currentActionSound = null as null | HTMLAudioElement
 let isAimHolding = false
 
+// Track ALL active audio objects to stop them when character changes
+let activeAudioObjects: HTMLAudioElement[] = []
+
 // Track which character the current sounds belong to
 let reloadSoundCharacterId = ''
 let actionSoundCharacterId = ''
@@ -1690,9 +1698,18 @@ watch(
     if (currentActionSound) {
       currentActionSound.pause()
       currentActionSound.currentTime = 0
+      currentActionSound.volume = 0 // Mute as extra safety
       currentActionSound = null
     }
     actionSoundCharacterId = '' // Clear so pending timeouts know not to play
+    
+    // Stop ALL active audio objects (in case some are lingering from overlaps)
+    activeAudioObjects.forEach(audio => {
+      audio.pause()
+      audio.currentTime = 0
+      audio.volume = 0
+    })
+    activeAudioObjects = []
     
     if (currentSkillcutOverlaySound) {
       currentSkillcutOverlaySound.pause()

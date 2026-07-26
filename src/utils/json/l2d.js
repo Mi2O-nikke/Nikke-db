@@ -17,15 +17,15 @@ const convertL2dData = (groups) => Object.entries(groups).flatMap(([group, chara
 // code, name, actionFx|reloadFx (track, d=delayMs o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
   '777': [
-    ['c270', 'Blanc'],
-    ['c270_01', 'Blanc White Rabbit'],
-    ['c270_02', 'Blanc No.77 Batter'],
-    ['c270_03', 'Blanc Fortune Express'],
-    ['c271', 'Noir'],
-    ['c271_01', 'Noir Black Rabbit'],
+    ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
+    ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
+    ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12'],
+    ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2'],
+    ['c271', 'Noir', 'ac:2d5', 'sc:0.34,0,100'],
+    ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
     ['c271_02', 'Noir Baseball Cheerleader'],
-    ['c272', 'Rouge'],
-    ['c272_01', 'Rouge Unlucky Rabbit', '', 'fb:0.28,0,50'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d500,2d500', 'sc:0.24,0,50'],
+    ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
   'A.C.P.U.': [
