@@ -40,18 +40,18 @@ const l2dGroups = {
   ],
 
   'Absolute': [
-    ['c090', 'Emma'],
-    ['c090_01', 'Emma Color Me Red'],
-    ['c090_02', 'Emma Office Therapy'],
-    ['c091', 'Vesti'],
-    ['c091_01', 'Vesti Ark Mage', '', 'fb:0.23,0,-50'],
-    ['c092', 'Eunhwa', '', 'fb:0.23,0,-50'],
-    ['c093', 'Emma: Tactical Upgrade'],
+    ['c090', 'Emma', 're:2d800', 'sc:0.3,0,50'],
+    ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
+    ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
+    ['c091', 'Vesti', 're:1d800,2d400', 'sc:0.23,0,100'],
+    ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40|sc:0.23,0,100'],
+    ['c092', 'Eunhwa', 'ac:1d5|re:3d500,4d300', 'fb:0.23,0,-50|sc:0.3,0,80'],
+    ['c093', 'Emma: Tactical Upgrade', '', 'sc:0.28'],
     ['c093_01', 'Emma: Tactical Upgrade Secret Therapy'],
-    ['c094', 'Vesti: Tactical Upgrade'],
+    ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5'],
     ['c094_01', 'Vesti: Tactical Upgrade Pure Beginner', '', 'fb:0.22,-150,-40'],
-    ['c095', 'Eunhwa: Tactical Upgrade'],
-    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off'],
+    ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|sc:0.3,60'],
+    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30|sc:0.3,60'],
   ],
 
   'Aegis': [
@@ -1028,6 +1028,8 @@ const skillcutAnimationOverrides = {
   'c030': 'Idle',
   'c030_01': 'Idle',
   'c030_02': 'Idle',
+  'c094': 'idle_2',
+  'c094_01': 'idle_2',
   'c513_03': 'idle_all',
 }
 
@@ -1035,6 +1037,8 @@ const skillcutAnimationOverrides = {
 const skillcutConfig = {
   c016: {animations: ['skillcut_2'],},
   c016_03: {animations: ['skillcut_2'],},
+  c094: {animations: ['skillcut_2_OFF_MOVE_BIG'],},
+  c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG'],},
 }
 
 const l2dData = convertL2dData(l2dGroups)
