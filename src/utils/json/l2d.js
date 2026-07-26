@@ -29,14 +29,14 @@ const l2dGroups = {
   ],
 
   'A.C.P.U.': [
-    ['c030', 'Poli', '', 'fb:0,80'],
+    ['c030', 'Poli', 're:1d400,2d200', 'fb:0,80|sc:0.36,0,30'],
     ['c030_01', 'Poli Sweet Holic'],
-    ['c030_02', 'Poli Cheer Up Police'],
-    ['c032', 'Miranda'],
-    ['c032_01', 'Miranda Thief of Justice'],
-    ['c033', 'Quiry'],
+    ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8'],
+    ['c032', 'Miranda', 'ac:1d5|re:1d5,2d200', 'sc:0.23,0,60'],
+    ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9'],
+    ['c033', 'Quiry', 'ac:2d4|re:1d500', 'sc:0.27,0,150'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.24,60'],
-    ['favorite_c032', 'Miranda@Favorite', '', 'fb:0.3,60'],
+    ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
   ],
 
   'Absolute': [
@@ -1025,6 +1025,9 @@ const skillcutAnimationOverrides = {
   'c010_01': 'Idle',
   'c010_02': 'Idle',
   'c010_03': 'Idle',
+  'c030': 'Idle',
+  'c030_01': 'Idle',
+  'c030_02': 'Idle',
   'c513_03': 'idle_all',
 }
 
