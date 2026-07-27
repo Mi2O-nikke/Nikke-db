@@ -27,7 +27,7 @@ const convertL2dData = (groups) => {
 
 // code, name, actionFx|reloadFx (track, d=delayMs o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
-  'z777': [
+  '777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12'],
@@ -39,7 +39,7 @@ const l2dGroups = {
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
-  'zA.C.P.U.': [
+  'A.C.P.U.': [
     ['c030', 'Poli', 're:1d400,2d200', 'fb:0,80|sc:0.36,0,30'],
     ['c030_01', 'Poli Sweet Holic'],
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8'],
@@ -50,7 +50,7 @@ const l2dGroups = {
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
   ],
 
-  'zAbsolute': [
+  'Absolute': [
     ['c090', 'Emma', 're:2d800', 'sc:0.3,0,50'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
@@ -67,7 +67,7 @@ const l2dGroups = {
 
   'Aegis': [
     ['c350', 'Mast', 'ac:2o5|re:3d700', 'sc:0.25,0,50'],
-    ['c350_01', "Mast A Pirate's Heart", 'ac:3d5,5d10'],
+    ['c350_01', 'Mast A Pirate\'s Heart', 'ac:3d5,5d10'],
     ['c350_02', 'Mast the Driver'],
     ['c350_old', 'Mast: Outdated'],
     ['c351', 'Anchor', 're:2d300,3d300', 'sc:0.31'],
@@ -83,7 +83,7 @@ const l2dGroups = {
   ],
 
   'Ark Rangers': [
-    ['c570', 'Ark Ranger Black'],
+    ['c570', 'Ark Ranger Black', 'ac:6d12|re:2o5'],
     ['c570_99', 'Ark Ranger Black: Hood'],
     ['c571', 'Ark Ranger Red', '', 'fb:0.23,0,-40'],
     ['c572', 'Ark Ranger Blue'],
@@ -1042,6 +1042,8 @@ const skillcutAnimationOverrides = {
   'c094': 'idle_2',
   'c094_01': 'idle_2',
   'c513_03': 'idle_all',
+  'c570': 'idle_0',
+  'c570_99': 'idle_0',
 }
 
 //skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut
