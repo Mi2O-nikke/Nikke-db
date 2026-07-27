@@ -14,8 +14,18 @@ OR just run the bat file in folder "_run.bat", first time it might close automat
 
 
 _______________________________________________________
-im missing these nikke might have no sound effects
+im missing these nikke might have no voice
 1. Poli@Favorite
 2. Miranda@Favorite
-3. Milk@Favorite
-4. Diesel@Favorite
+3. Phantom@Favorite
+4. Flora@Favorite
+5. Milk@Favorite
+6. Sugar@Favorite
+7. Diesel@Favorite
+8. Julia @Favorite
+9. Drake@Favorite
+10. Centi@Favorite
+11. Exia@Favorite
+12. Bay@Favorite
+13. Zwei@Favorite
+14. Rosanna@Favorite

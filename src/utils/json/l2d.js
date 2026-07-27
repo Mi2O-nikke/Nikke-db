@@ -97,9 +97,9 @@ const l2dGroups = {
   ],
 
   'Botanic Garden': [
-    ['c411', 'Flora'],
-    ['c412', 'Trina'],
-    ['c412_01', 'Trina Natural White'],
+    ['c411', 'Flora', 'ac:1o6,3d5|re:4d400', 'sc:0.53,-250,100'],
+    ['c412', 'Trina', 'ac:4d10|re:2d800,3d500,4d200', 'sc:0.37,200'],
+    ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
   ],
 
   'Cafe Sweety': [
@@ -1008,7 +1008,7 @@ const specialClickAnimations = {
   'c990': ['sad'],
   'c992': ['angry'],
   'c994': ['angry_02'],
-  'c412_01': ['expression_0', 'expression_1'],
+  'c412_01': ['expression_0'],
   'c940': ['sad'],
   'c943': ['surprise'],
   'c966': ['pain_02'],
