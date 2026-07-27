@@ -27,7 +27,7 @@ const convertL2dData = (groups) => {
 
 // code, name, actionFx|reloadFx (track, d=delayMs o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
-  '777': [
+  'z777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12'],
@@ -39,7 +39,7 @@ const l2dGroups = {
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
-  'A.C.P.U.': [
+  'zA.C.P.U.': [
     ['c030', 'Poli', 're:1d400,2d200', 'fb:0,80|sc:0.36,0,30'],
     ['c030_01', 'Poli Sweet Holic'],
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8'],
@@ -50,7 +50,7 @@ const l2dGroups = {
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
   ],
 
-  'Absolute': [
+  'zAbsolute': [
     ['c090', 'Emma', 're:2d800', 'sc:0.3,0,50'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
@@ -66,20 +66,20 @@ const l2dGroups = {
   ],
 
   'Aegis': [
-    ['c350', 'Mast'],
-    ['c350_01', "Mast A Pirate's Heart"],
+    ['c350', 'Mast', 'ac:2o5|re:3d700', 'sc:0.25,0,50'],
+    ['c350_01', "Mast A Pirate's Heart", 'ac:3d5,5d10'],
     ['c350_02', 'Mast the Driver'],
     ['c350_old', 'Mast: Outdated'],
-    ['c351', 'Anchor'],
-    ['c351_01', 'Anchor the Diver'],
-    ['c352', 'Helm'],
-    ['c352_01', 'Helm Chandelier', '', 'fb:0.3,0,-180'],
-    ['c352_02', 'Helm Post-Shower Moment', '', 'fb:0.24,0,-50'],
-    ['c353', 'Helm: Aquamarine'],
-    ['c354', 'Mast: Romantic Maid'],
-    ['c354_01', 'Mast: Romantic Maid Tea Service'],
-    ['c355', 'Anchor: Innocent Maid'],
-    ['favorite_c352', 'Helm@Favorite', '', 'fb:0.34,60'],
+    ['c351', 'Anchor', 're:2d300,3d300', 'sc:0.31'],
+    ['c351_01', 'Anchor the Diver', 'ac:1d5'],
+    ['c352', 'Helm', 'ac:2o5|re:1d500,3d300', 'sc:0.3,0,150'],
+    ['c352_01', 'Helm Chandelier', 'ac:3d10', 'fb:0.3,0,-180'],
+    ['c352_02', 'Helm Post-Shower Moment', 'ac:2d10,3d5', 'fb:0.24,0,-50|sc:0.2,0,30'],
+    ['c353', 'Helm: Aquamarine', 'ac:4o9', 'sc:0.66,-500,-30'],
+    ['c354', 'Mast: Romantic Maid', 're:2d500,3d300', 'sc:0.24,0,90'],
+    ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'sc:0.23,0,20'],
+    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d200', 'sc:0.3,0,100'],
+    ['favorite_c352', 'Helm@Favorite', 'ac:1o5,3d5,4o5', 'fb:0.34,60'],
   ],
 
   'Ark Rangers': [
