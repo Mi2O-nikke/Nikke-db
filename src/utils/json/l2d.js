@@ -90,10 +90,10 @@ const l2dGroups = {
   ],
 
   'Best Seller': [
-    ['c580', 'Phantom'],
-    ['c581', 'Arcana'],
-    ['c582', 'Label'],
-    ['c583', 'Arcana: Fortune Mate'],
+    ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:1d300,2o5', 'sc:0.25,0,-60'],
+    ['c581', 'Arcana', 'ac:2o5,6o8|re:3d200', 'sc:0.23,0,90'],
+    ['c582', 'Label', '', 'sc:0.26'],
+    ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d500', 'sc:0.27,0,10'],
   ],
 
   'Botanic Garden': [
@@ -1043,6 +1043,8 @@ const skillcutAnimationOverrides = {
   'c094_01': 'idle_2',
   'c513_03': 'idle_all',
   'c570': 'idle_0',
+  'c582': 'idle_0',
+  'c583': 'idle_all',
   'c570_99': 'idle_0',
 }
 
