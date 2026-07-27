@@ -19,10 +19,10 @@ im missing these nikke might have no voice
 2. Miranda@Favorite
 3. Phantom@Favorite
 4. Flora@Favorite
-5. Milk@Favorite
-6. Sugar@Favorite
+5. Sugar@Favorite
+6. Milk@Favorite
 7. Diesel@Favorite
-8. Julia @Favorite
+8. Julia@Favorite
 9. Drake@Favorite
 10. Centi@Favorite
 11. Exia@Favorite
