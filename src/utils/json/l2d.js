@@ -158,10 +158,10 @@ const l2dGroups = {
   ],
 
   'Electric Shock': [
-    ['c500', 'Elegg'],
-    ['c501', 'Trony'],
-    ['c501_01', 'Trony Sweet Step'],
-    ['c502', 'Elegg: Boom and Shock'],
+    ['c500', 'Elegg', 'ac:2o15|re:2o8', 'sc:0.25,0,50'],
+    ['c501', 'Trony', 're:3o3', 'sc:0.27'],
+    ['c501_01', 'Trony Sweet Step', 'ac:2d5'],
+    ['c502', 'Elegg: Boom and Shock', 'ac:3o8,4o5|re:1o5,2o5,3o5', 'sc:0.25'],
   ],
 
   'Exotic': [
