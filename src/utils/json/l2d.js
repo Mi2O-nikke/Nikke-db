@@ -35,7 +35,7 @@ const l2dGroups = {
     ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
     ['c271_02', 'Noir Baseball Cheerleader'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'sc:0.24,0,50'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50'],
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
@@ -137,7 +137,7 @@ const l2dGroups = {
     ['c016_03', 'Rapi: Red Hood Shining Light', 'ac:4d5'],
     ['c017', 'Anis: Star', 'ac:2o5,4o5|re:2o5', 'fb:0.23,0,-50|sc:0.3,0,200'],
     ['c017_01', 'Anis: Starlight', 'ac:1o5,3o8', 'fb:0.26,0,-80|sc:0.25'],
-    ['c017_02', 'Anis: Star T.T.STAR', 'ac:1o1,6d3,7d5'],
+    ['c017_02', 'Anis: Star T.T.STAR', 'ac:1o1,6d3,7d5', 'fb:0.21'],
     ['c018', 'Neon: Vision Eye', 'ac:2o5,3o4,4o6,6d35o2,7o3|re:2o5', 'fb:0.23|sc:0.25'],
     ['c989', 'Rapi: Red'],
     ['c990', 'Rapi: Minor'],
@@ -179,13 +179,13 @@ const l2dGroups = {
   ],
 
   'Extrinsic': [
-    ['c180', 'Guillotine'],
-    ['c180_01', 'Guillotine Dark Tracer'],
-    ['c181', 'Maiden'],
+    ['c180', 'Guillotine', 'ac:1d15|re:1d5,2d5', 'sc:0.26,0,35'],
+    ['c180_01', 'Guillotine Dark Tracer', 'ac:3d5,3o12', 'fb:0.22,-20,-30'],
+    ['c181', 'Maiden', 're:1d5,2d5'],
     ['c181_01', 'Maiden Covert Nurse'],
-    ['c181_02', 'Maiden Under the Sun'],
-    ['c182', 'Guillotine Winter Slayer', '', 'fb:0.22,70,-30'],
-    ['c183', 'Maiden Ice Rose', '', 'fb:0.23'],
+    ['c181_02', 'Maiden Under the Sun', 'ac:2o8'],
+    ['c182', 'Guillotine: Winter Slayer', 'ac:1d10,3d1|re:1d2', 'fb:0.22,70,-30|sc:0.4,0,300'],
+    ['c183', 'Maiden: Ice Rose', 'ac:2o6,3o8|re:1o1,3d2', 'fb:0.23|sc:0.3,60,70'],
   ],
 
   'Four Beasts': [
