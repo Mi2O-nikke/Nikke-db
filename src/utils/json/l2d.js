@@ -146,15 +146,15 @@ const l2dGroups = {
     ['c9019', 'Neon: Child'],
   ],
 
-  'Dazzling Pear': [
-    ['c450', 'Naga'],
+  'Dazzling Pearl': [
+    ['c450', 'Naga', 'ac:2o8|re:2d3'],
     ['c450_01', 'Naga Elegant Date'],
-    ['c450_02', 'Naga Last Girlhood', '', 'fb:0.25,0,-70'],
-    ['c450_03', 'Naga Ring Ensemble'],
-    ['c451', 'Tia'],
+    ['c450_02', 'Naga Last Girlhood', 'ac:1d5,1o15,2o5', 'fb:0.25,0,-70|sc:0.28'],
+    ['c450_03', 'Naga Ring Ensemble', 'ac:1d5,3d11,4o1'],
+    ['c451', 'Tia', '', 'sc:0.27,0,20'],
     ['c451_01', 'Tia Lovely Date'],
-    ['c451_02', 'Tia Sweet Chef'],
-    ['c451_03', 'Tia Sea Lizzie', '', 'fb:0.23,0,-30'],
+    ['c451_02', 'Tia Sweet Chef', 'ac:2d5,3d5,3o30'],
+    ['c451_03', 'Tia Sea Lizzie', 'ac:2o8,6o7', 'fb:0.23,0,-30'],
   ],
 
   'Electric Shock': [
@@ -1027,7 +1027,7 @@ const specialClickAnimations = {
 const charactersWithFgBgOverlays = [
   'c513_03', 
   'c515',
-  'c103', 'c105', 'c017_01', 'c017_02',
+  'c103', 'c105', 'c017_01', 'c017_02', 'c450_03', 'c451_03'
 ]
 
 //skillcut special default motion if not name as "idle"
