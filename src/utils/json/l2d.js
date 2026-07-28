@@ -103,15 +103,15 @@ const l2dGroups = {
   ],
 
   'Cafe Sweety': [
-    ['c140', 'Sugar', '', 'fb:0,80'],
+    ['c140', 'Sugar', 'ac:2d5|re:1d700,2d400,3d200', 'fb:0,80|sc:0.23,0,60'],
     ['c140_01', 'Sugar Hard-Boiled', '', 'fb:0,80'],
-    ['c140_02', 'Sugar Wild Backyard', '', 'fb:0,80'],
-    ['c141', 'Milk'],
-    ['c141_01', 'Milk Extreme Fighter'],
-    ['c142', 'Frima'],
-    ['c142_01', 'Frima Sea of Sloth'],
-    ['c143', 'Milk Blooming Bunny'],
-    ['favorite_c141', 'Milk@Favorite', '', 'fb:0.35,60,-60'],
+    ['c140_02', 'Sugar Wild Backyard', 'ac:2d32', 'fb:0,80'],
+    ['c141', 'Milk', 'ac:2d20,3d5|re:4d200', 'sc:0.26,0,70'],
+    ['c141_01', 'Milk Extreme Fighter', 'ac:2d20,3d5'],
+    ['c142', 'Frima', 'ac:3d5|re:1d400,2d400', 'sc:0.36,100'],
+    ['c142_01', 'Frima Sea of Sloth', 'ac:2d5'],
+    ['c143', 'Milk: Blooming Bunny', 'ac:4d5,6o5|re:3d200', 'sc:0.26'],
+    ['favorite_c141', 'Milk@Favorite', 'ac:2d5,3d3', 'fb:0.35,60,-60'],
     ['favorite_c142', 'Frima@Favorite', '', 'fb:0.31,60,-60'],
   ],
 
