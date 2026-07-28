@@ -548,7 +548,8 @@ const playNextReloadSound = (baseCharacterId: string) => {
       }
       
       if (soundConfig.delay) {
-        setTimeout(playWithDelay, soundConfig.delay)
+        // Auto multiply by 100 to convert to milliseconds (e.g., 3 -> 300ms)
+        setTimeout(playWithDelay, soundConfig.delay * 100)
       } else {
         playWithDelay()
       }

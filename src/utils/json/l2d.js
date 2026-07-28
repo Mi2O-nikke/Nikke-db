@@ -25,38 +25,38 @@ const convertL2dData = (groups) => {
         else if (baseChar.zoom.sc && !char.zoom.sc) char.zoom.sc = { ...baseChar.zoom.sc }}}})
   return allCharacters}
 
-// code, name, actionFx|reloadFx (track, d=delayMs o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
+// code, name, actionFx|reloadFx (track, d=delayMs(*100) o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
   '777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12'],
     ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2'],
-    ['c271', 'Noir', 'ac:2d5', 'sc:0.34,0,100'],
+    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
     ['c271_02', 'Noir Baseball Cheerleader'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d500,2d500', 'sc:0.24,0,50'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'sc:0.24,0,50'],
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
   'A.C.P.U.': [
-    ['c030', 'Poli', 're:1d400,2d200', 'fb:0,80|sc:0.36,0,30'],
+    ['c030', 'Poli', 're:1d4,2d2', 'fb:0,80|sc:0.36,0,30'],
     ['c030_01', 'Poli Sweet Holic'],
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8'],
-    ['c032', 'Miranda', 'ac:1d5|re:1d5,2d200', 'sc:0.23,0,60'],
+    ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60'],
     ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9'],
-    ['c033', 'Quiry', 'ac:2d4|re:1d500', 'sc:0.27,0,150'],
+    ['c033', 'Quiry', 'ac:2d4|re:1d5', 'sc:0.27,0,150'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.24,60'],
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
   ],
 
   'Absolute': [
-    ['c090', 'Emma', 're:2d800', 'sc:0.3,0,50'],
+    ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
-    ['c091', 'Vesti', 're:1d800,2d400', 'sc:0.23,0,100'],
+    ['c091', 'Vesti', 're:1d8,2d4', 'sc:0.23,0,100'],
     ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40'],
-    ['c092', 'Eunhwa', 'ac:1d5|re:3d500,4d300', 'fb:0.23,0,-50|sc:0.3,0,80'],
+    ['c092', 'Eunhwa', 'ac:1d5|re:3d5,4d3', 'fb:0.23,0,-50|sc:0.3,0,80'],
     ['c093', 'Emma: Tactical Upgrade', '', 'sc:0.28'],
     ['c093_01', 'Emma: Tactical Upgrade Secret Therapy'],
     ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5'],
@@ -66,19 +66,19 @@ const l2dGroups = {
   ],
 
   'Aegis': [
-    ['c350', 'Mast', 'ac:2o5|re:3d700', 'sc:0.25,0,50'],
+    ['c350', 'Mast', 'ac:2o5|re:3d7', 'sc:0.25,0,50'],
     ['c350_01', 'Mast A Pirate\'s Heart', 'ac:3d5,5d10'],
     ['c350_02', 'Mast the Driver'],
     ['c350_old', 'Mast: Outdated'],
-    ['c351', 'Anchor', 're:2d300,3d300', 'sc:0.31'],
+    ['c351', 'Anchor', 're:2d3,3d3', 'sc:0.31'],
     ['c351_01', 'Anchor the Diver', 'ac:1d5'],
-    ['c352', 'Helm', 'ac:2o5|re:1d500,3d300', 'sc:0.3,0,150'],
+    ['c352', 'Helm', 'ac:2o5|re:1d5,3d3', 'sc:0.3,0,150'],
     ['c352_01', 'Helm Chandelier', 'ac:3d10', 'fb:0.3,0,-180'],
     ['c352_02', 'Helm Post-Shower Moment', 'ac:2d10,3d5', 'fb:0.24,0,-50|sc:0.2,0,30'],
     ['c353', 'Helm: Aquamarine', 'ac:4o9', 'sc:0.66,-500,-30'],
-    ['c354', 'Mast: Romantic Maid', 're:2d500,3d300', 'sc:0.24,0,90'],
+    ['c354', 'Mast: Romantic Maid', 're:2d5,3d3', 'sc:0.24,0,90'],
     ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'sc:0.23,0,20'],
-    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d200', 'sc:0.3,0,100'],
+    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'sc:0.3,0,100'],
     ['favorite_c352', 'Helm@Favorite', 'ac:1o5,3d5,4o5', 'fb:0.34,60'],
   ],
 
@@ -90,35 +90,35 @@ const l2dGroups = {
   ],
 
   'Best Seller': [
-    ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:1d300,2o5', 'sc:0.25,0,-60'],
-    ['c581', 'Arcana', 'ac:2o5,6o8|re:3d200', 'sc:0.23,0,90'],
+    ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60'],
+    ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
     ['c582', 'Label', '', 'sc:0.26'],
-    ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d500', 'sc:0.27,0,10'],
+    ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
   ],
 
   'Botanic Garden': [
-    ['c411', 'Flora', 'ac:1o6,3d5|re:4d400', 'sc:0.53,-250,100'],
-    ['c412', 'Trina', 'ac:4d10|re:2d800,3d500,4d200', 'sc:0.37,200'],
+    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'sc:0.53,-250,100'],
+    ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
   ],
 
   'Cafe Sweety': [
-    ['c140', 'Sugar', 'ac:2d5|re:1d700,2d400,3d200', 'fb:0,80|sc:0.23,0,60'],
+    ['c140', 'Sugar', 'ac:2d5|re:1d7,2d4,3d2', 'fb:0,80|sc:0.23,0,60'],
     ['c140_01', 'Sugar Hard-Boiled', '', 'fb:0,80'],
     ['c140_02', 'Sugar Wild Backyard', 'ac:2d32', 'fb:0,80'],
-    ['c141', 'Milk', 'ac:2d20,3d5|re:4d200', 'sc:0.26,0,70'],
+    ['c141', 'Milk', 'ac:2d20,3d5|re:4d2', 'sc:0.26,0,70'],
     ['c141_01', 'Milk Extreme Fighter', 'ac:2d20,3d5'],
-    ['c142', 'Frima', 'ac:3d5|re:1d400,2d400', 'sc:0.36,100'],
+    ['c142', 'Frima', 'ac:3d5|re:1d4,2d4', 'sc:0.36,100'],
     ['c142_01', 'Frima Sea of Sloth', 'ac:2d5'],
-    ['c143', 'Milk: Blooming Bunny', 'ac:4d5,6o5|re:3d200', 'sc:0.26'],
+    ['c143', 'Milk: Blooming Bunny', 'ac:4d5,6o5|re:3d2', 'sc:0.26'],
     ['favorite_c141', 'Milk@Favorite', 'ac:2d5,3d3', 'fb:0.35,60,-60'],
     ['favorite_c142', 'Frima@Favorite', '', 'fb:0.31,60,-60'],
   ],
 
   'Cooking Oil': [
-    ['c520', 'Bready'],
-    ['c520_01', 'Bready Frosty Bite'],
-    ['c521', 'Crust'],
+    ['c520', 'Bready', 'ac:1d5,2d3,3d6,4d2|re:2d4,3d3', 'sc:0.25'],
+    ['c520_01', 'Bready Frosty Bite', 'ac:3d5,4d5,5d5'],
+    ['c521', 'Crust', 'ac:1o12|re:2d5,3d2', 'sc:0.25'],
   ],
 
   'Counters': [
@@ -126,11 +126,11 @@ const l2dGroups = {
     ['c010_01', 'Rapi: Outdated', 'ac:1d3,3d6'],
     ['c010_02', 'Rapi White Promise', 'ac:1d3,3d6'],
     ['c010_03', 'Rapi Classic Vacation', 'ac:1d3'],
-    ['c011', 'Neon', 'ac:1d15|re:2d400', 'sc:0.25'],
+    ['c011', 'Neon', 'ac:1d15|re:2d4', 'sc:0.25'],
     ['c011_01', 'Neon Bling Bullet'],
-    ['c012', 'Anis', 'ac:2d6,3d5|re:3d400', 'sc:0.42,0,40'],
-    ['c014', 'Neon: Blue Ocean', 'ac:1d5,4d8,5d5|re:2d400', 'fb:0,0,50|sc:0.29'],
-    ['c015', 'Anis: Sparkling Summer', 'ac:1d5,2d5|re:5o8', 'sc:0.6,0,520'],
+    ['c012', 'Anis', 'ac:2d6,3d5|re:3d4', 'sc:0.42,0,40'],
+    ['c014', 'Neon: Blue Ocean', 'ac:1d5,4d8,5d5|re:2d4', 'fb:0,0,50|sc:0.29'],
+    ['c015', 'Anis: Sparkling Summer', 'ac:1d5,2d5|re:2o9,3o9,4o9,5o11', 'sc:0.6,0,520'],
     ['c016', 'Rapi: Red Hood', '', 'sc:0.25'],
     ['c016_01', 'Rapi: Red Hood Red Flavor', 'ac:2d5,2o3,6d5', 'fb:0.23,0,20|sc:0.27'],
     ['c016_02', 'Rapi: Red Hood Cherished Red', 'ac:2d5,3d5', 'sc:0.28,0,-60'],
