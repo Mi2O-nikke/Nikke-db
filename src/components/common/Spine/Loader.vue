@@ -1140,7 +1140,7 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
         },
         atlasUrl: atlasUrl,
         animation: initialAnimation,
-        skin: market.live2d.getSkin(),
+        skin: null, // Don't set skin at init; let success callback handle it
         scale: spineScale,
         backgroundColor: '#00000000',
         alpha: true,
@@ -1151,24 +1151,59 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
         viewport: spineViewport,
         defaultMix: SPINE_DEFAULT_MIX,
         success: (player: any) => {
-          spineCanvas.animationState.data.skeletonData.defaultSkin.attachments.forEach((a: any[]) => {
-            if (a) {
-              const keys = Object.keys(a)
-              if (keys !== null && keys !== undefined && keys.length > 0) {
-                keys.forEach((k: string) => {
-                  a[k as any].color = {
-                    r: 1,
-                    g: 1,
-                    b: 1,
-                    a: 1
-                  }
-                })
+          // Now that skeleton is loaded, try to set the desired skin
+          const requestedSkin = market.live2d.getSkin()
+          const availableSkins = player.animationState.data.skeletonData.skins
+          
+          let skinToUse = requestedSkin
+          
+          // Check if requested skin exists
+          if (availableSkins && availableSkins.length > 0) {
+            const skinNames = availableSkins.map((s: any) => s.name)
+            
+            // If requested skin doesn't exist, use first available skin
+            if (!skinNames.includes(requestedSkin)) {
+              skinToUse = skinNames[0] || 'default'
+            }
+            
+            // Try to set the skin
+            try {
+              if (skinToUse && skinToUse !== 'default') {
+                player.skeleton.setSkinByName(skinToUse)
+              }
+            } catch (e) {
+              console.warn(`Failed to set skin '${skinToUse}', using first available`)
+              // Fallback to first available skin
+              try {
+                player.skeleton.setSkinByName(skinNames[0])
+              } catch (e2) {
+                console.warn('Could not set any skin, using default')
               }
             }
-          })
+          }
+
+          // Now safely get the skin's attachments (use current skin or fallback to defaultSkin)
+          const activeSkin = player.skeleton.skin || player.animationState.data.skeletonData.defaultSkin
+          if (activeSkin && activeSkin.attachments) {
+            activeSkin.attachments.forEach((a: any[]) => {
+              if (a) {
+                const keys = Object.keys(a)
+                if (keys !== null && keys !== undefined && keys.length > 0) {
+                  keys.forEach((k: string) => {
+                    a[k as any].color = {
+                      r: 1,
+                      g: 1,
+                      b: 1,
+                      a: 1
+                    }
+                  })
+                }
+              }
+            })
+          }
 
           spinePlayer = player
-          market.live2d.attachments = player.animationState.data.skeletonData.defaultSkin.attachments
+          market.live2d.attachments = activeSkin && activeSkin.attachments ? activeSkin.attachments : []
           
           // Auto-detect and apply best available skin if in fb pose
           if (market.live2d.current_pose === 'fb') {

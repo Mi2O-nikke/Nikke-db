@@ -27,6 +27,8 @@ const convertL2dData = (groups) => {
 
 // code, name, actionFx|reloadFx (track, d=delayMs(*100) o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
+
+  
   '777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
@@ -252,15 +254,15 @@ const l2dGroups = {
   ],
 
   'Inherit': [
-    ['c230', 'Harran'],
-    ['c230_01', 'Harran Banquet Witch', '', 'fb:0,0,-30'],
-    ['c231', 'Isabel', '', 'fb:0.25'],
-    ['c231_01', 'Isabel Honeymoon Party'],
-    ['c232', 'Noah'],
+    ['c230', 'Harran', 'ac:1d3,1o8,3d25|re:1d5,1o10', 'sc:0.28'],
+    ['c230_01', 'Harran Banquet Witch', 'ac:3d3,3o11,4o8', 'fb:0,0,-30'],
+    ['c231', 'Isabel', 'ac:2o3,3o8,4o8|re:2d3', 'fb:0.25'],
+    ['c231_01', 'Isabel Honeymoon Party', 'ac:1d5,3d5,5d5', 'fb:0.21'],
+    ['c232', 'Noah', 'ac:4d3'],
   ],
 
   'Liaozhai': [
-    ['c8004', 'Ying Ning'],
+    ['c8004', 'Ying Ning', '', 'sc:0.23,0,20'],
     ['c8005', 'Hua Pi'],
     ['c8006', 'Ying Ning Fox'],
   ],
@@ -1057,6 +1059,8 @@ const skillcutConfig = {
   c016: {animations: ['skillcut_2']},
   c016_03: {animations: ['skillcut_2']},
   c073: {animations: ['skillcut_2']},
+  c231: {animations: ['skill_01']},
+  c231_01: {animations: ['skill_01']},
   c234: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
   c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
