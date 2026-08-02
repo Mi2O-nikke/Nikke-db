@@ -136,7 +136,7 @@ const handleActionStart = () => {
       animationCandidates = charConfig.animations
     } else {
       // Default fallback order
-      animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut']
+      animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut', 'skillcut']
     }
     
     // Try each animation in the candidates list until one is found

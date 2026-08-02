@@ -220,34 +220,34 @@ const l2dGroups = {
   ],
 
   'Happy Zoo': [
-    ['c380', 'Nero', '', 'fb:0.27'],
-    ['c381', 'Biscuit'],
-    ['c381_01', 'Biscuit Spring Puppy'],
-    ['c382', 'Leona'],
-    ['c382_01', 'Leona Zoo Keeper'],
+    ['c380', 'Nero', 'ac:3d8|re:2d5', 'fb:0.27|sc:0.28,0,100'],
+    ['c381', 'Biscuit', 'ac:1d2,1o11,2o8|re:1d5,3o5,4o2', 'sc:0.25,0,30'],
+    ['c381_01', 'Biscuit Spring Puppy', 'ac:1d3,4o5,5o8,7d3'],
+    ['c382', 'Leona', 'ac:1d5,1o10,2o7|re:2o8', 'sc:0.28'],
+    ['c382_01', 'Leona Zoo Keeper', 'ac:1d5,1o12,2o9'],
   ],
 
   'Heavy Gram': [
-    ['c361', 'T.A.L.O.S', '', 'fb:0.23'],
+    ['c361', 'T.A.L.O.S', 'ac:1o8,3d5|re:1d3,2o1,3o5,4o6', 'fb:0.23|sc:0.24,0,20'],
     ['c977', 'Kilo'],
   ],
 
   'Incubator': [
-    ['c590', 'Mori'],
+    ['c590', 'Mori', 'ac:1d3,1o10,3o8,4o8,5o8|re:2d3', 'sc:0.4,-320,-300'],
   ],
 
   'Infinity Rail': [
-    ['c070', 'Brid'],
-    ['c070_01', 'Brid Model Worker'],
-    ['c070_02', 'Brid Black Moon'],
-    ['c071', 'Soline'],
-    ['c072', 'Diesel'],
-    ['c072_01', 'Diesel Black Sunday'],
-    ['c072_02', 'Diesel Strawberry Flower'],
-    ['c072_04', 'Diesel Midnight Strawberry'],
-    ['c073', 'Brid: Silent Track'],
-    ['c074', 'Soline: Frost Ticket'],
-    ['c075', 'Diesel: Winter Sweets'],
+    ['c070', 'Brid', 'ac:4o8,6d5|re:1d2,2d3', 'sc:0.45,0,-60'],
+    ['c070_01', 'Brid Model Worker', 'ac:4o8,6d5|re:1d2,2d3'],
+    ['c070_02', 'Brid Black Moon', 'ac:4d2,5d2', 'fb:0,-70'],
+    ['c071', 'Soline', 'ac:1d5', 'sc:0.22,0,50'],
+    ['c072', 'Diesel', 'ac:2d5|re:2d10,3d3'],
+    ['c072_01', 'Diesel Black Sunday', 'ac:2d2', 'fb:0,-30'],
+    ['c072_02', 'Diesel Strawberry Flower', 'ac:2d2', 'fb:0,-30'],
+    ['c072_04', 'Diesel Midnight Strawberry', 'ac:1d5,2d8', 'fb:0,-50'],
+    ['c073', 'Brid: Silent Track', 'ac:1d5,2d15,3d5,4d5|re:1d5', 'sc:0.3,100,200'],
+    ['c074', 'Soline: Frost Ticket', 'ac:1d5,1o12,2o7|re:1d5', 'sc:0.4,-400'],
+    ['c075', 'Diesel: Winter Sweets', 'ac:2o8,3o9|re:1d8', 'sc:0.25,0,100'],
     ['favorite_c072', 'Diesel@Favorite', '', 'fb:0.27,60'],
   ],
 
@@ -1040,6 +1040,7 @@ const skillcutAnimationOverrides = {
   'c030': 'Idle',
   'c030_01': 'Idle',
   'c030_02': 'Idle',
+  'c073': 'idle_2',
   'c094': 'idle_2',
   'c094_01': 'idle_2',
   'c225': 'idle_all',
@@ -1051,10 +1052,11 @@ const skillcutAnimationOverrides = {
   'c570_99': 'idle_0',
 }
 
-//skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut
+//skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut, skillcut
 const skillcutConfig = {
   c016: {animations: ['skillcut_2']},
   c016_03: {animations: ['skillcut_2']},
+  c073: {animations: ['skillcut_2']},
   c234: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
   c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
