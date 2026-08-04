@@ -28,7 +28,7 @@ const convertL2dData = (groups) => {
 // code, name, actionFx|reloadFx (track, d=delayMs(*100) o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
 const l2dGroups = {
 
-  
+
   '777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
@@ -65,6 +65,12 @@ const l2dGroups = {
     ['c094_01', 'Vesti: Tactical Upgrade Pure Beginner', '', 'fb:0.22,-150,-40'],
     ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|sc:0.3,60'],
     ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30'],
+  ],
+
+  'Academia': [
+    ['c321', 'Marciana', 're:3d5', 'sc:0.28,100,90'],
+    ['c321_01', 'Marciana School Days', '', 'fb:0.25,0,-80|sc:0.25,0,100'],
+    ['c322', 'Marciana: Marine Study', '', 'sc:0.27,0,90'],
   ],
 
   'Aegis': [
@@ -268,23 +274,22 @@ const l2dGroups = {
   ],
 
   'M.M.R.': [
-    ['c290', 'Mana'],
-    ['c291', 'Ether'],
-    ['c321', 'Marciana'],
-    ['c321_01', 'Marciana School Days'],
-    ['c322', 'Marciana: Marine Study'],
+    ['c290', 'Mana', 'ac:1o1,2o1,4o8|re:1d2', 'sc:0.28,0,50'],
+    ['c291', 'Ether', 'ac:1d5|re:1d8'],
+    ['c973', 'Jien'],
+    ['c9032', 'Jien: Child'],
   ],
 
   'Maid For You': [
-    ['c310', 'Ade'],
-    ['c310_01', 'Ade Maid in Spring'],
-    ['c311', 'Cocoa'],
-    ['c312', 'Soda'],
-    ['c313', 'Privaty: Unkind Maid'],
-    ['c314', 'Soda: Twinkling Bunny'],
-    ['c315', 'Ade: Agent Bunny'],
-    ['c316', 'Velvet'],
-    ['c316_01', 'Velvet: Sensual Rabbit'],
+    ['c310', 'Ade', 'ac:1d5,2d5|re:2o5', 'sc:0.45,0,150'],
+    ['c310_01', 'Ade Maid in Spring', 'ac:1d5'],
+    ['c311', 'Cocoa', 'ac:1d5,3d3,4d3|re:1d3,3d3', 'sc:0.9,1200,670'],
+    ['c312', 'Soda', 'ac:3o5|re:2o3', 'sc:0.4,0,100'],
+    ['c313', 'Privaty: Unkind Maid', 'ac:1d2|re:5d3', 'sc:0.25,0,70'],
+    ['c314', 'Soda: Twinkling Bunny', 'ac:1d3|re:2d5,4d5', 'sc:0.24'],
+    ['c315', 'Ade: Agent Bunny', 'ac:4d25|re:1d5', 'sc:0.5,0,50'],
+    ['c316', 'Velvet', 'ac:2d3,3o5,5d8|re:2d3', 'sc:0.24'],
+    ['c316_01', 'Velvet Sensual Rabbit', 'ac:1d5,1o12,3o8,5o1'],
   ],
 
   'Master Hand': [
@@ -553,8 +558,6 @@ const l2dGroups = {
     ['c907', 'Shifty'],
     ['c907_01', 'Shifty_old'],
     ['c908', 'Papillon'],
-    ['c973', 'Jien'],
-    ['c9032', 'Jien: Child'],
   ],
 
   _CEO: [
@@ -979,6 +982,8 @@ const voiceGroupOverrides = {
   'c180': ['c180_01'],
   'c181': ['c181_01', 'c181_02'],
   'c271': ['c271_01', 'c271_02'],
+  'c310': ['c310_01'],
+  'c316': ['c316_01'],
   'c350': ['c350_01', 'c350_old'],
   'c352': ['c352_01'],
   'c381': ['c381_01'],
@@ -996,6 +1001,8 @@ const voiceGroupOverrides = {
 const specialClickAnimations = {
   'c011': ['expression_0'],
   'c016_01': ['expression_1'],
+  'c290': ['expression_0'],
+  'c310': ['expression_0'],
   'c490': ['smile'],
   'c491': ['angry'],
   'c513_03': ['expression_0'],
@@ -1047,6 +1054,7 @@ const skillcutAnimationOverrides = {
   'c094_01': 'idle_2',
   'c225': 'idle_all',
   'c234': 'idle_2',
+  'c315': 'idle_2',
   'c513_03': 'idle_all',
   'c570': 'idle_0',
   'c582': 'idle_0',
