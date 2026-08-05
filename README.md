@@ -15,17 +15,9 @@ OR just run the bat file in folder "_run.bat", first time it might close automat
 
 _______________________________________________________
 im missing these nikke might have no voice
-1. Poli@Favorite
-2. Miranda@Favorite
-3. Phantom@Favorite
-4. Flora@Favorite
-5. Sugar@Favorite
-6. Milk@Favorite
-7. Diesel@Favorite
-8. Julia@Favorite
-9. Drake@Favorite
-10. Centi@Favorite
-11. Exia@Favorite
-12. Bay@Favorite
-13. Zwei@Favorite
-14. Rosanna@Favorite
+1. Phantom@Favorite
+2. Flora@Favorite
+3. Sugar@Favorite
+4. Centi@Favorite
+5. Zwei@Favorite
+6. Rosanna@Favorite/

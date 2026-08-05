@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithFgBgOverlays, skillcutAnimationOverrides, skillcutConfig } from '@/utils/json/l2d'
+import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -44,6 +44,14 @@ interface OverlayInstance {
 }
 let overlayInstances: OverlayInstance[] = []
 let usedSpine: any = null
+
+// Dual-layer spine support (same skeleton, different animations)
+interface DualLayerInstance {
+  skeleton: any
+  state: any
+  backAnimation: string
+}
+let dualLayerInstance: DualLayerInstance | null = null
 
 // BGM tracking
 let currentBGM: HTMLAudioElement | null = null
@@ -129,11 +137,60 @@ const handleActionStart = () => {
     let skillcutAnimation = ''
     let animationCandidates = []
     
+    // Determine what idle animation is currently playing
+    let currentIdleAnimation = 'idle'
+    const overrideConfig = skillcutAnimationOverrides[market.live2d.current_id]
+    
+    if (overrideConfig) {
+      if (typeof overrideConfig === 'string') {
+        // Simple string format (backward compatible)
+        currentIdleAnimation = overrideConfig
+      } else if (typeof overrideConfig === 'object') {
+        // Check if the main skeleton is currently playing one of the configured idles
+        const mainAnimEntry = spinePlayer?.animationState?.getCurrent(0)
+        const currentAnim = mainAnimEntry?.animation?.name
+        
+        // Look for a matching idle in the config
+        for (const [idleName, idleValue] of Object.entries(overrideConfig)) {
+          // idleValue should be a string, cast it
+          const idleStr = idleValue as string
+          if (currentAnim === idleStr || currentAnim === idleName) {
+            currentIdleAnimation = idleStr
+            console.debug(`[Skillcut] Matched ${currentAnim} to idle: ${currentIdleAnimation}`)
+            break
+          }
+        }
+        // If no match found, try to use the first available idle from config
+        if (currentIdleAnimation === 'idle') {
+          const firstEntry = Object.entries(overrideConfig)[0]
+          if (firstEntry) {
+            currentIdleAnimation = firstEntry[1] as string
+            console.debug(`[Skillcut] No match found, using first idle: ${currentIdleAnimation}`)
+          }
+        }
+      }
+    }
+    
+    // Debug: log current idle for this character
+    console.debug(`[Skillcut] ${market.live2d.current_id} - Current idle: ${currentIdleAnimation}`)
+    
     // Check if character has custom skillcut config
     const charConfig = skillcutConfig[market.live2d.current_id]
-    if (charConfig && charConfig.animations && charConfig.animations.length > 0) {
-      // Use custom animation list for this character
-      animationCandidates = charConfig.animations
+    if (charConfig) {
+      // Check if config has pose-specific animations (e.g., idle_1, idle_2)
+      if (charConfig[currentIdleAnimation]) {
+        // Use pose-specific animation for this idle
+        animationCandidates = charConfig[currentIdleAnimation]
+        console.debug(`[Skillcut] Using pose-specific animations: ${animationCandidates.join(', ')}`)
+      } else if (charConfig.animations && charConfig.animations.length > 0) {
+        // Use default animations for this character
+        animationCandidates = charConfig.animations
+        console.debug(`[Skillcut] Using default animations: ${animationCandidates.join(', ')}`)
+      } else {
+        // Default fallback order
+        animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut', 'skillcut']
+        console.debug(`[Skillcut] Using fallback animations: ${animationCandidates.join(', ')}`)
+      }
     } else {
       // Default fallback order
       animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut', 'skillcut']
@@ -154,12 +211,8 @@ const handleActionStart = () => {
       return
     }
     
-    // Determine what idle animation to use after skillcut
-    let idleAnimation = 'idle'
-    if (skillcutAnimationOverrides[market.live2d.current_id]) {
-      idleAnimation = skillcutAnimationOverrides[market.live2d.current_id]
-    }
-    
+    // Use the idle animation that was playing before skillcut
+    let idleAnimation = currentIdleAnimation
     // Play the skillcut animation then loop back to idle
     spinePlayer.animationState.setAnimation(0, skillcutAnimation, false)
     spinePlayer.animationState.addAnimation(0, idleAnimation, true, 0)
@@ -813,6 +866,98 @@ const handleActionEnd = () => {
 const SPINE_DEFAULT_MIX = 0.25
 let spinePlayer: any = null
 
+// Load dual-layer skeleton (same skeleton rendered twice with different animations)
+function loadDualLayerSkeleton() {
+  if (!spineCanvas?.context || !charactersWithDualLayer[market.live2d.current_id]) {
+    dualLayerInstance = null
+    return Promise.resolve()
+  }
+
+  return new Promise<void>(async (resolve) => {
+    try {
+      const SpineLib = (window as any).usedSpineGlobal
+      
+      if (!SpineLib || !spineCanvas) {
+        resolve()
+        return
+      }
+
+      // Get animation names from config - support both old and new format
+      const dualConfig = charactersWithDualLayer[market.live2d.current_id]
+      let backAnimation = ''
+      
+      if (Array.isArray(dualConfig) && dualConfig.length >= 2) {
+        // Parse array format: ['idle|skillcut', 'idle_bg|skillcut_bg']
+        const backStr = dualConfig[1]
+        const backParts = (backStr || '').split('|')
+        backAnimation = backParts[0] || ''
+      } else {
+        // Fallback to old object format
+        backAnimation = dualConfig?.backAnimation || ''
+      }
+      
+      if (!backAnimation) {
+        console.warn(`No back animation configured for ${market.live2d.current_id}`)
+        dualLayerInstance = null
+        resolve()
+        return
+      }
+
+      // Load the same skeleton data again for the back layer
+      const assetMgr = new SpineLib.AssetManager(spineCanvas.context, '')
+      
+      // Get the correct skeleton filename
+      let skelPath = ''
+      let atlasPath = ''
+      
+      // The spineCanvas.config.atlasUrl is already the full path, just use it
+      if (spineCanvas.config?.atlasUrl) {
+        atlasPath = spineCanvas.config.atlasUrl
+        // Replace .atlas with .skel to get skeleton path
+        skelPath = atlasPath.replace('.atlas', '.skel')
+      } else {
+        console.warn(`Could not determine skeleton paths for ${market.live2d.current_id}`)
+        dualLayerInstance = null
+        resolve()
+        return
+      }
+      
+      assetMgr.loadBinary(skelPath)
+      assetMgr.loadTextureAtlas(atlasPath)
+      await assetMgr.loadAll()
+      
+      const binary = assetMgr.require(skelPath)
+      const atlas = assetMgr.require(atlasPath)
+      const skeletonBinary = new SpineLib.SkeletonBinary(new SpineLib.AtlasAttachmentLoader(atlas))
+      const skeletonData = skeletonBinary.readSkeletonData(binary)
+      
+      const skeleton = new SpineLib.Skeleton(skeletonData)
+      const state = new SpineLib.AnimationState(new SpineLib.AnimationStateData(skeletonData))
+      
+      // Check if the configured back animation exists
+      if (!skeletonData.animations.some((a: any) => a.name === backAnimation)) {
+        dualLayerInstance = null
+        resolve()
+        return
+      }
+      
+      state.setAnimation(0, backAnimation, true)
+      
+      dualLayerInstance = {
+        skeleton: skeleton,
+        state: state,
+        backAnimation: backAnimation
+      }
+      
+      resolve()
+    } catch (error) {
+      console.warn('Failed to load dual-layer skeleton:', error)
+      dualLayerInstance = null
+      resolve()
+    }
+  })
+}
+
 // Auto-detect and load overlay skeletons (bg and fg layers) for any character
 function loadOverlaySkeletons() {
   if (!spineCanvas?.context) {
@@ -951,6 +1096,20 @@ function renderWithOverlays() {
     overlay.state.apply(overlay.skeleton)
     overlay.skeleton.updateWorldTransform()
   })
+
+  // Update dual-layer animations
+  if (dualLayerInstance) {
+    dualLayerInstance.state.update(1 / 60)
+    dualLayerInstance.state.apply(dualLayerInstance.skeleton)
+    dualLayerInstance.skeleton.updateWorldTransform()
+  }
+
+  // Render back layer first (if dual-layer enabled)
+  if (dualLayerInstance) {
+    renderer.begin()
+    renderer.drawSkeleton(dualLayerInstance.skeleton, true)
+    renderer.end()
+  }
 
   // Render main skeleton
   renderer.begin()
@@ -1130,7 +1289,17 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
 
       // Check if this character has a non-standard skillcut animation
       if (needsSafeAnimationDetection && skillcutAnimationOverrides[market.live2d.current_id]) {
-        initialAnimation = skillcutAnimationOverrides[market.live2d.current_id]
+        const overrideValue = skillcutAnimationOverrides[market.live2d.current_id]
+        // Handle both string and object formats
+        if (typeof overrideValue === 'string') {
+          initialAnimation = overrideValue
+        } else if (typeof overrideValue === 'object') {
+          // For object format, use the first idle as initial animation
+          const firstEntry = Object.entries(overrideValue)[0]
+          if (firstEntry) {
+            initialAnimation = firstEntry[1] as string
+          }
+        }
       }
 
       spineCanvas = new usedSpine.SpinePlayer('player-container', {
@@ -1333,6 +1502,81 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
             overlayInstances = []
           }
           
+          // Load dual-layer skeleton if this character supports it (works for any pose)
+          if (charactersWithDualLayer[market.live2d.current_id]) {
+            loadDualLayerSkeleton().then(() => {
+              if (dualLayerInstance) {
+                // Set up syncing between main and dual-layer
+                const renderer = spineCanvas.sceneRenderer
+                const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
+                const mainSkeleton = spineCanvas.skeleton
+                let isRenderingMain = false
+                
+                // Get animation names from config
+                const dualConfig = charactersWithDualLayer[market.live2d.current_id]
+                let frontAnim = '', backAnim = '', frontSkillcut = '', backSkillcut = ''
+                
+                if (Array.isArray(dualConfig) && dualConfig.length >= 2) {
+                  // Parse array format: ['idle|skillcut', 'idle_bg|skillcut_bg']
+                  const [frontStr, backStr] = dualConfig
+                  const frontParts = (frontStr || '').split('|')
+                  const backParts = (backStr || '').split('|')
+                  frontAnim = frontParts[0] || ''
+                  frontSkillcut = frontParts[1] || ''
+                  backAnim = backParts[0] || ''
+                  backSkillcut = backParts[1] || ''
+                }
+                
+                let lastFrontAnimName = ''  // Track last animation to detect changes
+                
+                renderer.drawSkeleton = function(skeleton: any, premultipliedAlpha: boolean) {
+                  if (skeleton === mainSkeleton && !isRenderingMain) {
+                    isRenderingMain = true
+                    
+                    // Get current animation from main skeleton
+                    const mainAnimEntry = player?.animationState?.getCurrent(0)
+                    const animName = mainAnimEntry?.animation?.name
+                    
+                    // Sync dual-layer to play back animation while main plays front animation
+                    if (animName === frontAnim && dualLayerInstance) {
+                      const hasBackAnim = dualLayerInstance.state.data.skeletonData.animations.some((a: any) => a.name === backAnim)
+                      if (hasBackAnim && dualLayerInstance.state.getCurrent(0)?.animation?.name !== backAnim) {
+                        dualLayerInstance.state.setAnimation(0, backAnim, true)
+                      }
+                    }
+                    
+                    // If main skeleton is playing a skillcut motion, also make back layer play its skillcut
+                    // Detect animation change instead of checking every frame
+                    if (frontSkillcut && backSkillcut && dualLayerInstance && animName !== lastFrontAnimName && animName === frontSkillcut) {
+                      const hasBackSkillcut = dualLayerInstance.state.data.skeletonData.animations.some((a: any) => a.name === backSkillcut)
+                      if (hasBackSkillcut) {
+                        dualLayerInstance.state.clearTracks()
+                        dualLayerInstance.state.setAnimation(0, backSkillcut, false)
+                        dualLayerInstance.state.addAnimation(0, backAnim, true, 0)
+                      }
+                    }
+                    lastFrontAnimName = animName || ''
+                    
+                    // Render back layer first
+                    if (dualLayerInstance) {
+                      dualLayerInstance.state.update(1 / 60)
+                      dualLayerInstance.state.apply(dualLayerInstance.skeleton)
+                      dualLayerInstance.skeleton.updateWorldTransform()
+                      originalDrawSkeleton(dualLayerInstance.skeleton, premultipliedAlpha)
+                    }
+                    
+                    // Render main skeleton on top
+                    originalDrawSkeleton(skeleton, premultipliedAlpha)
+                    
+                    isRenderingMain = false
+                  } else if (skeleton !== mainSkeleton) {
+                    originalDrawSkeleton(skeleton, premultipliedAlpha)
+                  }
+                }
+              }
+            })
+          }
+          
           market.live2d.triggerFinishedLoading()
           successfullyLoaded()
         },
@@ -1481,6 +1725,9 @@ const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
   if (market.live2d.current_id === 'c994') return 'idle_02'
   if (market.live2d.current_id === 'c996') return 'idle_02'
 
+  // Special case for favorite_c170 - uses idle instead of idle_merged
+  if (market.live2d.current_id === 'favorite_c170') return 'idle'
+
   if (market.live2d.current_id.includes('favorite')) return 'idle_merged'
 
   switch (market.live2d.current_pose) {
@@ -1593,8 +1840,12 @@ const handleAction = () => {
   // Determine action animation based on current pose
   let actionAnimation = 'action'
   
+  // Special case for favorite_c170 - uses expression_0 instead of expression_merged
+  if (market.live2d.current_id === 'favorite_c170') {
+    actionAnimation = 'expression_0'
+  }
   // For favorite characters, use expression_merged instead
-  if (market.live2d.current_id.includes('favorite')) {
+  else if (market.live2d.current_id.includes('favorite')) {
     actionAnimation = 'expression_merged'
   }
   // Check special click animations config - alternate between them
@@ -1625,7 +1876,9 @@ const handleAction = () => {
 
   // Determine idle animation based on current pose
   let idleAnimation = 'idle'
-  if (market.live2d.current_id.includes('favorite')) {
+  if (market.live2d.current_id === 'favorite_c170') {
+    idleAnimation = 'idle'
+  } else if (market.live2d.current_id.includes('favorite')) {
     idleAnimation = 'idle_merged'
   } else if (['smol_anis', 'smol_prika', 'smol_mint'].includes(market.live2d.current_id)) {
     idleAnimation = 'pose_idle'

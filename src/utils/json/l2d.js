@@ -317,10 +317,10 @@ const l2dGroups = {
   ],
 
   'Mighty Tools': [
-    ['c080', 'Centi'],
-    ['c080_01', 'Centi Supreme Holiday'],
-    ['c080_02', 'Centi Ocean Repair'],
-    ['c082', 'Liter'],
+    ['c080', 'Centi', 'ac:1d3,2d3|re:1d6', 'sc:0.34,200,100'],
+    ['c080_01', 'Centi Supreme Holiday', 'ac:1d3,2d3,3d3'],
+    ['c080_02', 'Centi Ocean Repair', 'ac:1o5,4d8,5o8'],
+    ['c082', 'Liter', 'ac:1d3,2o7|re:1d3,2d3,3d3', 'sc:0.25,0,120'],
     ['c082_01', 'Liter Guardfish'],
     ['c082_02', 'Liter Cute Sunflower'],
     ['c082_80', 'Liter (CN)'],
@@ -497,6 +497,7 @@ const l2dGroups = {
     ['c170_04', 'Privaty Sharp Lesson'],
     ['c171', 'Yulha'],
     ['c172', 'Admi'],
+    ['favorite_c170', 'Privaty@Favorite'],
   ],
 
   'Underworld Queen': [
@@ -969,6 +970,7 @@ const voiceGroupOverrides = {
   'c032': ['c032_01'],
   'c070': ['c070_01', 'c070_02'],
   'c072': ['c072_01', 'c072_02', 'c072_04'],
+  'c080': ['c080_01', 'c080_02'],
   'c090': ['c090_02'],
   'c091': ['c091_01'],
   'c093': ['c093_01'],
@@ -1035,6 +1037,7 @@ const specialClickAnimations = {
   'c9030': ['delight'],
   'c9031': ['pain'],
   'c9032': ['smile'],
+  'favorite_c170': ['expression_0'],
 }
 
 //chara have foreground and background
@@ -1043,6 +1046,16 @@ const charactersWithFgBgOverlays = [
   'c515',
   'c103', 'c105', 'c017_01', 'c017_02', 'c450_03', 'c451_03'
 ]
+
+// Characters that use dual-layer rendering (same skeleton rendered twice with different animations)
+// Format: characterId: [frontAnimations, backAnimations]
+// Each animation string: 'idle_animation|skillcut_animation' (skillcut is optional)
+// Example: 'c513_01': ['idle|skill_cut', 'idle_bg|skill_cut_bg']
+const charactersWithDualLayer = {
+  'favorite_c170': ['idle|', 'bg_idle|'],
+  'c513_01': ['idle|skill_cut', 'idle_bg|skill_cut_bg'],
+  'c094': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_1|skillcut_1_OFF']
+}
 
 //skillcut special default motion if not name as "idle"
 const skillcutAnimationOverrides = {
@@ -1075,7 +1088,6 @@ const skillcutConfig = {
   c231_01: {animations: ['skill_01']},
   c234: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
-  c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
 }
 
 const l2dData = convertL2dData(l2dGroups)
@@ -1236,5 +1248,5 @@ l2dData.forEach((character) => {
   }
 })
 
-export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig, charactersWithFgBgOverlays, skillcutAnimationOverrides, skillcutConfig }
+export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig }
 export default l2dData
