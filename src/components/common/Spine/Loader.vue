@@ -92,39 +92,38 @@ const setupClickListener = () => {
 }
 
 const handleActionStart = () => {
-
   if (!spinePlayer) return
-  
+
   // For cover pose - just play cover_reload then back to cover_idle
   if (market.live2d.current_pose === 'cover') {
     // Check if cover_reload animation exists
     const animations = spinePlayer.animationState.data.skeletonData.animations
     const hasCoverReload = animations.some((a: { name: string }) => a.name === 'cover_reload')
-    
+
     if (!hasCoverReload) {
       // Fallback to action if cover_reload doesn't exist
       handleAction()
       return
     }
-    
+
     spinePlayer.animationState.setAnimation(0, 'cover_reload', false)
     spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
     playVoice()
     return
   }
-  
+
   // Special handling for aim pose - hold to keep playing aim_hit
   if (market.live2d.current_pose === 'aim') {
     // Check if aim_hit animation exists
     const animations = spinePlayer.animationState.data.skeletonData.animations
     const hasAimHit = animations.some((a: { name: string }) => a.name === 'aim_hit')
-    
+
     if (!hasAimHit) {
       // Fallback to action if aim_hit doesn't exist
       handleAction()
       return
     }
-    
+
     isAimHolding = true
     spinePlayer.animationState.setAnimation(0, 'aim_hit', true) // true = loop
     return
@@ -136,11 +135,11 @@ const handleActionStart = () => {
     const animations = spinePlayer.animationState.data.skeletonData.animations
     let skillcutAnimation = ''
     let animationCandidates = []
-    
+
     // Determine what idle animation is currently playing
     let currentIdleAnimation = 'idle'
     const overrideConfig = skillcutAnimationOverrides[market.live2d.current_id]
-    
+
     if (overrideConfig) {
       if (typeof overrideConfig === 'string') {
         // Simple string format (backward compatible)
@@ -149,7 +148,7 @@ const handleActionStart = () => {
         // Check if the main skeleton is currently playing one of the configured idles
         const mainAnimEntry = spinePlayer?.animationState?.getCurrent(0)
         const currentAnim = mainAnimEntry?.animation?.name
-        
+
         // Look for a matching idle in the config
         for (const [idleName, idleValue] of Object.entries(overrideConfig)) {
           // idleValue should be a string, cast it
@@ -170,10 +169,10 @@ const handleActionStart = () => {
         }
       }
     }
-    
+
     // Debug: log current idle for this character
     console.debug(`[Skillcut] ${market.live2d.current_id} - Current idle: ${currentIdleAnimation}`)
-    
+
     // Check if character has custom skillcut config
     const charConfig = skillcutConfig[market.live2d.current_id]
     if (charConfig) {
@@ -195,7 +194,7 @@ const handleActionStart = () => {
       // Default fallback order
       animationCandidates = ['skillcut_all', 'skillcut_0', 'skillcut_1', 'skill_cut', 'skillcut']
     }
-    
+
     // Try each animation in the candidates list until one is found
     for (const candidate of animationCandidates) {
       const hasSkillcut = animations.some((a: { name: string }) => a.name === candidate)
@@ -204,13 +203,13 @@ const handleActionStart = () => {
         break
       }
     }
-    
+
     if (!skillcutAnimation) {
       // No skillcut animation found, fallback to action
       handleAction()
       return
     }
-    
+
     // Use the idle animation that was playing before skillcut
     let idleAnimation = currentIdleAnimation
     // Play the skillcut animation then loop back to idle
@@ -219,13 +218,13 @@ const handleActionStart = () => {
     playVoice()
     return
   }
-  
+
   handleAction()
 }
 
 const swapToAimSpine = async () => {
   if (!spineCanvas) return
-  
+
   try {
     // Load aim spine data
     const aimData = await loadSpineData('aim')
@@ -263,7 +262,7 @@ const swapToAimSpine = async () => {
       success: (player: any) => {
         spinePlayer = player
         playVoice()
-        
+
         // After aim_hit animation, swap back to cover
         setTimeout(() => {
           swapBackToCoverSpine()
@@ -284,7 +283,7 @@ const swapToAimSpine = async () => {
 
 const swapBackToCoverSpine = async () => {
   if (!spineCanvas) return
-  
+
   try {
     // Reload cover spine
     const coverData = await loadSpineData('cover')
@@ -339,7 +338,7 @@ const swapBackToCoverSpine = async () => {
 
 const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0): boolean => {
   const MAX_VOICE_RECURSION = 25 // Max recursion depth
-  
+
   if (attemptCount > MAX_VOICE_RECURSION) {
     console.warn(`Max voice recursion depth reached for ${characterId}`)
     return false
@@ -355,13 +354,13 @@ const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0)
   }
 
   const voices = voiceMap[voiceFolderId]?.[pose]
-  
+
   if (!voices || voices.length === 0) return false
-  
+
   const voiceKey = `${voiceFolderId}_${pose}`
   let currentIndex = voiceIndexMap.get(voiceKey) ?? 0
   const voice = voices[currentIndex]
-  
+
   // Check cache first - skip known missing voices
   if (voiceExistsCache.has(voice) && voiceExistsCache.get(voice) === false) {
     console.debug(`Skipping known missing voice: ${voice}`)
@@ -370,11 +369,11 @@ const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0)
     voiceIndexMap.set(voiceKey, currentIndex)
     return playVoiceWithRetry(characterId, pose, attemptCount + 1)
   }
-  
+
   // Increment index for next time
   currentIndex = (currentIndex + 1) % voices.length
   voiceIndexMap.set(voiceKey, currentIndex)
-  
+
   // ALWAYS stop the old voice immediately to prevent overlapping audio
   if (currentVoice) {
     currentVoice.pause()
@@ -386,53 +385,61 @@ const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0)
   if (voice) {
     currentVoice = new Audio(voice)
     activeAudioObjects.push(currentVoice) // Track all audio objects
-    currentVoice.addEventListener('error', () => {
-      voiceExistsCache.set(voice, false)
-      console.debug(`Voice file not found: ${voice}`)
-      // On error, try the next voice
-      playVoiceWithRetry(characterId, pose, attemptCount + 1)
-    }, { once: true })
-    
-    currentVoice.addEventListener('canplay', () => {
-      voiceExistsCache.set(voice, true)
-    }, { once: true })
-    
+    currentVoice.addEventListener(
+      'error',
+      () => {
+        voiceExistsCache.set(voice, false)
+        console.debug(`Voice file not found: ${voice}`)
+        // On error, try the next voice
+        playVoiceWithRetry(characterId, pose, attemptCount + 1)
+      },
+      { once: true }
+    )
+
+    currentVoice.addEventListener(
+      'canplay',
+      () => {
+        voiceExistsCache.set(voice, true)
+      },
+      { once: true }
+    )
+
     currentVoice.play().catch((err) => {
       console.debug(`Failed to play voice: ${err.message}`)
     })
-    
+
     return true
   }
-  
+
   return false
 }
 
 const playVoice = () => {
   const characterData = l2dData.find((a) => a.id === market.live2d.current_id)
   if (!characterData) return
-  
+
   // Stop any existing sound effects first
   stopAllSoundEffects()
-  
+
   // In skillcut mode, use specialized skillcut sound handler (handles all audio)
   if (market.live2d.current_pose === 'skillcut') {
-    playSkillcutSound().catch(err => console.error('Error playing skillcut sound:', err))
+    playSkillcutSound().catch((err) => console.error('Error playing skillcut sound:', err))
     return
   }
-  
+
   let currentPose = 'normal'
   if (market.live2d.current_pose === 'cover') {
     currentPose = 'cover'
   }
-  
+
   // Try to play voice with automatic retry on missing files
   playVoiceWithRetry(market.live2d.current_id, currentPose)
-  
+
   // In cover mode, also play reload sound simultaneously
   if (market.live2d.current_pose === 'cover') {
     playReloadSound()
   }
-  
+
   // In fullbody mode, also play action sound simultaneously
   if (market.live2d.current_pose === 'fb') {
     playActionSound()
@@ -441,43 +448,43 @@ const playVoice = () => {
 
 const stopAllSoundEffects = () => {
   // Cancel all pending timeouts that would continue playing sounds
-  pendingReloadTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+  pendingReloadTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
   pendingReloadTimeouts = []
-  
-  pendingActionTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+
+  pendingActionTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
   pendingActionTimeouts = []
-  
+
   // Stop main voice
   if (currentVoice) {
     currentVoice.pause()
     currentVoice.currentTime = 0
     currentVoice = null
   }
-  
+
   // Stop reload sound
   if (currentReloadSound) {
     currentReloadSound.pause()
     currentReloadSound.currentTime = 0
     currentReloadSound = null
   }
-  
+
   // Stop action sound
   if (currentActionSound) {
     currentActionSound.pause()
     currentActionSound.currentTime = 0
     currentActionSound = null
   }
-  
+
   // Stop skillcut overlay sound
   if (currentSkillcutOverlaySound) {
     currentSkillcutOverlaySound.pause()
     currentSkillcutOverlaySound.currentTime = 0
     currentSkillcutOverlaySound = null
   }
-  
+
   // Reset action sound sequence
   actionSoundIndex = 1
-  
+
   // Reset reload sound sequence
   reloadSoundIndex = 1
 }
@@ -486,10 +493,10 @@ const playReloadSound = () => {
   // Get base character ID for reload sound (always stored in base folder)
   // e.g., 'c271_01' -> 'c271'
   const baseCharacterId = market.live2d.current_id.split('_')[0]
-  
+
   // Track which character this reload sound belongs to
   reloadSoundCharacterId = baseCharacterId
-  
+
   // Reset to start of sequence when new reload sound starts
   reloadSoundIndex = 1
   playNextReloadSound(baseCharacterId)
@@ -500,21 +507,21 @@ const playNextReloadSound = (baseCharacterId: string) => {
   if (reloadSoundCharacterId !== baseCharacterId) {
     return
   }
-  
+
   // Check if we've reached the end of the sequence (1-6)
   if (reloadSoundIndex > 6) {
     return
   }
-  
+
   // Construct reload sound path
   const reloadSoundPath = `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_reload_${reloadSoundIndex}.ogg`
-  
+
   // Get config for this character and reload number
   const characterConfig = reloadSoundConfig[baseCharacterId]
   const soundConfig = characterConfig?.[reloadSoundIndex] || {}
-  
+
   let eventHandled = false
-  
+
   const moveToNext = () => {
     if (!eventHandled) {
       eventHandled = true
@@ -523,95 +530,116 @@ const playNextReloadSound = (baseCharacterId: string) => {
       pendingReloadTimeouts.push(timeoutId)
     }
   }
-  
+
   const tryPlayReload = (soundPath: string) => {
     // Check if file exists first (HEAD request, no logging)
-    fetch(soundPath, { method: 'HEAD' }).then((response) => {
-      if (!response.ok) {
-        // File doesn't exist, skip to next
-        moveToNext()
-        return
-      }
-      
-      // File exists, proceed with playback
-      currentReloadSound = new Audio(soundPath)
-      activeAudioObjects.push(currentReloadSound) // Track all audio objects
-      
-      // Set up trim if configured
-      if (soundConfig.trimMs) {
-        currentReloadSound.addEventListener('canplay', () => {
-          setTimeout(() => {
-            if (currentReloadSound && currentReloadSound.currentTime >= 0) {
-              currentReloadSound.pause()
+    fetch(soundPath, { method: 'HEAD' })
+      .then((response) => {
+        if (!response.ok) {
+          // File doesn't exist, skip to next
+          moveToNext()
+          return
+        }
+
+        // File exists, proceed with playback
+        currentReloadSound = new Audio(soundPath)
+        activeAudioObjects.push(currentReloadSound) // Track all audio objects
+
+        // Set up trim if configured
+        if (soundConfig.trimMs) {
+          currentReloadSound.addEventListener(
+            'canplay',
+            () => {
+              setTimeout(() => {
+                if (currentReloadSound && currentReloadSound.currentTime >= 0) {
+                  currentReloadSound.pause()
+                  moveToNext()
+                }
+              }, soundConfig.trimMs)
+            },
+            { once: true }
+          )
+        }
+
+        currentReloadSound.addEventListener(
+          'error',
+          () => {
+            moveToNext()
+          },
+          { once: true }
+        )
+
+        // Set a timeout in case it fails to load
+        const timeoutId = setTimeout(() => {
+          moveToNext()
+        }, 2000)
+
+        // Handle overlap - wait for metadata to get duration
+        if (soundConfig.overlapMs || soundConfig.overlap) {
+          currentReloadSound.addEventListener(
+            'loadedmetadata',
+            () => {
+              const durationMs = currentReloadSound.duration * 1000
+              let overlapStart
+
+              if (soundConfig.overlap !== undefined) {
+                // Calculate overlap based on percentage (0-10 scale, where 10 = 100%)
+                const percentageDecimal = soundConfig.overlap / 10
+                overlapStart = Math.max(0, durationMs * percentageDecimal)
+              } else {
+                // Use milliseconds if overlapMs is specified
+                overlapStart = Math.max(0, durationMs - soundConfig.overlapMs)
+              }
+
+              // Start next sound during this one (don't wait for 'ended')
+              const timeoutId = setTimeout(() => {
+                // Check if character changed or sequence was cancelled
+                if (!eventHandled && reloadSoundCharacterId === baseCharacterId) {
+                  reloadSoundIndex++
+                  playNextReloadSound(baseCharacterId)
+                }
+              }, overlapStart)
+              pendingReloadTimeouts.push(timeoutId)
+            },
+            { once: true }
+          )
+        } else {
+          // Only add 'ended' listener if NOT using overlap
+          currentReloadSound.addEventListener(
+            'ended',
+            () => {
               moveToNext()
-            }
-          }, soundConfig.trimMs)
-        }, { once: true })
-      }
-      
-      currentReloadSound.addEventListener('error', () => {
+            },
+            { once: true }
+          )
+        }
+
+        // Play with delay if configured
+        const playWithDelay = () => {
+          currentReloadSound
+            .play()
+            .then(() => {
+              clearTimeout(timeoutId)
+            })
+            .catch(() => {
+              clearTimeout(timeoutId)
+              moveToNext()
+            })
+        }
+
+        if (soundConfig.delay) {
+          // Auto multiply by 100 to convert to milliseconds (e.g., 3 -> 300ms)
+          setTimeout(playWithDelay, soundConfig.delay * 100)
+        } else {
+          playWithDelay()
+        }
+      })
+      .catch(() => {
+        // Network error, skip to next
         moveToNext()
-      }, { once: true })
-      
-      // Set a timeout in case it fails to load
-      const timeoutId = setTimeout(() => {
-        moveToNext()
-      }, 2000)
-      
-      // Handle overlap - wait for metadata to get duration
-      if (soundConfig.overlapMs || soundConfig.overlap) {
-        currentReloadSound.addEventListener('loadedmetadata', () => {
-          const durationMs = currentReloadSound.duration * 1000
-          let overlapStart
-          
-          if (soundConfig.overlap !== undefined) {
-            // Calculate overlap based on percentage (0-10 scale, where 10 = 100%)
-            const percentageDecimal = soundConfig.overlap / 10
-            overlapStart = Math.max(0, durationMs * percentageDecimal)
-          } else {
-            // Use milliseconds if overlapMs is specified
-            overlapStart = Math.max(0, durationMs - soundConfig.overlapMs)
-          }
-          
-          // Start next sound during this one (don't wait for 'ended')
-          const timeoutId = setTimeout(() => {
-            // Check if character changed or sequence was cancelled
-            if (!eventHandled && reloadSoundCharacterId === baseCharacterId) {
-              reloadSoundIndex++
-              playNextReloadSound(baseCharacterId)
-            }
-          }, overlapStart)
-          pendingReloadTimeouts.push(timeoutId)
-        }, { once: true })
-      } else {
-        // Only add 'ended' listener if NOT using overlap
-        currentReloadSound.addEventListener('ended', () => {
-          moveToNext()
-        }, { once: true })
-      }
-      
-      // Play with delay if configured
-      const playWithDelay = () => {
-        currentReloadSound.play().then(() => {
-          clearTimeout(timeoutId)
-        }).catch(() => {
-          clearTimeout(timeoutId)
-          moveToNext()
-        })
-      }
-      
-      if (soundConfig.delay) {
-        // Auto multiply by 100 to convert to milliseconds (e.g., 3 -> 300ms)
-        setTimeout(playWithDelay, soundConfig.delay * 100)
-      } else {
-        playWithDelay()
-      }
-    }).catch(() => {
-      // Network error, skip to next
-      moveToNext()
-    })
+      })
   }
-  
+
   // Start with primary path
   tryPlayReload(reloadSoundPath)
 }
@@ -619,7 +647,7 @@ const playNextReloadSound = (baseCharacterId: string) => {
 const playActionSound = () => {
   // Track which character this action sound belongs to
   actionSoundCharacterId = market.live2d.current_id
-  
+
   // Reset to start of sequence when new action sound starts
   actionSoundIndex = 1
   playNextActionSound()
@@ -630,25 +658,25 @@ const playNextActionSound = (pathAttempt = 0) => {
   if (actionSoundCharacterId !== market.live2d.current_id) {
     return
   }
-  
+
   // Get config for this character and action number
   const characterConfig = actionSoundConfig[market.live2d.current_id]
   const soundConfig = characterConfig?.[actionSoundIndex] || {}
-  
+
   // Store max actions per character to avoid repeated 404s
   if (!window.actionMaxCache) window.actionMaxCache = {}
   const charId = market.live2d.current_id
   const cachedMax = window.actionMaxCache[charId]
-  
+
   // If we already know the max for this character, stop before requesting
   if (cachedMax && actionSoundIndex > cachedMax) {
     return
   }
-  
+
   // Construct action sound paths - try original first, then _00 version
   const baseCharacterId = market.live2d.current_id.split('_')[0]
   const isVariant = baseCharacterId !== market.live2d.current_id
-  
+
   // For base characters, try original first, then _00 version
   // For variants, just use as-is
   const soundPaths = []
@@ -656,7 +684,7 @@ const playNextActionSound = (pathAttempt = 0) => {
   if (!isVariant) {
     soundPaths.push(`/assets/l2d/${market.live2d.current_id}/voice/fx/${market.live2d.current_id}_00_action_${actionSoundIndex}.ogg`)
   }
-  
+
   if (pathAttempt >= soundPaths.length) {
     // All paths failed, cache the max
     if (!window.actionMaxCache[charId]) {
@@ -664,15 +692,15 @@ const playNextActionSound = (pathAttempt = 0) => {
     }
     return
   }
-  
+
   const actionSoundPath = soundPaths[pathAttempt]
-  
+
   // Try to play action sound
   currentActionSound = new Audio(actionSoundPath)
   activeAudioObjects.push(currentActionSound) // Track all audio objects
-  
+
   let eventHandled = false
-  
+
   const moveToNext = () => {
     if (!eventHandled) {
       eventHandled = true
@@ -681,64 +709,80 @@ const playNextActionSound = (pathAttempt = 0) => {
       pendingActionTimeouts.push(timeoutId)
     }
   }
-  
+
   // Set up trim if configured
   if (soundConfig.trimMs) {
-    currentActionSound.addEventListener('canplay', () => {
-      const timeoutId = setTimeout(() => {
-        if (currentActionSound && currentActionSound.currentTime >= 0) {
-          currentActionSound.pause()
-          moveToNext()
-        }
-      }, soundConfig.trimMs)
-      pendingActionTimeouts.push(timeoutId)
-    }, { once: true })
+    currentActionSound.addEventListener(
+      'canplay',
+      () => {
+        const timeoutId = setTimeout(() => {
+          if (currentActionSound && currentActionSound.currentTime >= 0) {
+            currentActionSound.pause()
+            moveToNext()
+          }
+        }, soundConfig.trimMs)
+        pendingActionTimeouts.push(timeoutId)
+      },
+      { once: true }
+    )
   }
-  
+
   // Handle overlap - wait for metadata to get duration
   if (soundConfig.overlapMs || soundConfig.overlap) {
-    currentActionSound.addEventListener('loadedmetadata', () => {
-      const durationMs = currentActionSound.duration * 1000
-      let overlapStart
-      
-      if (soundConfig.overlap !== undefined) {
-        // Calculate overlap based on percentage (0-10 scale, where 10 = 100%)
-        const percentageDecimal = soundConfig.overlap / 10
-        overlapStart = Math.max(0, durationMs * percentageDecimal)
-      } else {
-        // Use milliseconds if overlapMs is specified
-        overlapStart = Math.max(0, durationMs - soundConfig.overlapMs)
-      }
-      
-      // Start next sound during this one (don't wait for 'ended')
-      const timeoutId = setTimeout(() => {
-        // Check if character changed or sequence was cancelled
-        if (!eventHandled && actionSoundCharacterId === market.live2d.current_id) {
-          actionSoundIndex++
-          playNextActionSound()
+    currentActionSound.addEventListener(
+      'loadedmetadata',
+      () => {
+        const durationMs = currentActionSound.duration * 1000
+        let overlapStart
+
+        if (soundConfig.overlap !== undefined) {
+          // Calculate overlap based on percentage (0-10 scale, where 10 = 100%)
+          const percentageDecimal = soundConfig.overlap / 10
+          overlapStart = Math.max(0, durationMs * percentageDecimal)
+        } else {
+          // Use milliseconds if overlapMs is specified
+          overlapStart = Math.max(0, durationMs - soundConfig.overlapMs)
         }
-      }, overlapStart)
-      pendingActionTimeouts.push(timeoutId)
-    }, { once: true })
+
+        // Start next sound during this one (don't wait for 'ended')
+        const timeoutId = setTimeout(() => {
+          // Check if character changed or sequence was cancelled
+          if (!eventHandled && actionSoundCharacterId === market.live2d.current_id) {
+            actionSoundIndex++
+            playNextActionSound()
+          }
+        }, overlapStart)
+        pendingActionTimeouts.push(timeoutId)
+      },
+      { once: true }
+    )
   } else {
     // Only add 'ended' listener if NOT using overlap
-    currentActionSound.addEventListener('ended', () => {
-      moveToNext()
-    }, { once: true })
+    currentActionSound.addEventListener(
+      'ended',
+      () => {
+        moveToNext()
+      },
+      { once: true }
+    )
   }
-  
-  currentActionSound.addEventListener('error', () => {
-    // Try next path
-    playNextActionSound(pathAttempt + 1)
-  }, { once: true })
-  
+
+  currentActionSound.addEventListener(
+    'error',
+    () => {
+      // Try next path
+      playNextActionSound(pathAttempt + 1)
+    },
+    { once: true }
+  )
+
   // Play with delay if configured
   const playWithDelay = () => {
     currentActionSound.play().catch((error) => {
       return
     })
   }
-  
+
   if (soundConfig.delay) {
     // Auto multiply by 100 to convert to milliseconds (e.g., 3 -> 300ms)
     setTimeout(playWithDelay, soundConfig.delay * 100)
@@ -759,27 +803,27 @@ const playSkillcutSound = async () => {
   }
 
   const characterId = market.live2d.current_id
-  
+
   // Helper function to validate that a response is a valid OGG audio file (not HTML)
   const isValidAudioResponse = (response: Response): boolean => {
     // Check if response is ok
     if (!response.ok) {
       return false
     }
-    
+
     // Check Content-Type header to ensure it's audio (not HTML error page)
     const contentType = response.headers.get('content-type')
-    
+
     // If content-type is HTML, it's definitely an error page
     if (contentType && contentType.includes('text/html')) {
       return false
     }
-    
+
     // Valid audio files should have audio/* content type or application/ogg
     if (contentType && (contentType.includes('audio/') || contentType.includes('application/ogg'))) {
       return true
     }
-    
+
     // If no content-type header, assume it's valid (some servers don't send it)
     // The file extension in the URL (.ogg) is our best indicator
     return true
@@ -788,24 +832,20 @@ const playSkillcutSound = async () => {
   // Helper function to get skillcut voice path with fallback
   const getSkillcutVoicePath = async (charId, soundType) => {
     // First try the character itself
-    const selfPath = soundType === 'main' 
-      ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg`
-      : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
-    
+    const selfPath = soundType === 'main' ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg` : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
+
     try {
       const response = await fetch(selfPath, { method: 'HEAD' })
       if (isValidAudioResponse(response)) return selfPath
     } catch (e) {
       // Continue to fallback
     }
-    
+
     // Try base character fallback (for variants like c514_01 -> c514)
     if (charId.includes('_')) {
       const baseId = charId.split('_')[0]
-      const basePath = soundType === 'main'
-        ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg`
-        : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
-      
+      const basePath = soundType === 'main' ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
+
       try {
         const response = await fetch(basePath, { method: 'HEAD' })
         if (isValidAudioResponse(response)) return basePath
@@ -813,14 +853,12 @@ const playSkillcutSound = async () => {
         // Continue
       }
     }
-    
+
     // Try voiceGroupOverrides fallback
     for (const [baseId, variants] of Object.entries(voiceGroupOverrides)) {
       if (Array.isArray(variants) && variants.includes(charId)) {
-        const overridePath = soundType === 'main'
-          ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg`
-          : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
-        
+        const overridePath = soundType === 'main' ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
+
         try {
           const response = await fetch(overridePath, { method: 'HEAD' })
           if (isValidAudioResponse(response)) return overridePath
@@ -829,23 +867,23 @@ const playSkillcutSound = async () => {
         }
       }
     }
-    
+
     // Return self as last resort (will fail gracefully with .catch())
     return selfPath
   }
-  
+
   // Play main sound (Ult_Skill_1) with fallback
   const mainPath = await getSkillcutVoicePath(characterId, 'main')
-  
+
   console.debug(`Playing skillcut main sound: ${mainPath}`)
   currentActionSound = new Audio(mainPath)
   currentActionSound.play().catch(() => {
     console.debug(`Failed to play main skillcut sound: ${mainPath}`)
   })
-  
+
   // Play overlay sound (ult_cutscene) with fallback
   const overlayPath = await getSkillcutVoicePath(characterId, 'overlay')
-  
+
   console.debug(`Playing skillcut overlay sound: ${overlayPath}`)
   currentSkillcutOverlaySound = new Audio(overlayPath)
   currentSkillcutOverlaySound.play().catch(() => {
@@ -855,7 +893,7 @@ const playSkillcutSound = async () => {
 
 const handleActionEnd = () => {
   if (!spinePlayer) return
-  
+
   // Release aim_hit animation when mouse is released
   if (isAimHolding && market.live2d.current_pose === 'aim') {
     isAimHolding = false
@@ -876,44 +914,28 @@ function loadDualLayerSkeleton() {
   return new Promise<void>(async (resolve) => {
     try {
       const SpineLib = (window as any).usedSpineGlobal
-      
+
       if (!SpineLib || !spineCanvas) {
         resolve()
         return
       }
 
-      // Get animation names from config - support both old and new format
+      // Get layers config
       const dualConfig = charactersWithDualLayer[market.live2d.current_id]
-      let backAnimation = ''
-      
-      if (Array.isArray(dualConfig) && dualConfig.length >= 2) {
-        // Parse array format: ['idle|skillcut', 'idle_bg|skillcut_bg']
-        const backStr = dualConfig[1]
-        const backParts = (backStr || '').split('|')
-        backAnimation = backParts[0] || ''
-      } else {
-        // Fallback to old object format
-        backAnimation = dualConfig?.backAnimation || ''
-      }
-      
-      if (!backAnimation) {
-        console.warn(`No back animation configured for ${market.live2d.current_id}`)
+      if (!dualConfig?.layers || !Array.isArray(dualConfig.layers) || dualConfig.layers.length === 0) {
         dualLayerInstance = null
         resolve()
         return
       }
 
-      // Load the same skeleton data again for the back layer
+      // Load skeleton once for all layers
       const assetMgr = new SpineLib.AssetManager(spineCanvas.context, '')
-      
-      // Get the correct skeleton filename
+
       let skelPath = ''
       let atlasPath = ''
-      
-      // The spineCanvas.config.atlasUrl is already the full path, just use it
+
       if (spineCanvas.config?.atlasUrl) {
         atlasPath = spineCanvas.config.atlasUrl
-        // Replace .atlas with .skel to get skeleton path
         skelPath = atlasPath.replace('.atlas', '.skel')
       } else {
         console.warn(`Could not determine skeleton paths for ${market.live2d.current_id}`)
@@ -921,34 +943,52 @@ function loadDualLayerSkeleton() {
         resolve()
         return
       }
-      
+
       assetMgr.loadBinary(skelPath)
       assetMgr.loadTextureAtlas(atlasPath)
       await assetMgr.loadAll()
-      
+
       const binary = assetMgr.require(skelPath)
       const atlas = assetMgr.require(atlasPath)
       const skeletonBinary = new SpineLib.SkeletonBinary(new SpineLib.AtlasAttachmentLoader(atlas))
       const skeletonData = skeletonBinary.readSkeletonData(binary)
-      
-      const skeleton = new SpineLib.Skeleton(skeletonData)
-      const state = new SpineLib.AnimationState(new SpineLib.AnimationStateData(skeletonData))
-      
-      // Check if the configured back animation exists
-      if (!skeletonData.animations.some((a: any) => a.name === backAnimation)) {
+
+      // Create instances for each layer
+      const layerInstances = dualConfig.layers.map((layerConfig: any) => {
+        const skeleton = new SpineLib.Skeleton(skeletonData)
+        const state = new SpineLib.AnimationState(new SpineLib.AnimationStateData(skeletonData))
+
+        // Validate that animations exist
+        const idleExists = !layerConfig.idle || skeletonData.animations.some((a: any) => a.name === layerConfig.idle)
+        const skillcutExists = !layerConfig.skillcut || skeletonData.animations.some((a: any) => a.name === layerConfig.skillcut)
+
+        if (!idleExists || !skillcutExists) {
+          return null
+        }
+
+        // Set initial idle animation
+        if (layerConfig.idle) {
+          state.setAnimation(0, layerConfig.idle, true)
+        }
+
+        return {
+          skeleton: skeleton,
+          state: state,
+          config: layerConfig
+        }
+      }).filter((layer: any) => layer !== null)
+
+      if (layerInstances.length === 0) {
         dualLayerInstance = null
         resolve()
         return
       }
-      
-      state.setAnimation(0, backAnimation, true)
-      
+
       dualLayerInstance = {
-        skeleton: skeleton,
-        state: state,
-        backAnimation: backAnimation
+        layers: layerInstances,
+        skeletonData: skeletonData
       }
-      
+
       resolve()
     } catch (error) {
       console.warn('Failed to load dual-layer skeleton:', error)
@@ -968,7 +1008,7 @@ function loadOverlaySkeletons() {
   return new Promise<void>(async (resolve) => {
     try {
       const SpineLib = (window as any).usedSpineGlobal
-      
+
       if (!SpineLib) {
         resolve()
         return
@@ -988,7 +1028,7 @@ function loadOverlaySkeletons() {
       // First, try to find what suffix the main skeleton uses by checking common patterns
       let mainSuffix = '_00'
       const suffixPatterns = ['_00', '_02', '_04', '_01', '_03', '_05']
-      
+
       for (const suffix of suffixPatterns) {
         try {
           const mainCheckResponse = await fetch(`${charFolder}/${characterId}${suffix}.skel`, { method: 'HEAD' })
@@ -1008,7 +1048,7 @@ function loadOverlaySkeletons() {
         // Characters without variant suffix use _00 for overlays
         const hasVariant = /_\d{2}$/.test(characterId)
         const overlaySuffix = hasVariant ? '' : mainSuffix
-        
+
         // Try with the appropriate suffix
         const pathPatterns = [
           { skel: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.atlas` },
@@ -1023,22 +1063,22 @@ function loadOverlaySkeletons() {
               assetMgr.loadBinary(paths.skel)
               assetMgr.loadTextureAtlas(paths.atlas)
               await assetMgr.loadAll()
-              
+
               const binary = assetMgr.require(paths.skel)
               const atlas = assetMgr.require(paths.atlas)
               const skeletonBinary = new SpineLib.SkeletonBinary(new SpineLib.AtlasAttachmentLoader(atlas))
               const skeletonData = skeletonBinary.readSkeletonData(binary)
-              
+
               const animations = skeletonData.animations.map((a: any) => a.name)
-              
+
               const skeleton = new SpineLib.Skeleton(skeletonData)
               skeleton.scaleX = spineCanvas.skeleton.scaleX
               skeleton.scaleY = spineCanvas.skeleton.scaleY
               skeleton.x = spineCanvas.skeleton.x
               skeleton.y = spineCanvas.skeleton.y
-              
+
               const state = new SpineLib.AnimationState(new SpineLib.AnimationStateData(skeletonData))
-              
+
               // Try common idle animation names
               let defaultAnim = 'idle'
               if (overlayType === 'bg' && animations.includes('bg_idle')) {
@@ -1050,7 +1090,7 @@ function loadOverlaySkeletons() {
               } else if (animations.length > 0) {
                 defaultAnim = animations[0]
               }
-              
+
               state.setAnimation(0, defaultAnim, true)
 
               overlayInstances.push({
@@ -1059,20 +1099,20 @@ function loadOverlaySkeletons() {
                 segments: [],
                 source: `${characterId}_${overlayType}`
               })
-              
+
               return true
             }
           } catch (error) {
             continue
           }
         }
-        
+
         return false
       }
 
       // Try to load background
       await tryLoadOverlay('bg')
-      
+
       // Try to load foreground
       await tryLoadOverlay('fg')
 
@@ -1091,7 +1131,7 @@ function renderWithOverlays() {
   const renderer = spineCanvas.sceneRenderer
 
   // Update overlay animations
-  overlayInstances.forEach(overlay => {
+  overlayInstances.forEach((overlay) => {
     overlay.state.update(1 / 60)
     overlay.state.apply(overlay.skeleton)
     overlay.skeleton.updateWorldTransform()
@@ -1121,7 +1161,7 @@ function renderWithOverlays() {
   renderer.drawSkeleton(spineCanvas.skeleton, true)
 
   // Render overlays (bg first, then fg)
-  overlayInstances.forEach(overlay => {
+  overlayInstances.forEach((overlay) => {
     renderer.drawSkeleton(overlay.skeleton, true)
   })
 
@@ -1142,14 +1182,14 @@ const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
     request.responseType = 'arraybuffer'
     request.open('GET', skelUrl, true)
     request.timeout = 5000 // 5 second timeout
-    
+
     request.onload = () => {
       if (request.status === 404) {
         console.warn(`${pose} skel file not found for ${market.live2d.current_id}`)
         reject(new Error(`${pose} pose not available`))
         return
       }
-      
+
       if (request.status !== 200) {
         console.error(`Failed to load ${pose} skel file:`, request.statusText)
         reject(new Error(`Failed to load ${pose} skel`))
@@ -1169,15 +1209,15 @@ const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
         reject(new Error(`Failed to read ${pose} skel file`))
       }
     }
-    
+
     request.onerror = () => {
       reject(new Error(`Network error loading ${pose} skel`))
     }
-    
+
     request.ontimeout = () => {
       reject(new Error(`Timeout loading ${pose} skel`))
     }
-    
+
     request.send()
   })
 }
@@ -1188,29 +1228,29 @@ const isValidSkeletonResponse = (request: XMLHttpRequest): boolean => {
   if (request.status !== 200) {
     return false
   }
-  
+
   // Check Content-Type header to ensure it's binary data (not HTML error page)
   const contentType = request.getResponseHeader('content-type')
-  
+
   // If content-type is HTML, it's definitely an error page
   if (contentType && contentType.includes('text/html')) {
     return false
   }
-  
+
   // Additional validation: check if response buffer looks like a skeleton file
   // Spine skeleton files have a version header in the first 16 bytes
   if (request.response && request.response.byteLength > 16) {
     const uintArray = new Uint8Array(request.response)
     const firstBytes = uintArray.slice(0, 16)
     const versionString = new TextDecoder().decode(firstBytes).replace(/\0/g, '')
-    
+
     // Skeleton files should have a version like "4.0.xx" or "4.1.xx"
     // If it's HTML content, this will be gibberish or HTML tags
     if (/4\.[01]\.\d+/.test(versionString)) {
       return true
     }
   }
-  
+
   return false
 }
 
@@ -1226,10 +1266,10 @@ const spineLoader = () => {
     if (!isValidSkeletonResponse(request) && market.live2d.current_pose === 'skillcut') {
       const characterId = market.live2d.current_id
       const baseCharacterId = characterId.split('_')[0]
-      
+
       if (baseCharacterId !== characterId) {
         const baseSkelUrl = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
-        
+
         const baseRequest = new XMLHttpRequest()
         baseRequest.responseType = 'arraybuffer'
         baseRequest.open('GET', baseSkelUrl, true)
@@ -1247,7 +1287,7 @@ const spineLoader = () => {
         return
       }
     }
-    
+
     if (!isValidSkeletonResponse(request)) {
       console.error('Failed to load skel file:', request.statusText)
       return
@@ -1261,353 +1301,383 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
   const frURL = new FileReader()
   frURL.readAsDataURL(new Blob([buffer]))
   frURL.onload = () => {
-      const skelURL: string | ArrayBuffer | null = frURL.result
+    const skelURL: string | ArrayBuffer | null = frURL.result
 
-      const uintArray = new Uint8Array(buffer)
+    const uintArray = new Uint8Array(buffer)
 
-      // Take the first 16 bytes
-      const versionBytes = uintArray.slice(0, 16)
+    // Take the first 16 bytes
+    const versionBytes = uintArray.slice(0, 16)
 
-      // Extract and decode version string
-      const versionString = new TextDecoder().decode(versionBytes).replace(/\0/g, '')
+    // Extract and decode version string
+    const versionString = new TextDecoder().decode(versionBytes).replace(/\0/g, '')
 
-      let usedSpine
+    let usedSpine
 
-      if (/4\.0\.\d+/.test(versionString)) {
-        usedSpine = spine40
-      } else if (/4\.1\.\d+/.test(versionString)) {
-        usedSpine = spine41
-      } else {
-        console.error('Unsupported Spine version:', versionString + ' | defaults to 4.1')
-        usedSpine = spine41
-      }
+    if (/4\.0\.\d+/.test(versionString)) {
+      usedSpine = spine40
+    } else if (/4\.1\.\d+/.test(versionString)) {
+      usedSpine = spine41
+    } else {
+      console.error('Unsupported Spine version:', versionString + ' | defaults to 4.1')
+      usedSpine = spine41
+    }
 
-      // Set global usedSpine for overlays
-      window.usedSpineGlobal = usedSpine
+    // Set global usedSpine for overlays
+    window.usedSpineGlobal = usedSpine
 
-      // For skillcut with base character fallback, use the base character's ID in rawDataURIs
-      const skelUrlKey = market.live2d.current_pose === 'skillcut' ? characterId : market.live2d.current_id
-      
-      // Build atlas URL - if it's a fallback skillcut, use base character's atlas
-      let atlasUrl = getPathing('atlas')
-      if (market.live2d.current_pose === 'skillcut' && characterId !== market.live2d.current_id) {
-        atlasUrl = globalParams.PATH_L2D + characterId + '/' + globalParams.PATH_L2D_SKILLCUT + characterId + '_00_skillcut.atlas'
-      }
+    // For skillcut with base character fallback, use the base character's ID in rawDataURIs
+    const skelUrlKey = market.live2d.current_pose === 'skillcut' ? characterId : market.live2d.current_id
 
-      let initialAnimation = getDefaultAnimation()
-      let needsSafeAnimationDetection = market.live2d.current_pose === 'skillcut'
+    // Build atlas URL - if it's a fallback skillcut, use base character's atlas
+    let atlasUrl = getPathing('atlas')
+    if (market.live2d.current_pose === 'skillcut' && characterId !== market.live2d.current_id) {
+      atlasUrl = globalParams.PATH_L2D + characterId + '/' + globalParams.PATH_L2D_SKILLCUT + characterId + '_00_skillcut.atlas'
+    }
 
-      // Check if this character has a non-standard skillcut animation
-      if (needsSafeAnimationDetection && skillcutAnimationOverrides[market.live2d.current_id]) {
-        const overrideValue = skillcutAnimationOverrides[market.live2d.current_id]
-        // Handle both string and object formats
-        if (typeof overrideValue === 'string') {
-          initialAnimation = overrideValue
-        } else if (typeof overrideValue === 'object') {
-          // For object format, use the first idle as initial animation
-          const firstEntry = Object.entries(overrideValue)[0]
-          if (firstEntry) {
-            initialAnimation = firstEntry[1] as string
-          }
+    let initialAnimation = getDefaultAnimation()
+    let needsSafeAnimationDetection = market.live2d.current_pose === 'skillcut'
+
+    // Check if this character has a non-standard skillcut animation
+    if (needsSafeAnimationDetection && skillcutAnimationOverrides[market.live2d.current_id]) {
+      const overrideValue = skillcutAnimationOverrides[market.live2d.current_id]
+      // Handle both string and object formats
+      if (typeof overrideValue === 'string') {
+        initialAnimation = overrideValue
+      } else if (typeof overrideValue === 'object') {
+        // For object format, use the first idle as initial animation
+        const firstEntry = Object.entries(overrideValue)[0]
+        if (firstEntry) {
+          initialAnimation = firstEntry[1] as string
         }
       }
+    }
 
-      spineCanvas = new usedSpine.SpinePlayer('player-container', {
-        skelUrl: skelUrlKey,
-        rawDataURIs: {
-          [skelUrlKey]: skelURL
-        },
-        atlasUrl: atlasUrl,
-        animation: initialAnimation,
-        skin: null, // Don't set skin at init; let success callback handle it
-        scale: spineScale,
-        backgroundColor: '#00000000',
-        alpha: true,
-        premultipliedAlpha: true,
-        mipmaps: market.live2d.current_pose === 'fb' ? true : false,
-        debug: false,
-        preserveDrawingBuffer: true,
-        viewport: spineViewport,
-        defaultMix: SPINE_DEFAULT_MIX,
-        success: (player: any) => {
-          // Now that skeleton is loaded, try to set the desired skin
-          const requestedSkin = market.live2d.getSkin()
+    spineCanvas = new usedSpine.SpinePlayer('player-container', {
+      skelUrl: skelUrlKey,
+      rawDataURIs: {
+        [skelUrlKey]: skelURL
+      },
+      atlasUrl: atlasUrl,
+      animation: initialAnimation,
+      skin: null, // Don't set skin at init; let success callback handle it
+      scale: spineScale,
+      backgroundColor: '#00000000',
+      alpha: true,
+      premultipliedAlpha: true,
+      mipmaps: market.live2d.current_pose === 'fb' ? true : false,
+      debug: false,
+      preserveDrawingBuffer: true,
+      viewport: spineViewport,
+      defaultMix: SPINE_DEFAULT_MIX,
+      success: (player: any) => {
+        // Now that skeleton is loaded, try to set the desired skin
+        const requestedSkin = market.live2d.getSkin()
+        const availableSkins = player.animationState.data.skeletonData.skins
+
+        let skinToUse = requestedSkin
+
+        // Check if requested skin exists
+        if (availableSkins && availableSkins.length > 0) {
+          const skinNames = availableSkins.map((s: any) => s.name)
+
+          // If requested skin doesn't exist, use first available skin
+          if (!skinNames.includes(requestedSkin)) {
+            skinToUse = skinNames[0] || 'default'
+          }
+
+          // Try to set the skin
+          try {
+            if (skinToUse && skinToUse !== 'default') {
+              player.skeleton.setSkinByName(skinToUse)
+            }
+          } catch (e) {
+            console.warn(`Failed to set skin '${skinToUse}', using first available`)
+            // Fallback to first available skin
+            try {
+              player.skeleton.setSkinByName(skinNames[0])
+            } catch (e2) {
+              console.warn('Could not set any skin, using default')
+            }
+          }
+        }
+
+        // Now safely get the skin's attachments (use current skin or fallback to defaultSkin)
+        const activeSkin = player.skeleton.skin || player.animationState.data.skeletonData.defaultSkin
+        if (activeSkin && activeSkin.attachments) {
+          activeSkin.attachments.forEach((a: any[]) => {
+            if (a) {
+              const keys = Object.keys(a)
+              if (keys !== null && keys !== undefined && keys.length > 0) {
+                keys.forEach((k: string) => {
+                  a[k as any].color = {
+                    r: 1,
+                    g: 1,
+                    b: 1,
+                    a: 1
+                  }
+                })
+              }
+            }
+          })
+        }
+
+        spinePlayer = player
+        market.live2d.attachments = activeSkin && activeSkin.attachments ? activeSkin.attachments : []
+
+        // Auto-detect and apply best available skin if in fb pose
+        if (market.live2d.current_pose === 'fb') {
           const availableSkins = player.animationState.data.skeletonData.skins
-          
-          let skinToUse = requestedSkin
-          
-          // Check if requested skin exists
           if (availableSkins && availableSkins.length > 0) {
             const skinNames = availableSkins.map((s: any) => s.name)
-            
-            // If requested skin doesn't exist, use first available skin
-            if (!skinNames.includes(requestedSkin)) {
-              skinToUse = skinNames[0] || 'default'
-            }
-            
-            // Try to set the skin
-            try {
-              if (skinToUse && skinToUse !== 'default') {
-                player.skeleton.setSkinByName(skinToUse)
-              }
-            } catch (e) {
-              console.warn(`Failed to set skin '${skinToUse}', using first available`)
-              // Fallback to first available skin
-              try {
-                player.skeleton.setSkinByName(skinNames[0])
-              } catch (e2) {
-                console.warn('Could not set any skin, using default')
-              }
-            }
-          }
+            let bestSkin = 'default'
 
-          // Now safely get the skin's attachments (use current skin or fallback to defaultSkin)
-          const activeSkin = player.skeleton.skin || player.animationState.data.skeletonData.defaultSkin
-          if (activeSkin && activeSkin.attachments) {
-            activeSkin.attachments.forEach((a: any[]) => {
-              if (a) {
-                const keys = Object.keys(a)
-                if (keys !== null && keys !== undefined && keys.length > 0) {
-                  keys.forEach((k: string) => {
-                    a[k as any].color = {
-                      r: 1,
-                      g: 1,
-                      b: 1,
-                      a: 1
-                    }
-                  })
-                }
-              }
-            })
-          }
+            // Prefer bg, then acc, then first available non-default
+            if (skinNames.includes('bg')) {
+              bestSkin = 'bg'
+            } else if (skinNames.includes('acc')) {
+              bestSkin = 'acc'
+            } else if (skinNames.length > 1) {
+              // Use first non-default skin
+              bestSkin = skinNames.find((name: string) => name !== 'default') || 'default'
+            }
 
-          spinePlayer = player
-          market.live2d.attachments = activeSkin && activeSkin.attachments ? activeSkin.attachments : []
-          
-          // Auto-detect and apply best available skin if in fb pose
-          if (market.live2d.current_pose === 'fb') {
-            const availableSkins = player.animationState.data.skeletonData.skins
-            if (availableSkins && availableSkins.length > 0) {
-              const skinNames = availableSkins.map((s: any) => s.name)
-              let bestSkin = 'default'
-              
-              // Prefer bg, then acc, then first available non-default
-              if (skinNames.includes('bg')) {
-                bestSkin = 'bg'
-              } else if (skinNames.includes('acc')) {
-                bestSkin = 'acc'
-              } else if (skinNames.length > 1) {
-                // Use first non-default skin
-                bestSkin = skinNames.find((name: string) => name !== 'default') || 'default'
-              }
-              
-              if (bestSkin !== 'default') {
-                player.skeleton.setSkinByName(bestSkin)
-              }
+            if (bestSkin !== 'default') {
+              player.skeleton.setSkinByName(bestSkin)
             }
           }
-          
-          // c570 uses 'part_0' skin for cover and aim poses
-          if (market.live2d.current_id === 'c570' && (market.live2d.current_pose === 'cover' || market.live2d.current_pose === 'aim')) {
-            const availableSkins = player.animationState.data.skeletonData.skins
-            if (availableSkins && availableSkins.length > 0) {
-              const skinNames = availableSkins.map((s: any) => s.name)
-              if (skinNames.includes('part_0')) {
-                player.skeleton.setSkinByName('part_0')
-              }
-            }
-          }
-          
-          // Load overlay skeletons if they exist (bg, fg layers)
-          if (market.live2d.current_pose === 'fb') {
-            loadOverlaySkeletons().then(() => {
-              
-              if (overlayInstances.length > 0) {
-                const renderer = spineCanvas.sceneRenderer
-                const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
-                const mainSkeleton = spineCanvas.skeleton // Reference to main skeleton
-                let isRenderingMain = false
-                let lastMainAnimTime = 0 // Track main animation time to detect restart
-                
-                renderer.drawSkeleton = function(skeleton: any, premultipliedAlpha: boolean) {
-                  // Check if this is the main skeleton
-                  if (skeleton === mainSkeleton && !isRenderingMain) {
-                    isRenderingMain = true
-                    
-                    // Get current animation from main skeleton
-                    const mainAnimEntry = player?.animationState?.getCurrent(0)
-                    const animName = mainAnimEntry?.animation?.name
-                    const currentAnimTime = mainAnimEntry?.trackTime || 0
-                    
-                    // Detect if animation has restarted (time went backwards or very small)
-                    const hasRestarted = currentAnimTime < lastMainAnimTime * 0.9 // 90% threshold for restart detection
-                    lastMainAnimTime = currentAnimTime
-                    
-                    if (animName && (hasRestarted || currentAnimTime < 0.05)) {
-                      // Animation has changed or restarted - sync overlays
-                      
-                      // Sync background overlay
-                      const bgOverlay = overlayInstances.find(o => o.source.includes('_bg'))
-                      if (bgOverlay) {
-                        const hasAnim = bgOverlay.state.data.skeletonData.animations.some((a: any) => a.name === animName)
-                        if (hasAnim) {
-                          // Clear all queued animations first
-                          bgOverlay.state.clearTracks()
-                          bgOverlay.state.setAnimation(0, animName, mainAnimEntry.loop)
-                          // If this is a one-shot animation, queue bg_idle after it
-                          if (!mainAnimEntry.loop) {
-                            bgOverlay.state.addAnimation(0, 'bg_idle', true, 0)
-                          }
-                        }
-                      }
-                      
-                      // Sync foreground overlay
-                      const fgOverlay = overlayInstances.find(o => o.source.includes('_fg'))
-                      if (fgOverlay) {
-                        const hasAnim = fgOverlay.state.data.skeletonData.animations.some((a: any) => a.name === animName)
-                        if (hasAnim) {
-                          // Clear all queued animations first
-                          fgOverlay.state.clearTracks()
-                          fgOverlay.state.setAnimation(0, animName, mainAnimEntry.loop)
-                          // If this is a one-shot animation, queue bg_idle after it
-                          if (!mainAnimEntry.loop) {
-                            fgOverlay.state.addAnimation(0, 'bg_idle', true, 0)
-                          }
-                        }
-                      }
-                    }
-                    
-                    // Render background first (behind main)
-                    const bgOverlay = overlayInstances.find(o => o.source.includes('_bg'))
-                    if (bgOverlay) {
-                      bgOverlay.state.update(1 / 60)
-                      bgOverlay.state.apply(bgOverlay.skeleton)
-                      bgOverlay.skeleton.updateWorldTransform()
-                      originalDrawSkeleton(bgOverlay.skeleton, premultipliedAlpha)
-                    }
-                    
-                    // Render main skeleton in the middle
-                    originalDrawSkeleton(skeleton, premultipliedAlpha)
-                    
-                    // Render foreground last (in front of main)
-                    const fgOverlay = overlayInstances.find(o => o.source.includes('_fg'))
-                    if (fgOverlay) {
-                      fgOverlay.state.update(1 / 60)
-                      fgOverlay.state.apply(fgOverlay.skeleton)
-                      fgOverlay.skeleton.updateWorldTransform()
-                      originalDrawSkeleton(fgOverlay.skeleton, premultipliedAlpha)
-                    }
-                    
-                    isRenderingMain = false
-                  } else if (skeleton !== mainSkeleton) {
-                    // This is being called for some other skeleton, just render it
-                    originalDrawSkeleton(skeleton, premultipliedAlpha)
-                  }
-                }
-                
-              } else {
-              }
-            })
-          } else {
-            overlayInstances = []
-          }
-          
-          // Load dual-layer skeleton if this character supports it (works for any pose)
-          if (charactersWithDualLayer[market.live2d.current_id]) {
-            loadDualLayerSkeleton().then(() => {
-              if (dualLayerInstance) {
-                // Set up syncing between main and dual-layer
-                const renderer = spineCanvas.sceneRenderer
-                const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
-                const mainSkeleton = spineCanvas.skeleton
-                let isRenderingMain = false
-                
-                // Get animation names from config
-                const dualConfig = charactersWithDualLayer[market.live2d.current_id]
-                let frontAnim = '', backAnim = '', frontSkillcut = '', backSkillcut = ''
-                
-                if (Array.isArray(dualConfig) && dualConfig.length >= 2) {
-                  // Parse array format: ['idle|skillcut', 'idle_bg|skillcut_bg']
-                  const [frontStr, backStr] = dualConfig
-                  const frontParts = (frontStr || '').split('|')
-                  const backParts = (backStr || '').split('|')
-                  frontAnim = frontParts[0] || ''
-                  frontSkillcut = frontParts[1] || ''
-                  backAnim = backParts[0] || ''
-                  backSkillcut = backParts[1] || ''
-                }
-                
-                let lastFrontAnimName = ''  // Track last animation to detect changes
-                
-                renderer.drawSkeleton = function(skeleton: any, premultipliedAlpha: boolean) {
-                  if (skeleton === mainSkeleton && !isRenderingMain) {
-                    isRenderingMain = true
-                    
-                    // Get current animation from main skeleton
-                    const mainAnimEntry = player?.animationState?.getCurrent(0)
-                    const animName = mainAnimEntry?.animation?.name
-                    
-                    // Sync dual-layer to play back animation while main plays front animation
-                    if (animName === frontAnim && dualLayerInstance) {
-                      const hasBackAnim = dualLayerInstance.state.data.skeletonData.animations.some((a: any) => a.name === backAnim)
-                      if (hasBackAnim && dualLayerInstance.state.getCurrent(0)?.animation?.name !== backAnim) {
-                        dualLayerInstance.state.setAnimation(0, backAnim, true)
-                      }
-                    }
-                    
-                    // If main skeleton is playing a skillcut motion, also make back layer play its skillcut
-                    // Detect animation change instead of checking every frame
-                    if (frontSkillcut && backSkillcut && dualLayerInstance && animName !== lastFrontAnimName && animName === frontSkillcut) {
-                      const hasBackSkillcut = dualLayerInstance.state.data.skeletonData.animations.some((a: any) => a.name === backSkillcut)
-                      if (hasBackSkillcut) {
-                        dualLayerInstance.state.clearTracks()
-                        dualLayerInstance.state.setAnimation(0, backSkillcut, false)
-                        dualLayerInstance.state.addAnimation(0, backAnim, true, 0)
-                      }
-                    }
-                    lastFrontAnimName = animName || ''
-                    
-                    // Get z-index for this character from config array (if provided)
-                    const dualCfg = charactersWithDualLayer[market.live2d.current_id]
-                    const dualInFront = Array.isArray(dualCfg) && dualCfg.length >= 4 && dualCfg[3] > dualCfg[2]
-                    
-                    // Render dual-layer in front if configured
-                    if (dualLayerInstance && dualInFront) {
-                      dualLayerInstance.state.update(1 / 60)
-                      dualLayerInstance.state.apply(dualLayerInstance.skeleton)
-                      dualLayerInstance.skeleton.updateWorldTransform()
-                      originalDrawSkeleton(dualLayerInstance.skeleton, premultipliedAlpha)
-                    }
-                    
-                    // Render main skeleton
-                    originalDrawSkeleton(skeleton, premultipliedAlpha)
-                    
-                    // Render dual-layer in back if configured
-                    if (dualLayerInstance && !dualInFront) {
-                      dualLayerInstance.state.update(1 / 60)
-                      dualLayerInstance.state.apply(dualLayerInstance.skeleton)
-                      dualLayerInstance.skeleton.updateWorldTransform()
-                      originalDrawSkeleton(dualLayerInstance.skeleton, premultipliedAlpha)
-                    }
-                    
-                    isRenderingMain = false
-                  } else if (skeleton !== mainSkeleton) {
-                    originalDrawSkeleton(skeleton, premultipliedAlpha)
-                  }
-                }
-              }
-            })
-          }
-          
-          market.live2d.triggerFinishedLoading()
-          successfullyLoaded()
-        },
-        error: () => {
-          wrongfullyLoaded()
         }
-      })
-      applyDefaultStyle2Canvas()
-    }
+
+        // c570 uses 'part_0' skin for cover and aim poses
+        if (market.live2d.current_id === 'c570' && (market.live2d.current_pose === 'cover' || market.live2d.current_pose === 'aim')) {
+          const availableSkins = player.animationState.data.skeletonData.skins
+          if (availableSkins && availableSkins.length > 0) {
+            const skinNames = availableSkins.map((s: any) => s.name)
+            if (skinNames.includes('part_0')) {
+              player.skeleton.setSkinByName('part_0')
+            }
+          }
+        }
+
+        // Load overlay skeletons if they exist (bg, fg layers)
+        if (market.live2d.current_pose === 'fb') {
+          loadOverlaySkeletons().then(() => {
+            if (overlayInstances.length > 0) {
+              const renderer = spineCanvas.sceneRenderer
+              const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
+              const mainSkeleton = spineCanvas.skeleton // Reference to main skeleton
+              let isRenderingMain = false
+              let lastMainAnimTime = 0 // Track main animation time to detect restart
+
+              renderer.drawSkeleton = function (skeleton: any, premultipliedAlpha: boolean) {
+                // Check if this is the main skeleton
+                if (skeleton === mainSkeleton && !isRenderingMain) {
+                  isRenderingMain = true
+
+                  // Get current animation from main skeleton
+                  const mainAnimEntry = player?.animationState?.getCurrent(0)
+                  const animName = mainAnimEntry?.animation?.name
+                  const currentAnimTime = mainAnimEntry?.trackTime || 0
+
+                  // Detect if animation has restarted (time went backwards or very small)
+                  const hasRestarted = currentAnimTime < lastMainAnimTime * 0.9 // 90% threshold for restart detection
+                  lastMainAnimTime = currentAnimTime
+
+                  if (animName && (hasRestarted || currentAnimTime < 0.05)) {
+                    // Animation has changed or restarted - sync overlays
+
+                    // Sync background overlay
+                    const bgOverlay = overlayInstances.find((o) => o.source.includes('_bg'))
+                    if (bgOverlay) {
+                      const hasAnim = bgOverlay.state.data.skeletonData.animations.some((a: any) => a.name === animName)
+                      if (hasAnim) {
+                        // Clear all queued animations first
+                        bgOverlay.state.clearTracks()
+                        bgOverlay.state.setAnimation(0, animName, mainAnimEntry.loop)
+                        // If this is a one-shot animation, queue bg_idle after it
+                        if (!mainAnimEntry.loop) {
+                          bgOverlay.state.addAnimation(0, 'bg_idle', true, 0)
+                        }
+                      }
+                    }
+
+                    // Sync foreground overlay
+                    const fgOverlay = overlayInstances.find((o) => o.source.includes('_fg'))
+                    if (fgOverlay) {
+                      const hasAnim = fgOverlay.state.data.skeletonData.animations.some((a: any) => a.name === animName)
+                      if (hasAnim) {
+                        // Clear all queued animations first
+                        fgOverlay.state.clearTracks()
+                        fgOverlay.state.setAnimation(0, animName, mainAnimEntry.loop)
+                        // If this is a one-shot animation, queue bg_idle after it
+                        if (!mainAnimEntry.loop) {
+                          fgOverlay.state.addAnimation(0, 'bg_idle', true, 0)
+                        }
+                      }
+                    }
+                  }
+
+                  // Render background first (behind main)
+                  const bgOverlay = overlayInstances.find((o) => o.source.includes('_bg'))
+                  if (bgOverlay) {
+                    bgOverlay.state.update(1 / 60)
+                    bgOverlay.state.apply(bgOverlay.skeleton)
+                    bgOverlay.skeleton.updateWorldTransform()
+                    originalDrawSkeleton(bgOverlay.skeleton, premultipliedAlpha)
+                  }
+
+                  // Render main skeleton in the middle
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+
+                  // Render foreground last (in front of main)
+                  const fgOverlay = overlayInstances.find((o) => o.source.includes('_fg'))
+                  if (fgOverlay) {
+                    fgOverlay.state.update(1 / 60)
+                    fgOverlay.state.apply(fgOverlay.skeleton)
+                    fgOverlay.skeleton.updateWorldTransform()
+                    originalDrawSkeleton(fgOverlay.skeleton, premultipliedAlpha)
+                  }
+
+                  isRenderingMain = false
+                } else if (skeleton !== mainSkeleton) {
+                  // This is being called for some other skeleton, just render it
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+                }
+              }
+            } else {
+            }
+          })
+        } else {
+          overlayInstances = []
+        }
+
+        // Load dual-layer skeleton if this character supports it (works for any pose)
+        if (charactersWithDualLayer[market.live2d.current_id]) {
+          loadDualLayerSkeleton().then(() => {
+            if (dualLayerInstance) {
+              // Set up syncing between main and dual-layer
+              const renderer = spineCanvas.sceneRenderer
+              const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
+              const mainSkeleton = spineCanvas.skeleton
+              let isRenderingMain = false
+
+              // Get layers config
+              const dualConfig = charactersWithDualLayer[market.live2d.current_id]
+              
+              let lastFrontAnimName = '' // Track last animation to detect changes
+
+              renderer.drawSkeleton = function (skeleton: any, premultipliedAlpha: boolean) {
+                if (skeleton === mainSkeleton && !isRenderingMain) {
+                  isRenderingMain = true
+
+                  // Get current animation from main skeleton
+                  const mainAnimEntry = player?.animationState?.getCurrent(0)
+                  const animName = mainAnimEntry?.animation?.name
+
+                  // Sync all layers
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    dualLayerInstance.layers.forEach((layer: any) => {
+                      const { config, state } = layer
+
+                      // Check if main skeleton is playing ANY skillcut animation (from any layer)
+                      const isPlayingAnySkillcut = dualConfig && dualConfig.layers && 
+                        dualConfig.layers.some((l: any) => l.skillcut && animName === l.skillcut)
+
+                      // If any layer's skillcut is playing on main skeleton, sync all layers to their skillcuts
+                      if (isPlayingAnySkillcut && animName !== lastFrontAnimName && config.skillcut) {
+                        state.clearTracks()
+                        state.setAnimation(0, config.skillcut, false)
+                        // Return to idle after skillcut with a slight delay
+                        if (config.idle) {
+                          state.addAnimation(0, config.idle, true, 0)
+                        }
+                      }
+                      // Handle idle animation (if not in skillcut mode)
+                      else if (!isPlayingAnySkillcut && animName === config.idle && config.idle) {
+                        if (state.getCurrent(0)?.animation?.name !== config.idle) {
+                          state.setAnimation(0, config.idle, true)
+                        }
+                      }
+                    })
+                    lastFrontAnimName = animName || ''
+                  }
+
+                  // Render layers sorted by zIndex
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    const sortedLayers = [...dualLayerInstance.layers].sort((a: any, b: any) => a.config.zIndex - b.config.zIndex)
+                    
+                    // Render layers with lower zIndex first (background), then main skeleton, then higher zIndex (foreground)
+                    const mainZIndex = 1000 // Main skeleton rendered in the middle
+                    
+                    for (const layer of sortedLayers) {
+                      if (layer.config.zIndex < mainZIndex) {
+                        // Skip rendering if this layer's current animation matches the main skeleton's animation (avoid duplication)
+                        const layerCurrentAnim = layer.state.getCurrent(0)?.animation?.name
+                        if (layerCurrentAnim === animName) {
+                          continue
+                        }
+
+                        // Hide shadow attachments on additional layers to avoid double shadow
+                        const shadowSlot = layer.skeleton.findSlot('shadow')
+                        if (shadowSlot) {
+                          shadowSlot.attachment = null
+                        }
+                        
+                        layer.state.update(1 / 60)
+                        layer.state.apply(layer.skeleton)
+                        layer.skeleton.updateWorldTransform()
+                        originalDrawSkeleton(layer.skeleton, premultipliedAlpha)
+                      }
+                    }
+                  }
+
+                  // Render main skeleton
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+
+                  // Render foreground layers
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    const sortedLayers = [...dualLayerInstance.layers].sort((a: any, b: any) => a.config.zIndex - b.config.zIndex)
+                    const mainZIndex = 1000
+
+                    for (const layer of sortedLayers) {
+                      if (layer.config.zIndex >= mainZIndex) {
+                        // Skip rendering if this layer's current animation matches the main skeleton's animation (avoid duplication)
+                        const layerCurrentAnim = layer.state.getCurrent(0)?.animation?.name
+                        if (layerCurrentAnim === animName) {
+                          continue
+                        }
+
+                        // Hide shadow attachments on additional layers to avoid double shadow
+                        const shadowSlot = layer.skeleton.findSlot('shadow')
+                        if (shadowSlot) {
+                          shadowSlot.attachment = null
+                        }
+                        
+                        layer.state.update(1 / 60)
+                        layer.state.apply(layer.skeleton)
+                        layer.skeleton.updateWorldTransform()
+                        originalDrawSkeleton(layer.skeleton, premultipliedAlpha)
+                      }
+                    }
+                  }
+
+                  isRenderingMain = false
+                } else if (skeleton !== mainSkeleton) {
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+                }
+              }
+            }
+          })
+        }
+
+        market.live2d.triggerFinishedLoading()
+        successfullyLoaded()
+      },
+      error: () => {
+        wrongfullyLoaded()
+      }
+    })
+    applyDefaultStyle2Canvas()
+  }
 }
 
 const customSpineLoader = () => {
@@ -1722,13 +1792,13 @@ const getPathing = (extension: string, pose?: 'aim' | 'cover' | 'fb' | 'skillcut
 const getSkillcutPathing = (extension: string) => {
   const id = market.live2d.current_id
   let route = globalParams.PATH_L2D + id + '/' + globalParams.PATH_L2D_SKILLCUT
-  
+
   // Try variant naming first (without _00 prefix for variants)
   if (id.includes('_')) {
     route += id + '_skillcut.' + extension
     return route
   }
-  
+
   // Base character: use _00_skillcut naming
   route += id + '_00_skillcut.' + extension
   return route
@@ -1775,18 +1845,18 @@ const verifyPoseFileExists = async (pose: 'aim' | 'cover' | 'skillcut'): Promise
   try {
     const skelUrl = getPathing('skel', pose)
     const response = await fetch(skelUrl, { method: 'HEAD' }).catch(() => null)
-    
+
     // Validate that response is an actual skeleton file (not HTML error page)
     if (response && isValidSkeletonFileResponse(response)) {
       return true
     }
-    
+
     // If file not found and it's skillcut, try base character (e.g., c511_01 -> c511)
     if (pose === 'skillcut') {
       const characterId = market.live2d.current_id
       // Extract base character ID (e.g., c511_01 -> c511)
       const baseCharacterId = characterId.split('_')[0]
-      
+
       if (baseCharacterId !== characterId) {
         // Try the base character's skillcut
         const baseRoute = globalParams.PATH_L2D + baseCharacterId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharacterId + '_00_skillcut.skel'
@@ -1794,7 +1864,7 @@ const verifyPoseFileExists = async (pose: 'aim' | 'cover' | 'skillcut'): Promise
         return baseResponse ? isValidSkeletonFileResponse(baseResponse) : false
       }
     }
-    
+
     return false
   } catch (error) {
     return false
@@ -1807,15 +1877,15 @@ const isValidSkeletonFileResponse = (response: Response): boolean => {
   if (!response.ok) {
     return false
   }
-  
+
   // Check Content-Type header to ensure it's binary data (not HTML error page)
   const contentType = response.headers.get('content-type')
-  
+
   // If content-type is HTML, it's definitely an error page
   if (contentType && contentType.includes('text/html')) {
     return false
   }
-  
+
   // Valid skeleton files should be binary (application/octet-stream) or not have explicit type
   // Invalid responses are usually text/html
   return true
@@ -1852,16 +1922,15 @@ let pendingReloadTimeouts: number[] = []
 let pendingActionTimeouts: number[] = []
 
 const handleAction = () => {
-
   if (!spinePlayer) return
-  
+
   // Get available animations
   const animations = spinePlayer.animationState.data.skeletonData.animations
   const animationNames = animations.map((a: { name: string }) => a.name)
-  
+
   // Determine action animation based on current pose
   let actionAnimation = 'action'
-  
+
   // Special case for favorite_c170 - uses expression_0 instead of expression_merged
   if (market.live2d.current_id === 'favorite_c170') {
     actionAnimation = 'expression_0'
@@ -1880,18 +1949,18 @@ const handleAction = () => {
     // Get current animation and move to next
     const currentAnim = animations[animationIndex[market.live2d.current_id]]
     animationIndex[market.live2d.current_id] = (animationIndex[market.live2d.current_id] + 1) % animations.length
-    
+
     if (animationNames.includes(currentAnim)) {
       actionAnimation = currentAnim
     }
   }
-  
+
   // Check if action animation exists, if not just play voice
   if (!animationNames.includes(actionAnimation)) {
     playVoice()
     return
   }
-  
+
   spinePlayer.animationState.setAnimation(0, actionAnimation, false)
 
   playVoice()
@@ -1970,10 +2039,10 @@ watch(
     isSpineHidden.value = true
 
     // Cancel all pending timeouts that would continue playing sounds
-    pendingReloadTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    pendingReloadTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
     pendingReloadTimeouts = []
-    
-    pendingActionTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+
+    pendingActionTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
     pendingActionTimeouts = []
 
     // Stop current BGM if playing
@@ -1982,22 +2051,22 @@ watch(
       currentBGM.currentTime = 0
       currentBGM = null
     }
-    
+
     // Play BGM for oldtales
     if (market.live2d.current_id === 'oldtales') {
       currentBGM = new Audio('/assets/l2d/voice/oldtales/oldtales_bgm.ogg')
       currentBGM.loop = true
       currentBGM.volume = 0.5
-      currentBGM.play().catch(err => console.log('BGM play failed:', err))
+      currentBGM.play().catch((err) => console.log('BGM play failed:', err))
     }
-    
+
     // Stop old character's voice when switching to new character
     if (currentVoice) {
       currentVoice.pause()
       currentVoice.currentTime = 0
       currentVoice = null
     }
-    
+
     // Stop sound effects and clear character tracking
     if (currentReloadSound) {
       currentReloadSound.pause()
@@ -2005,7 +2074,7 @@ watch(
       currentReloadSound = null
     }
     reloadSoundCharacterId = '' // Clear so pending timeouts know not to play
-    
+
     if (currentActionSound) {
       currentActionSound.pause()
       currentActionSound.currentTime = 0
@@ -2013,25 +2082,25 @@ watch(
       currentActionSound = null
     }
     actionSoundCharacterId = '' // Clear so pending timeouts know not to play
-    
+
     // Stop ALL active audio objects (in case some are lingering from overlaps)
-    activeAudioObjects.forEach(audio => {
+    activeAudioObjects.forEach((audio) => {
       audio.pause()
       audio.currentTime = 0
       audio.volume = 0
     })
     activeAudioObjects = []
-    
+
     if (currentSkillcutOverlaySound) {
       currentSkillcutOverlaySound.pause()
       currentSkillcutOverlaySound.currentTime = 0
       currentSkillcutOverlaySound = null
     }
-    
+
     // Reset sound sequences
     actionSoundIndex = 1
     reloadSoundIndex = 1
-    
+
     // Check if current pose is available for this character
     // If not, reset to fullbody before loading
     if (market.live2d.current_pose !== 'fb') {
@@ -2040,9 +2109,9 @@ watch(
         market.live2d.current_pose = 'fb'
       }
     }
-    
+
     loadSpineAfterWatcher()
-    
+
     // Apply custom zoom after spine loads - wait longer for canvas to be ready
     // Only apply if user hasn't manually zoomed
     if (!hasUserZoomed) {
@@ -2070,16 +2139,16 @@ watch(
 
     // Stop any playing sound effects when switching poses
     stopAllSoundEffects()
-    
+
     // Check if the character has the required spine files for this pose
     const hasRequiredFiles = checkCharacterHasPose(market.live2d.current_pose)
-    
+
     if (!hasRequiredFiles) {
       // Fallback to fb pose if the requested pose doesn't exist
       market.live2d.current_pose = 'fb'
       return
     }
-    
+
     // For aim, cover, and skillcut poses, verify the file actually exists
     if (market.live2d.current_pose === 'aim' || market.live2d.current_pose === 'cover' || market.live2d.current_pose === 'skillcut') {
       const fileExists = await verifyPoseFileExists(market.live2d.current_pose)
@@ -2089,7 +2158,7 @@ watch(
         return
       }
     }
-    
+
     loadSpineAfterWatcher()
   }
 )
@@ -2098,15 +2167,15 @@ watch(
   () => market.live2d.resetPlacement,
   () => {
     hasUserZoomed = false
-    
+
     // Reset transformScale to base value
     transformScale = market.live2d.HQassets ? 0.18 : 0.5
-    
+
     applyDefaultStyle2CanvasImmediate()
-    
+
     // Hide spine temporarily while position is being reset
     isSpineHidden.value = true
-    
+
     // Reapply custom zoom after reset immediately
     setTimeout(() => {
       canvas = document.querySelector('.spine-player-canvas') as HTMLCanvasElement
@@ -2287,7 +2356,7 @@ const loadSpineAfterWatcher = () => {
       market.live2d.current_pose = 'fb'
       return
     }
-    
+
     spineCanvas.dispose()
     market.load.beginLoad()
     spineLoader()
@@ -2579,7 +2648,7 @@ const triggerPreview1 = () => {
 #player-container {
   //height: calc(100vh - 100px);
   overflow: hidden;
-  
+
   &.spine-hidden {
     visibility: hidden;
   }

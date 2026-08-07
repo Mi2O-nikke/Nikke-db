@@ -1047,15 +1047,36 @@ const charactersWithFgBgOverlays = [
   'c103', 'c105', 'c017_01', 'c017_02', 'c450_03', 'c451_03'
 ]
 
-//code: ['motion1|clickTrigger', 'motion2|clickTrigger', zindex]...i too noob to set triple layers especially c094
+//{ motion, clickTrigger, layer} >>fullBody dun need charaIdle but skillcut does
 const charactersWithDualLayer = {
-  'favorite_c170': ['idle|', 'bg_idle|'],
-  'c513_01': ['idle|skill_cut', 'idle_bg|skill_cut_bg'],
-  'c094': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_3|skillcut_3_OFF', 2, 1],
-  'c094_01': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_3|skillcut_3_OFF', 2, 1]
+  'favorite_c170': {
+    layers: [
+      { idle: 'bg_idle', skillcut: '', zIndex: 0 }
+    ]
+  },
+  'c513_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skill_cut', zIndex: 1 },
+      { idle: 'idle_bg', skillcut: 'skill_cut_bg', zIndex: 0 }
+    ]
+  },
+  'c094': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 2 }
+    ]
+  },
+  'c094_01': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 2 },
+    ]
+  }
 }
 
-//skillcut special default motion if not name as "idle"...if detect like skillcut click will not be function
+//skillcut special default motion other than "idle"
 const skillcutAnimationOverrides = {
   'c010': 'Idle',
   'c010_01': 'Idle',
