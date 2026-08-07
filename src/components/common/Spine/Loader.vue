@@ -1104,8 +1104,13 @@ function renderWithOverlays() {
     dualLayerInstance.skeleton.updateWorldTransform()
   }
 
-  // Render back layer first (if dual-layer enabled)
-  if (dualLayerInstance) {
+  // Get z-index for dual-layer from config array (if provided)
+  const dualConfig = charactersWithDualLayer[market.live2d.current_id]
+  const hasZIndexInConfig = Array.isArray(dualConfig) && dualConfig.length >= 4
+  const dualLayerInFront = hasZIndexInConfig && dualConfig[3] > dualConfig[2]
+
+  // Render dual-layer in front if configured, otherwise back
+  if (dualLayerInstance && dualLayerInFront) {
     renderer.begin()
     renderer.drawSkeleton(dualLayerInstance.skeleton, true)
     renderer.end()
@@ -1119,6 +1124,11 @@ function renderWithOverlays() {
   overlayInstances.forEach(overlay => {
     renderer.drawSkeleton(overlay.skeleton, true)
   })
+
+  // Render dual-layer in back if configured that way
+  if (dualLayerInstance && !dualLayerInFront) {
+    renderer.drawSkeleton(dualLayerInstance.skeleton, true)
+  }
 
   renderer.end()
 }
@@ -1557,16 +1567,28 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
                     }
                     lastFrontAnimName = animName || ''
                     
-                    // Render back layer first
-                    if (dualLayerInstance) {
+                    // Get z-index for this character from config array (if provided)
+                    const dualCfg = charactersWithDualLayer[market.live2d.current_id]
+                    const dualInFront = Array.isArray(dualCfg) && dualCfg.length >= 4 && dualCfg[3] > dualCfg[2]
+                    
+                    // Render dual-layer in front if configured
+                    if (dualLayerInstance && dualInFront) {
                       dualLayerInstance.state.update(1 / 60)
                       dualLayerInstance.state.apply(dualLayerInstance.skeleton)
                       dualLayerInstance.skeleton.updateWorldTransform()
                       originalDrawSkeleton(dualLayerInstance.skeleton, premultipliedAlpha)
                     }
                     
-                    // Render main skeleton on top
+                    // Render main skeleton
                     originalDrawSkeleton(skeleton, premultipliedAlpha)
+                    
+                    // Render dual-layer in back if configured
+                    if (dualLayerInstance && !dualInFront) {
+                      dualLayerInstance.state.update(1 / 60)
+                      dualLayerInstance.state.apply(dualLayerInstance.skeleton)
+                      dualLayerInstance.skeleton.updateWorldTransform()
+                      originalDrawSkeleton(dualLayerInstance.skeleton, premultipliedAlpha)
+                    }
                     
                     isRenderingMain = false
                   } else if (skeleton !== mainSkeleton) {

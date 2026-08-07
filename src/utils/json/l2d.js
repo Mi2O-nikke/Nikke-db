@@ -1047,17 +1047,15 @@ const charactersWithFgBgOverlays = [
   'c103', 'c105', 'c017_01', 'c017_02', 'c450_03', 'c451_03'
 ]
 
-// Characters that use dual-layer rendering (same skeleton rendered twice with different animations)
-// Format: characterId: [frontAnimations, backAnimations]
-// Each animation string: 'idle_animation|skillcut_animation' (skillcut is optional)
-// Example: 'c513_01': ['idle|skill_cut', 'idle_bg|skill_cut_bg']
+//code: ['motion1|clickTrigger', 'motion2|clickTrigger', zindex]...i too noob to set triple layers especially c094
 const charactersWithDualLayer = {
   'favorite_c170': ['idle|', 'bg_idle|'],
   'c513_01': ['idle|skill_cut', 'idle_bg|skill_cut_bg'],
-  'c094': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_1|skillcut_1_OFF']
+  'c094': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_3|skillcut_3_OFF', 2, 1],
+  'c094_01': ['idle_2|skillcut_2_OFF_MOVE_BIG', 'idle_3|skillcut_3_OFF', 2, 1]
 }
 
-//skillcut special default motion if not name as "idle"
+//skillcut special default motion if not name as "idle"...if detect like skillcut click will not be function
 const skillcutAnimationOverrides = {
   'c010': 'Idle',
   'c010_01': 'Idle',
@@ -1088,6 +1086,7 @@ const skillcutConfig = {
   c231_01: {animations: ['skill_01']},
   c234: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
+  c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
 }
 
 const l2dData = convertL2dData(l2dGroups)
