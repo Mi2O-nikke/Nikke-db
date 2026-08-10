@@ -1064,14 +1064,14 @@ const charactersWithDualLayer = {
     layers: [
       { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
       { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
-      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 2 }
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 }
     ]
   },
   'c094_01': {
     layers: [
       { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
       { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
-      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 2 },
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 },
     ]
   }
 }
