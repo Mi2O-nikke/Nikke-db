@@ -14,10 +14,13 @@ OR just run the bat file in folder "_run.bat", first time it might close automat
 
 
 _______________________________________________________
-im missing these nikke might have no voice
-1. Phantom@Favorite
-2. Flora@Favorite
-3. Sugar@Favorite
-4. Centi@Favorite
-5. Zwei@Favorite
-6. Rosanna@Favorite/
+im missing these nikke might have no voice or action sound
+1. Liter (CN)
+2. Modernia (CN)
+3. Phantom@Favorite
+4. Flora@Favorite
+5. Sugar@Favorite
+6. Centi@Favorite
+7. Zwei@Favorite
+8. Rosanna@Favorite
+9. Moran@Favorite
