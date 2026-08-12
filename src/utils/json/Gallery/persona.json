@@ -1,0 +1,40 @@
+{
+  "path": "persona/",
+  "type": "large",
+  "id": "persona",
+  "title": "Persona",
+  "content": [
+    {
+      "name": "EventScene_ce009_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_04_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce009_06_2.png",
+      "text": ""
+    }
+  ]
+}

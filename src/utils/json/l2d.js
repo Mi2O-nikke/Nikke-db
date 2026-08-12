@@ -99,6 +99,7 @@ const l2dGroups = {
 
   'Best Seller': [
     ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60'],
+    ['c580_01', 'Phantom_test'],
     ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
     ['c582', 'Label', '', 'sc:0.3,0,50'],
     ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
@@ -106,6 +107,7 @@ const l2dGroups = {
 
   'Botanic Garden': [
     ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100'],
+    ['c411_01', 'Flora_test'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
   ],
@@ -798,6 +800,16 @@ const l2dGroups = {
     ['c833', 'Misato Katsuragi'],
   ],
 
+  '__Collab Persona': [
+    ['c870', 'Makoto Niijima'],
+    ['c870_01', 'Makoto Niijima_test'],
+    ['c870_02', 'Makoto Niijima_test2'],
+    ['c871', 'Yukiko Amagi'],
+    ['c871_01', 'Yukiko Amagi_test'],
+    ['c871_02', 'Yukiko Amagi_test2'],
+    ['c872', 'Aigis'],
+  ],
+
   '__Collab WILLE': [
     ['c834', 'Rei Ayanami Tentative Name'],
     ['c834_01', 'Rei Ayanami Miss Lookalike from Village-3'],
@@ -909,6 +921,7 @@ const l2dGroups = {
     ['bitterspice', 'Bitter Spice'],
     ['arkranger', 'Ark Ranger'],
     ['projectmatis', 'Project Matis'],
+    ['persona', 'Persona'],
   ],
 
   '__Story': [
@@ -1060,7 +1073,8 @@ const specialClickAnimations = {
 const charactersWithFgBgOverlays = [
   'c103', 'c105', 'c017_01', 'c017_02', 
   'c441', 'c450_03', 'c451_03',
-  'c513_03', 'c515',
+  'c513_03', 'c515', 'c580_01',
+  'c870_02', 'c871', 'c871_01', 'c871_02', 'c872',
 ]
 
 //skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut, skillcut
@@ -1076,8 +1090,10 @@ const skillcutConfig = {
   c231_01: {animations: ['skill_01']},
   c234: {animations: ['skillcut_2']},
   c411: {animations: ['skillcut_2']},
+  c411_01: {animations: ['skillcut_2']},
   c532: {animations: ['skillcut_1_all']},
   c532_01: {animations: ['skillcut_1_all']},
+  c580_01: {animations: ['skillcut_2']},
 }
 
 //cover mode skin other than default
@@ -1130,6 +1146,9 @@ const skillcutAnimationOverrides = {
   'c570_99': 'idle_0',
   'c582': 'idle_0',
   'c583': 'idle_all',
+  'c871': 'idle_0',
+  'c871_01': 'idle_0',
+  'c871_02': 'idle_0',
 }
 
 //{ motion, clickTrigger, layer} >>fullBody dun need charaIdle but skillcut does
@@ -1245,6 +1264,13 @@ const charactersWithDualLayer = {
       { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
     ]
   },
+  'c411_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
+    ]
+  },
   'c470_02': {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
@@ -1263,6 +1289,13 @@ const charactersWithDualLayer = {
       { idle: 'idle_1', skillcut: '', zIndex: 0 },
     ]
   },
+  'c580_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle2', skillcut: 'skillcut_3', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1000 },
+    ]
+  },
   'c582': {
     layers: [
       { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
@@ -1273,6 +1306,48 @@ const charactersWithDualLayer = {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
       { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
+  'c870': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c870_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c870_02': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c871': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c871_01': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c871_02': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c872': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'bg_idle', skillcut: 'bg_skillcut_1', zIndex: 0 },
     ]
   },
 }

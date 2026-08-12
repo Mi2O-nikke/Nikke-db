@@ -1,0 +1,15 @@
+c870_02_bg.png
+size:2048,2048
+filter:Linear,Linear
+pma:true
+bg_floor
+bounds:2,1415,1716,303
+bg_stuff1
+bounds:2,1056,451,357
+bg_stuff2
+bounds:829,861,739,555
+rotate:180
+bg_stuff2_f1
+bounds:2,1678,132,40
+bg_stuff2_f2
+bounds:2,982,270,72

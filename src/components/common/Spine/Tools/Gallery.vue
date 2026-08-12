@@ -208,6 +208,8 @@ import story6 from '@/utils/json/Gallery/story6.json'
 import story7 from '@/utils/json/Gallery/story7.json'
 import story8 from '@/utils/json/Gallery/story8.json'
 import story9 from '@/utils/json/Gallery/story9.json'
+import story13 from '@/utils/json/Gallery/story13.json'
+import persona from '@/utils/json/Gallery/persona.json'
 import terminusticket from '@/utils/json/Gallery/terminusticket.json'
 import unbreakablesphere from '@/utils/json/Gallery/unbreakablesphere.json'
 import voltroad from '@/utils/json/Gallery/voltroad.json'
@@ -362,7 +364,8 @@ const buttonListStory = [
   { data: story9 },
   { data: story10 },
   { data: story11 },
-  { data: story12 }
+  { data: story12 },
+  { data: story13 }
 ] as buttonInterface[]
 
 const buttonListSideStory = [
@@ -416,6 +419,7 @@ const buttonListEvents = [
   { data: outerautomata },
   { data: overthehorizon },
   { data: overzone },
+  { data: persona },
   { data: projectmatis },
   { data: rebornevil },
   { data: recipeforyou },
