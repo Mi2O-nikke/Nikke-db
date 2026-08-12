@@ -43,10 +43,10 @@ const l2dGroups = {
 
   'A.C.P.U.': [
     ['c030', 'Poli', 're:1d4,2d2', 'fb:0,80|sc:0.36,0,30'],
-    ['c030_01', 'Poli Sweet Holic'],
-    ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8'],
+    ['c030_01', 'Poli Sweet Holic', '', 'fb:0,0'],
+    ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8', 'fb:0,-30'],
     ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60'],
-    ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9'],
+    ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9', 'fb:0.22,0,-20'],
     ['c033', 'Quiry', 'ac:2d4|re:1d5', 'sc:0.27,0,150'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.24,60'],
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
@@ -79,14 +79,14 @@ const l2dGroups = {
     ['c350_02', 'Mast the Driver'],
     ['c350_old', 'Mast: Outdated'],
     ['c351', 'Anchor', 're:2d3,3d3', 'sc:0.31'],
-    ['c351_01', 'Anchor the Diver', 'ac:1d5'],
+    ['c351_01', 'Anchor the Diver', 'ac:1d5', 'fb:0.20,-10,30'],
     ['c352', 'Helm', 'ac:2o5|re:1d5,3d3', 'sc:0.3,0,150'],
     ['c352_01', 'Helm Chandelier', 'ac:3d10', 'fb:0.3,0,-180'],
     ['c352_02', 'Helm Post-Shower Moment', 'ac:2d10,3d5', 'fb:0.24,0,-50|sc:0.2,0,30'],
     ['c353', 'Helm: Aquamarine', 'ac:4o9', 'sc:0.66,-500,-30'],
     ['c354', 'Mast: Romantic Maid', 're:2d5,3d3', 'sc:0.24,0,90'],
     ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'sc:0.23,0,20'],
-    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'sc:0.3,0,100'],
+    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'fb:0.23,0,10|sc:0.3,0,100'],
     ['favorite_c352', 'Helm@Favorite', 'ac:1o5,3d5,4o5', 'fb:0.34,60'],
   ],
 
@@ -100,12 +100,12 @@ const l2dGroups = {
   'Best Seller': [
     ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60'],
     ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
-    ['c582', 'Label', '', 'sc:0.26'],
+    ['c582', 'Label', '', 'sc:0.3,0,50'],
     ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
   ],
 
   'Botanic Garden': [
-    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'sc:0.53,-250,100'],
+    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
   ],
@@ -144,7 +144,7 @@ const l2dGroups = {
     ['c016_02', 'Rapi: Red Hood Cherished Red', 'ac:2d5,3d5', 'sc:0.28,0,-60'],
     ['c016_03', 'Rapi: Red Hood Shining Light', 'ac:4d5'],
     ['c017', 'Anis: Star', 'ac:2o5,4o5|re:2o5', 'fb:0.23,0,-50|sc:0.3,0,200'],
-    ['c017_01', 'Anis: Starlight', 'ac:1o5,3o8', 'fb:0.26,0,-80|sc:0.25'],
+    ['c017_01', 'Anis: Starlight', 'ac:1o5,3o8', 'fb:0.26,0,-80|sc:0.27,60,-50'],
     ['c017_02', 'Anis: Star T.T.STAR', 'ac:1o1,6d3,7d5', 'fb:0.21'],
     ['c018', 'Neon: Vision Eye', 'ac:2o5,3o4,4o6,6d35o2,7o3|re:2o5', 'fb:0.23|sc:0.25'],
     ['c989', 'Rapi: Red'],
@@ -159,10 +159,10 @@ const l2dGroups = {
     ['c450_01', 'Naga Elegant Date'],
     ['c450_02', 'Naga Last Girlhood', 'ac:1d5,1o15,2o5', 'fb:0.25,0,-70|sc:0.28'],
     ['c450_03', 'Naga Ring Ensemble', 'ac:1d5,3d11,4o1'],
-    ['c451', 'Tia', '', 'sc:0.27,0,20'],
-    ['c451_01', 'Tia Lovely Date'],
-    ['c451_02', 'Tia Sweet Chef', 'ac:2d5,3d5,3o30'],
-    ['c451_03', 'Tia Sea Lizzie', 'ac:2o8,6o7', 'fb:0.23,0,-30'],
+    ['c451', 'Tia', '', 'fb:0.22,0,-10|sc:0.27,0,20'],
+    ['c451_01', 'Tia Lovely Date', '', 'fb:0.21'],
+    ['c451_02', 'Tia Sweet Chef', 'ac:2d5,3d5,3o30', 'fb:0.21'],
+    ['c451_03', 'Tia Sea Lizzie', 'ac:2o8,6o7', 'fb:0.23,0,-40'],
   ],
 
   'Electric Shock': [
@@ -177,10 +177,10 @@ const l2dGroups = {
     ['c111', 'Jackal', 'ac:1d3,2d13|re:1d5,3d2,3o14', 'sc:0.27'],
     ['c111_01', 'Jackal Class Troublemaker', 'ac:1d5,3o5,4o8,6d2,7d5'],
     ['c112', 'Viper', 'ac:1d2,3d2,4d5|re:1d5,2d3', 'sc:0,0,50'],
-    ['c112_01', 'Viper Toxic Rabbit', 'ac:1d5'],
+    ['c112_01', 'Viper Toxic Rabbit', 'ac:1d5', 'fb:0.22,-10,-20'],
     ['c112_02', 'Viper Shine of Love', 'ac:4d2', 'fb:0.25,0,-70|sc:0.32,0,70'],
-    ['c112_03', 'Viper Punky Street', 'ac:5d8,6d3'],
-    ['c113', 'E.H.', 'ac:3d3'],
+    ['c112_03', 'Viper Punky Street', 'ac:5d8,6d3', 'fb:0.22,0,-10'],
+    ['c113', 'E.H.', 'ac:3d3', 'sc:0.25,0,100'],
     ['c113_01', 'E.H. Junkyard Vanguard', 'ac:3o8,7d10'],
     ['c940', 'E.H.: Origin'],
     ['favorite_c112', 'Viper@Favorite', '', 'fb:0.28,60'],
@@ -214,16 +214,16 @@ const l2dGroups = {
     ['c233_01', 'Dorothy Nostalgia', 'ac:2d10,4d43', 'sc:0.24,0,20'],
     ['c233_02', 'Dorothy Luna Light', 'ac:1d4,3d2,4d3,4o7'],
     ['c233_80', 'Dorothy (CN)', '', 'fb:0.23,0,-30'],
-    ['c234', 'Dorothy: Serendipity', 'ac:1o5,5d10,6d5,6o8|re:2d2', 'fb:0.26,0,-10|sc:0.32,0,150'],
-    ['c470', 'Red Hood', 'ac:4d13|re:1d3,2d3', 'sc:0.71,900'],
+    ['c234', 'Dorothy: Serendipity', 'ac:1o5,5d10,6d5,6o8|re:2d2', 'fb:0.26,0,-10|sc:0.33,0,120'],
+    ['c470', 'Red Hood', 'ac:4d13|re:1d3,2d3', 'fb:0.22,0,-10|sc:0.71,900'],
     ['c470_01', 'Red Hood Nonsense Red', '', 'sc:0.25'],
-    ['c470_02', 'Red Hood Retro Days', 'ac:1d3,2d3,2o15', 'sc:0.23,0,20'],
+    ['c470_02', 'Red Hood Retro Days', 'ac:1d3,2d3,2o15', 'sc:0.25,-150,60'],
     ['c943', 'Liliweiss'],
     ['c966', 'Rapunzel: Pure'],
   ],
 
   'Hammer & Drill': [
-    ['c490', 'Hammering'],
+    ['c490', 'Hammering', '', 'fb:0.23,0,-20'],
     ['c491', 'Drilley'],
   ],
 
@@ -241,7 +241,7 @@ const l2dGroups = {
   ],
 
   'Incubator': [
-    ['c590', 'Mori', 'ac:1d3,1o10,3o8,4o8,5o8|re:2d3', 'sc:0.4,-320,-300'],
+    ['c590', 'Mori', 'ac:1d3,1o10,3o8,4o8,5o8|re:2d3', 'sc:0.42,-320,-350'],
   ],
 
   'Infinity Rail': [
@@ -253,7 +253,7 @@ const l2dGroups = {
     ['c072_01', 'Diesel Black Sunday', 'ac:2d2', 'fb:0,-30'],
     ['c072_02', 'Diesel Strawberry Flower', 'ac:2d2', 'fb:0,-30'],
     ['c072_04', 'Diesel Midnight Strawberry', 'ac:1d5,2d8', 'fb:0,-50'],
-    ['c073', 'Brid: Silent Track', 'ac:1d5,2d15,3d5,4d5|re:1d5', 'sc:0.3,100,200'],
+    ['c073', 'Brid: Silent Track', 'ac:1d5,2d15,3d5,4d5|re:1d5', 'sc:0.29,200,200'],
     ['c074', 'Soline: Frost Ticket', 'ac:1d5,1o12,2o7|re:1d5', 'sc:0.4,-400'],
     ['c075', 'Diesel: Winter Sweets', 'ac:2o8,3o9|re:1d8', 'sc:0.25,0,100'],
     ['favorite_c072', 'Diesel@Favorite', '', 'fb:0.27,60'],
@@ -287,7 +287,7 @@ const l2dGroups = {
     ['c312', 'Soda', 'ac:3o5|re:2o3', 'sc:0.4,0,100'],
     ['c313', 'Privaty: Unkind Maid', 'ac:1d2|re:5d3', 'sc:0.25,0,70'],
     ['c314', 'Soda: Twinkling Bunny', 'ac:1d3|re:2d5,4d5', 'sc:0.24'],
-    ['c315', 'Ade: Agent Bunny', 'ac:4d25|re:1d5', 'sc:0.5,0,50'],
+    ['c315', 'Ade: Agent Bunny', 'ac:4d25|re:1d5', 'fb:0.23,0,-20|sc:0.5,0,50'],
     ['c316', 'Velvet', 'ac:2d3,3o5,5d8|re:2d3', 'sc:0.24'],
     ['c316_01', 'Velvet Sensual Rabbit', 'ac:1d5,1o12,3o8,5o1'],
   ],
@@ -306,8 +306,8 @@ const l2dGroups = {
     ['c101_02', 'Drake Maid For Vilian', 'ac:1d3,2d3'],
     ['c102', 'Maxwell', 're:2d5,3d3,4d3', 'sc:0.3,-100,170'],
     ['c102_01', 'Maxwell Mechanic White'],
-    ['c103', 'Laplace: Ultimate Hero', 'ac:1o8,2o2,3o2,5d45|re:1o1,2o8', 'sc:0.26,0,60'],
-    ['c103_01', 'Laplace: Prototype Hero', 'ac:2o6'],
+    ['c103', 'Laplace: Ultimate Hero', 'ac:1o8,2o2,3o2,5d45|re:1o1,2o8', 'fb:0,50|sc:0.26,0,60'],
+    ['c103_01', 'Laplace: Prototype Hero', 'ac:2o6', 'fb:0.22,0,-20'],
     ['c104', 'Drake: Upgrade'],
     ['c105', 'Maxwell: Ordinary Mechanic', 'ac:3d15,5d5,6d5|re:2o6', 'sc:0.28,50,50'],
     ['c105_01', 'Maxwell: Chief Researcher', 'ac:3d5'],
@@ -318,10 +318,10 @@ const l2dGroups = {
 
   'Mighty Tools': [
     ['c080', 'Centi', 'ac:1d3,2d3|re:1d6', 'sc:0.34,200,100'],
-    ['c080_01', 'Centi Supreme Holiday', 'ac:1d3,2d3,3d3'],
-    ['c080_02', 'Centi Ocean Repair', 'ac:1o5,4d8,5o8'],
+    ['c080_01', 'Centi Supreme Holiday', 'ac:1d3,2d3,3d3', 'fb:0,-20'],
+    ['c080_02', 'Centi Ocean Repair', 'ac:1o5,4d8,5o8', 'fb:0.22,-55'],
     ['c082', 'Liter', 'ac:1d3,2o7|re:1d3,2d3,3d3', 'sc:0.25,0,120'],
-    ['c082_01', 'Liter Guardfish', 'ac:1d5,1o15,3d5'],
+    ['c082_01', 'Liter Guardfish', 'ac:1d5,1o15,3d5', 'fb:0,60'],
     ['c082_02', 'Liter Cute Sunflower', 'ac:2o4,3o5,5d3'],
     ['c082_80', 'Liter (CN)'],
   ],
@@ -355,13 +355,13 @@ const l2dGroups = {
   'Over the Horizon': [
     ['c530', 'Sky'],
     ['c531', 'Cielo'],
-    ['c532', 'Sora'],
-    ['c532_01', 'Sora Spring Flight'],
+    ['c532', 'Sora', 'ac:1d3,2d1,3d1,4d8,5d1|re:1d3,2d1', 'sc:0.27,0,30'],
+    ['c532_01', 'Sora Spring Flight', 'ac:1d5,3d15,5d5,6d5'],
   ],
 
   'Overseer': [
     ['c440', 'Eyeri'],
-    ['c441', 'Avista'],
+    ['c441', 'Avista', 'ac:1d3,2d3,3o9|re:1o3', 'sc:0.29,0,30'],
   ],
 
   'Pathfinder': [
@@ -370,25 +370,25 @@ const l2dGroups = {
   ],
 
   'Perilous Siege': [
-    ['c040', 'D'],
-    ['c041', 'K'],
-    ['c041_01', 'K: Undercover'],
-    ['c043', 'D: Killer Wife'],
-    ['c043_01', 'D: Killer Wife Secret Party Cleaner'],
-    ['c043_02', 'D: Killer Wife Secret Police'],
+    ['c040', 'D', 'ac:1d3,2o8|re:2d5', 'sc:0.3,0,150'],
+    ['c041', 'K', 'ac:3d10,4o8|re:1d3,1o13', 'sc:0.24'],
+    ['c041_01', 'K Undercover', 'ac:1d3,2d1'],
+    ['c043', 'D: Killer Wife', 'ac:2d3', 'sc:0.24,0,30'],
+    ['c043_01', 'D: Killer Wife Secret Party Cleaner', 'ac:1d3,2o3,3o8,4o5'],
+    ['c043_02', 'D: Killer Wife Secret Police', 'ac:1d5', 'fb:0.24,20|sc:0.35,0,50'],
   ],
 
   'Pioneer': [
-    ['c220', 'Snow White'],
-    ['c220_01', 'Snow White White Knight'],
-    ['c221', 'Rapunzel'],
-    ['c222', 'Scarlet'],
-    ['c222_01', "Scarlet: Racer's High"],
-    ['c223', 'Nayuta'],
-    ['c223_01', 'Nayuta: Wu Wei'],
-    ['c227', 'Pinocchio'],
-    ['c471', 'Snow White: Heavy Arms'],
-    ['c9008', 'Nayuta Clone'],
+    ['c220', 'Snow White', 'ac:3o3|re:2d3,3d3', 'fb:0.34,30'],
+    ['c220_01', 'Snow White White Knight', 'ac:1o8,2o8', 'fb:0.31,-50'],
+    ['c221', 'Rapunzel', 'ac:1o7,2o8|re:2o8', 'fb:0.23,0,-50|sc:0.22,0,30'],
+    ['c222', 'Scarlet', 'ac:1d3,3d1,3o11,5o8', 'fb:0.23,0,-10|sc:0.24,0,50'],
+    ['c222_01', 'Scarlet Racer\'s High', 'ac:1d3,1o18,3d3,6d3', 'fb:0.25|sc:1.0,0,550'],
+    ['c223', 'Nayuta', 'ac:1d3,2o8,3o8,5d8,6d1,7d1,8d3,9d1,10d1|re:1o3,2o5', 'fb:0.22,0,-20|sc:0.36,0,10'],
+    ['c223_01', 'Nayuta Wu Wei', 'ac:1d5,1o10,2o8,4o5', 'fb:0.32,0,-80|sc:0.35,80'],
+    ['c227', 'Pinocchio', '', 'fb:0.24'],
+    ['c471', 'Snow White: Heavy Arms', 'ac:1o7,2o5,3o8,4o8,5o5|re:1o3,2o8,3o6', 'fb:0.29,0,-70|sc:0.3,60,60'],
+    ['c9008', 'Nayuta Clone', '', 'fb:0.22,0,-20'],
   ],
 
   'Prima Donna': [
@@ -968,6 +968,8 @@ const voiceGroupOverrides = {
   'c016': ['c016_03'],
   'c030': ['c030_01', 'c030_02'],
   'c032': ['c032_01'],
+  'c041': ['c041_01'],
+  'c043': ['c043_01'],
   'c070': ['c070_01', 'c070_02'],
   'c072': ['c072_01', 'c072_02', 'c072_04'],
   'c080': ['c080_01', 'c080_02'],
@@ -999,6 +1001,7 @@ const voiceGroupOverrides = {
   'c501': ['c501_01'],
   'c511': ['c511_02'],
   'c513': ['c513_02'],
+  'c532': ['c532_01'],
   'c851': ['c851_01'], 
 }
 
@@ -1007,11 +1010,18 @@ const specialClickAnimations = {
   'c011': ['expression_0'],
   'c016_01': ['expression_1'],
   'c104': ['delight2'],
+  'c227': ['smile'],
   'c290': ['expression_0'],
   'c310': ['expression_0'],
+  'c412_01': ['expression_0'],
+  'c440': ['shy'],
+  'c480': ['special'],
+  'c481': ['shy'],
   'c490': ['smile'],
   'c491': ['angry'],
   'c513_03': ['expression_0'],
+  'c530': ['angry2'],
+  'c531': ['delight'],
   'c560': ['special'],
   'c561': ['delight'],
   'c562': ['special'],
@@ -1019,23 +1029,23 @@ const specialClickAnimations = {
   'c570_99': ['think'],
   'c571': ['pain'],
   'c572': ['angry'],
-  'c989': ['special'],
-  'c990': ['sad'],
-  'c992': ['angry'],
-  'c994': ['angry_02'],
-  'c979': ['delight'],
-  'c412_01': ['expression_0'],
   'c940': ['sad'],
   'c943': ['surprise'],
   'c944': ['special_02'],
   'c966': ['pain_02'],
   'c973': ['smile'],
   'c977': ['surprise'],
+  'c979': ['delight'],
   'c980': ['angry'],
   'c981': ['angry'],
   'c982': ['special'],
+  'c989': ['special'],
+  'c990': ['sad'],
+  'c992': ['angry'],
+  'c994': ['angry_02'],
   'c996': ['special_02'],
   'c997': ['angry'],
+  'c9008': ['special_02'],
   'c9018': ['delight'],
   'c9019': ['delight'],
   'c9028': ['special'],
@@ -1048,38 +1058,53 @@ const specialClickAnimations = {
 
 //chara have foreground and background
 const charactersWithFgBgOverlays = [
-  'c513_03', 
-  'c515',
-  'c103', 'c105', 'c017_01', 'c017_02', 'c450_03', 'c451_03'
+  'c103', 'c105', 'c017_01', 'c017_02', 
+  'c441', 'c450_03', 'c451_03',
+  'c513_03', 'c515',
 ]
 
-//{ motion, clickTrigger, layer} >>fullBody dun need charaIdle but skillcut does
-const charactersWithDualLayer = {
-  'favorite_c170': {
-    layers: [
-      { idle: 'bg_idle', skillcut: '', zIndex: 0 }
-    ]
-  },
-  'c513_01': {
-    layers: [
-      { idle: 'idle', skillcut: 'skill_cut', zIndex: 1 },
-      { idle: 'idle_bg', skillcut: 'skill_cut_bg', zIndex: 0 }
-    ]
-  },
-  'c094': {
-    layers: [
-      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
-      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
-      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 }
-    ]
-  },
-  'c094_01': {
-    layers: [
-      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
-      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
-      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 },
-    ]
-  }
+//skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut, skillcut
+const skillcutConfig = {
+  c015: {animations: ['skillcut_2']},
+  c016: {animations: ['skillcut_2']},
+  c016_03: {animations: ['skillcut_2']},
+  c073: {animations: ['skillcut_2']},
+  c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
+  c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
+  c223_01: {animations: ['skillcut_2']},
+  c231: {animations: ['skill_01']},
+  c231_01: {animations: ['skill_01']},
+  c234: {animations: ['skillcut_2']},
+  c411: {animations: ['skillcut_2']},
+  c532: {animations: ['skillcut_1_all']},
+  c532_01: {animations: ['skillcut_1_all']},
+}
+
+//cover mode skin other than default
+export const characterSkins = {
+  c220: 'weapon_1',
+  c220_01: 'weapon_1',
+  c223: 'part_1',
+  c223_01: 'part_1',
+  c570: 'part_0',
+}
+
+//fullbody other than idle
+export const characterDefaultAnimations = {
+  mbg004_appearance: 'mbg004_appearance',
+  c944: 'special_02',
+  c994: 'idle_02', 
+  c996: 'idle_02',
+  favorite_c170: 'idle',
+  smol_rem: 'idle_front',
+  smol_ram: 'idle_front',
+  smol_emilia: 'idle_front',
+  smol_mast_pirate: 'idle_front',
+  smol_anchor_pirate: 'idle_front',
+  smol_sin_pirate: 'idle_front',
+  smol_anis: 'pose_idle',
+  smol_prika: 'pose_idle',
+  smol_mint: 'pose_idle'
 }
 
 //skillcut special default motion other than "idle"
@@ -1096,24 +1121,160 @@ const skillcutAnimationOverrides = {
   'c094_01': 'idle_2',
   'c225': 'idle_all',
   'c234': 'idle_2',
-  'c315': 'idle_2',
+  'c315': 'idle_1',
+  'c471': 'idle_all',
   'c513_03': 'idle_all',
+  'c532': 'idle_all',
+  'c532_01': 'idle_all',
   'c570': 'idle_0',
+  'c570_99': 'idle_0',
   'c582': 'idle_0',
   'c583': 'idle_all',
-  'c570_99': 'idle_0',
 }
 
-//skillcut click if other than skillcut_all, skillcut_0, skillcut_1, skill_cut, skillcut
-const skillcutConfig = {
-  c016: {animations: ['skillcut_2']},
-  c016_03: {animations: ['skillcut_2']},
-  c073: {animations: ['skillcut_2']},
-  c231: {animations: ['skill_01']},
-  c231_01: {animations: ['skill_01']},
-  c234: {animations: ['skillcut_2']},
-  c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
-  c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
+//{ motion, clickTrigger, layer} >>fullBody dun need charaIdle but skillcut does
+const charactersWithDualLayer = {
+  'favorite_c170': {
+    layers: [
+      { idle: 'bg_idle', skillcut: '', zIndex: 0 }
+    ]
+  },
+  'c015': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c016': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
+    ]
+  },
+  'c016_03': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
+    ]
+  },
+  'c017_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'idle2', skillcut: 'skillcut_2', zIndex: 0 },
+    ]
+  },
+  'c073': {
+    layers: [
+      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  }, 
+  'c093': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },  
+  'c093_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c094': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 }
+    ]
+  },
+  'c094_01': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1_OFF', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2_OFF_MOVE_BIG', zIndex: 1 },
+      { idle: 'idle_3', skillcut: 'skillcut_3_OFF', zIndex: 1000 },
+    ]
+  },
+  'c103': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'bg_idle', skillcut: 'bg_skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c103_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'bg_idle', skillcut: 'bg_skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c105': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
+  'c105_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
+  'c223_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
+    ]
+  },  
+  'c234': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c315': {
+    layers: [
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c411': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
+    ]
+  },
+  'c470_02': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle2', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
+  'c513_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skill_cut', zIndex: 1 },
+      { idle: 'idle_bg', skillcut: 'skill_cut_bg', zIndex: 0 }
+    ]
+  }, 
+  'c570': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: '', zIndex: 0 },
+    ]
+  },
+  'c582': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c590': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
 }
 
 const l2dData = convertL2dData(l2dGroups)

@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig } from '@/utils/json/l2d'
+import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterDefaultAnimations } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -215,6 +215,29 @@ const handleActionStart = () => {
     // Play the skillcut animation then loop back to idle
     spinePlayer.animationState.setAnimation(0, skillcutAnimation, false)
     spinePlayer.animationState.addAnimation(0, idleAnimation, true, 0)
+    
+    // Force reset all dual-layer animations when starting skillcut
+    if (dualLayerInstance?.layers && Array.isArray(dualLayerInstance.layers)) {
+      dualLayerInstance.layers.forEach((layer: any) => {
+        if (!layer || !layer.state || !layer.config) return
+        
+        const { config, state } = layer
+        if (config.skillcut) {
+          try {
+            // Clear and play the skillcut animation for this layer
+            state.clearTracks()
+            state.setAnimation(0, config.skillcut, false)
+            // Queue return to idle after skillcut finishes
+            if (config.idle) {
+              state.addAnimation(0, config.idle, true, 0)
+            }
+          } catch (e) {
+            console.warn('Failed to reset dual layer:', e)
+          }
+        }
+      })
+    }
+    
     playVoice()
     return
   }
@@ -1447,13 +1470,14 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
           }
         }
 
-        // c570 uses 'part_0' skin for cover and aim poses
-        if (market.live2d.current_id === 'c570' && (market.live2d.current_pose === 'cover' || market.live2d.current_pose === 'aim')) {
+        // Apply special skins from config
+        const skinName = characterSkins[market.live2d.current_id]
+        if (skinName) {
           const availableSkins = player.animationState.data.skeletonData.skins
           if (availableSkins && availableSkins.length > 0) {
             const skinNames = availableSkins.map((s: any) => s.name)
-            if (skinNames.includes('part_0')) {
-              player.skeleton.setSkinByName('part_0')
+            if (skinNames.includes(skinName)) {
+              player.skeleton.setSkinByName(skinName)
             }
           }
         }
@@ -1805,24 +1829,16 @@ const getSkillcutPathing = (extension: string) => {
 }
 
 const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
-  if (market.live2d.current_id === 'mbg004_appearance') {
-    return 'mbg004_appearance'
+  // Check character-specific overrides first
+  const charId = market.live2d.current_id
+  if (characterDefaultAnimations[charId]) {
+    return characterDefaultAnimations[charId]
   }
 
-  if (market.live2d.current_id === 'smol_rem' || market.live2d.current_id === 'smol_ram' || market.live2d.current_id === 'smol_emilia' || market.live2d.current_id === 'smol_mast_pirate' || market.live2d.current_id === 'smol_anchor_pirate' || market.live2d.current_id === 'smol_sin_pirate') {
-    return 'idle_front'
-  }
+  // Favorite characters default to idle_merged (unless overridden above)
+  if (charId.includes('favorite')) return 'idle_merged'
 
-  // mass manufactured rapi
-  if (market.live2d.current_id === 'c944') return 'special_02'
-  if (market.live2d.current_id === 'c994') return 'idle_02'
-  if (market.live2d.current_id === 'c996') return 'idle_02'
-
-  // Special case for favorite_c170 - uses idle instead of idle_merged
-  if (market.live2d.current_id === 'favorite_c170') return 'idle'
-
-  if (market.live2d.current_id.includes('favorite')) return 'idle_merged'
-
+  // Pose-specific defaults
   switch (market.live2d.current_pose) {
     case 'aim':
       return 'aim_idle'
@@ -1831,7 +1847,7 @@ const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
     case 'skillcut':
       return 'idle' // fallback to idle for skillcut
     default:
-      return ['smol_anis', 'smol_prika', 'smol_mint'].includes(market.live2d.current_id) ? 'pose_idle' : 'idle'
+      return 'idle'
   }
 }
 
