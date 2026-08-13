@@ -1984,7 +1984,11 @@ const handleAction = () => {
 
   // Determine idle animation based on current pose
   let idleAnimation = 'idle'
-  if (market.live2d.current_id === 'favorite_c170') {
+  
+  // Check characterDefaultAnimations first (for characters with custom idle states like ce009_char_01)
+  if (characterDefaultAnimations[market.live2d.current_id]) {
+    idleAnimation = characterDefaultAnimations[market.live2d.current_id]
+  } else if (market.live2d.current_id === 'favorite_c170') {
     idleAnimation = 'idle'
   } else if (market.live2d.current_id.includes('favorite')) {
     idleAnimation = 'idle_merged'

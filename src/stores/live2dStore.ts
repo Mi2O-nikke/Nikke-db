@@ -63,6 +63,16 @@ export const useLive2dStore = defineStore('live2d', () => {
     const base_array: live2d_interface[] = l2dData as unknown as live2d_interface[]
     filtered_l2d_Array.value = base_array.sort(
       (a: live2d_interface, b: live2d_interface) => {
+        const getRank = (name: string) => {
+          if (name.startsWith('__')) return 2
+          if (name.startsWith('_')) return 1
+          return 0
+        }
+        
+        const rankA = getRank(a.name)
+        const rankB = getRank(b.name)
+        
+        if (rankA !== rankB) return rankA - rankB
         return a.name.localeCompare(b.name)
       }
     )

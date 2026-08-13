@@ -99,7 +99,7 @@ const l2dGroups = {
 
   'Best Seller': [
     ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60'],
-    ['c580_01', 'Phantom_test'],
+    ['c580_01', 'Phantom Saint Thief', 'ac:3d5,4d58', 'sc:0.47,50,120'],
     ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
     ['c582', 'Label', '', 'sc:0.3,0,50'],
     ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
@@ -107,7 +107,7 @@ const l2dGroups = {
 
   'Botanic Garden': [
     ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100'],
-    ['c411_01', 'Flora_test'],
+    ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
   ],
@@ -390,6 +390,8 @@ const l2dGroups = {
     ['c223_01', 'Nayuta Wu Wei', 'ac:1d5,1o10,2o8,4o5', 'fb:0.32,0,-80|sc:0.35,80'],
     ['c227', 'Pinocchio', '', 'fb:0.24'],
     ['c471', 'Snow White: Heavy Arms', 'ac:1o7,2o5,3o8,4o8,5o5|re:1o3,2o8,3o6', 'fb:0.29,0,-70|sc:0.3,60,60'],
+    ['c472', 'Scarlet: Upgrade'],
+    ['c473', 'Rapunzel: Upgrade', '', 'fb:0.27,0,-100'],
     ['c9008', 'Nayuta Clone', '', 'fb:0.22,0,-20'],
   ],
 
@@ -801,13 +803,25 @@ const l2dGroups = {
   ],
 
   '__Collab Persona': [
-    ['c870', 'Makoto Niijima'],
-    ['c870_01', 'Makoto Niijima_test'],
-    ['c870_02', 'Makoto Niijima_test2'],
-    ['c871', 'Yukiko Amagi'],
-    ['c871_01', 'Yukiko Amagi_test'],
-    ['c871_02', 'Yukiko Amagi_test2'],
-    ['c872', 'Aigis'],
+    ['c870', 'Queen | Makoto', 'ac:1d3,1o8,3d3|re:1d5,2d3', 'sc:0.35,0,70'],
+    ['c870_01', 'Queen | Makoto Shujin Academy Student Council President', 'ac:1d3,1o8,3d3'],
+    ['c870_02', 'Queen | Makoto Queen\'s Pajamas (Ver. NIKKE Collabo)', 'ac:1d8,2d5,3d12'],
+    ['c871', 'Yukiko', 'ac:2o8', 'fb:0,0,15|sc:0.17,-40,40'],
+    ['c871_01', 'Yukiko Amagi Inn Kimono', 'ac:2o8'],
+    ['c871_02', 'Yukiko Winter Roomwear (Ver. NIKKE Collabo)', 'ac:1d10,2d1,3d15', 'fb:0,-50'],
+    ['c872', 'Aigis', 'ac:1d3,1o7,3o7|re:1d2,1o13,2o5', 'fb:0,0,20|sc:0.24,-100'],
+    ['c9038', '_Teddie'],
+    ['c9039', '_Mona'],
+    ['c9040', '_Cat'],
+    ['ce009_char_01', '__Queen'],
+    ['ce009_char_02', '__Yukiko'],
+    ['ce009_char_03', '__Aigis'],
+    ['ce009_enemy_ade', '__Ade'],
+    ['ce009_enemy_delta', '__Delta'],
+    ['ce009_enemy_miranda', '__Miranda'],
+    ['ce009_enemy_phantom', '__Phantom'],
+    ['ce009_enemy_poli', '__Poli'],
+    ['ce009_enemy_quency', '__Quency'],
   ],
 
   '__Collab WILLE': [
@@ -1008,6 +1022,7 @@ const voiceGroupOverrides = {
   'c352': ['c352_01'],
   'c381': ['c381_01'],
   'c382': ['c382_01'],
+  'c411': ['c411_01'],
   'c412': ['c412_01'],
   'c450': ['c450_01', 'c450_03'],
   'c451': ['c451_01', 'c451_02'],
@@ -1016,6 +1031,8 @@ const voiceGroupOverrides = {
   'c513': ['c513_02'],
   'c532': ['c532_01'],
   'c851': ['c851_01'], 
+  'c870': ['c870_01', 'c870_02'],
+  'c871': ['c871_01', 'c871_02'],
 }
 
 //click motion especially for sub model
@@ -1028,6 +1045,8 @@ const specialClickAnimations = {
   'c310': ['expression_0'],
   'c412_01': ['expression_0'],
   'c440': ['shy'],
+  'c472': ['pain'],
+  'c473': ['idle2'],
   'c480': ['special'],
   'c481': ['shy'],
   'c490': ['smile'],
@@ -1066,6 +1085,17 @@ const specialClickAnimations = {
   'c9030': ['delight'],
   'c9031': ['pain'],
   'c9032': ['smile'],
+  'c9038': ['special'],
+  'c9039': ['special'],
+  'ce009_char_01': ['down_move'],
+  'ce009_char_02': ['down_move'],
+  'ce009_char_03': ['down_move'],
+  'ce009_enemy_ade': ['down_move'],
+  'ce009_enemy_delta': ['down_move'],
+  'ce009_enemy_miranda': ['down_move'],
+  'ce009_enemy_phantom': ['down_move'],
+  'ce009_enemy_poli': ['down_move'],
+  'ce009_enemy_quency': ['down_move'],
   'favorite_c170': ['expression_0'],
 }
 
@@ -1108,9 +1138,11 @@ export const characterSkins = {
 //fullbody other than idle
 export const characterDefaultAnimations = {
   mbg004_appearance: 'mbg004_appearance',
+  c473: 'smile',
   c944: 'special_02',
   c994: 'idle_02', 
   c996: 'idle_02',
+  c9008: 'idle_02',
   favorite_c170: 'idle',
   smol_rem: 'idle_front',
   smol_ram: 'idle_front',
@@ -1120,7 +1152,16 @@ export const characterDefaultAnimations = {
   smol_sin_pirate: 'idle_front',
   smol_anis: 'pose_idle',
   smol_prika: 'pose_idle',
-  smol_mint: 'pose_idle'
+  smol_mint: 'pose_idle',
+  ce009_char_01: 'down_idle',
+  ce009_char_02: 'down_idle',
+  ce009_char_03: 'down_idle',
+  ce009_enemy_ade: 'down_idle',
+  ce009_enemy_delta: 'down_idle',
+  ce009_enemy_miranda: 'down_idle',
+  ce009_enemy_phantom: 'down_idle',
+  ce009_enemy_poli: 'down_idle',
+  ce009_enemy_quency: 'down_idle',
 }
 
 //skillcut special default motion other than "idle"
