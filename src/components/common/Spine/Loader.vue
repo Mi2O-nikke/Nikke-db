@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch, ref } from 'vue'
+import { onMounted, onUnmounted, watch, ref } from 'vue'
 import { useMarket } from '@/stores/market'
 
 // @ts-ignore
@@ -82,17 +82,41 @@ onMounted(() => {
   setupClickListener()
 })
 
-const setupClickListener = () => {
-  const container = document.getElementById('player-container')
-  if (container) {
-    container.addEventListener('mousedown', handleActionStart)
-    container.addEventListener('mouseup', handleActionEnd)
-    container.addEventListener('mouseleave', handleActionEnd)
+// Clean up zoom animation frame on unmount
+onUnmounted(() => {
+  if (zoomFrameId !== null) {
+    cancelAnimationFrame(zoomFrameId)
+    zoomFrameId = null
   }
+})
+
+const setupClickListener = () => {
+  // Listen on document to catch all clicks, then filter
+  document.addEventListener('mousedown', (e) => handleActionStart(e))
+  document.addEventListener('mouseup', handleActionEnd)
 }
 
-const handleActionStart = () => {
-  if (!spinePlayer) return
+const handleActionStart = (e?: MouseEvent) => {
+  if (!spinePlayer || !canvas) return
+
+  const target = e?.target as HTMLElement
+  if (!target) return
+
+  // Only trigger action if click is on the canvas or inside it
+  // Use DOM hierarchy, not visual position (works with transforms)
+  const isOnCanvas = target === canvas || canvas.contains(target)
+  
+  if (!isOnCanvas) {
+    return  // Click is not on canvas, ignore
+  }
+
+  // Check if clicking is over UI panels - if so, don't trigger action
+  const isUiPanel = target.closest('#l2dsearchbox') ||     // Left character list panel
+                   target.closest('.toolList')              // Right tools panel
+  
+  if (isUiPanel) {
+    return  // Don't trigger action on UI
+  }
 
   // For cover pose - just play cover_reload then back to cover_idle
   if (market.live2d.current_pose === 'cover') {
@@ -2191,8 +2215,16 @@ watch(
   () => {
     hasUserZoomed = false
 
-    // Reset transformScale to base value
-    transformScale = market.live2d.HQassets ? 0.18 : 0.5
+    // Cancel any in-flight zoom animation
+    if (zoomFrameId !== null) {
+      cancelAnimationFrame(zoomFrameId)
+      zoomFrameId = null
+    }
+
+    // Reset BOTH transformScale and targetScale to base value
+    const baseZoom = market.live2d.HQassets ? 0.18 : 0.5
+    transformScale = baseZoom
+    targetScale = baseZoom
 
     applyDefaultStyle2CanvasImmediate()
 
@@ -2204,6 +2236,8 @@ watch(
       canvas = document.querySelector('.spine-player-canvas') as HTMLCanvasElement
       if (canvas) {
         transformScale = setCustomZoom(market.live2d.current_id, canvas, transformScale, market.live2d.current_pose)
+        // Also update targetScale to match so next scroll starts from correct value
+        targetScale = transformScale
         defaultZoomForCharacter = transformScale
       }
       // Show spine after position is applied
@@ -2404,7 +2438,9 @@ const applyDefaultStyle2Canvas = () => {
       canvas.style.position = 'absolute'
       canvas.style.left = '0px'
       canvas.style.top = '0px'
-      transformScale = market.live2d.HQassets ? 0.18 : 0.5
+      const baseZoom = market.live2d.HQassets ? 0.18 : 0.5
+      transformScale = baseZoom
+      targetScale = baseZoom
       market.globalParams.showMobileHeader()
       centerForPC()
     }
@@ -2427,7 +2463,9 @@ const applyDefaultStyle2CanvasImmediate = () => {
     canvas.style.position = 'absolute'
     canvas.style.left = '0px'
     canvas.style.top = '0px'
-    transformScale = market.live2d.HQassets ? 0.18 : 0.5
+    const baseZoom = market.live2d.HQassets ? 0.18 : 0.5
+    transformScale = baseZoom
+    targetScale = baseZoom
     market.globalParams.showMobileHeader()
     centerForPC()
   }
@@ -2505,52 +2543,161 @@ document.addEventListener('mousemove', (e) => {
 })
 
 /**
- * zoom in or out for the live2d
+ * zoom in or out for the live2d with SMOOTH ANIMATION
  * it uses the property transform scale instead of buffing up or down viewport height of the canvas
  * using the vh in nikke db legacy produces some lag when zooming at high values ( 450 - 500 vh of size)
  * transform should hopefully fix this issue, but to fix blurring/pixelated images
  * the canvas is already bruteforced to 500vh and transform scale 0.2
- * since the zoom is smooth there is no reason to limit it like in nikke db legacy
- * however after scale(1) it'll start getting blurried than usual
- * though I don't see the point as it is already pixelated enough
+ * 
+ * NEW: Smooth zoom animation using requestAnimationFrame
+ * - Moves 15% closer to target zoom each frame for smooth visual feedback
+ * - Prevents jarring instant zoom changes
  */
 
-let transformScale = 0.5
+// Zoom constants
+const MIN_SCALE = 0.05
+const MAX_SCALE = 5.0
+const ZOOM_FACTOR = 1.5      // Each scroll = 50% change
+const ZOOM_SMOOTHING = 0.15  // 15% closer per frame
 
-document.addEventListener('wheel', (e) => {
-  if (filterDomEvents(e)) {
-    // Mark that user has manually zoomed
-    hasUserZoomed = true
+// Zoom state variables
+let transformScale = 0.5      // Current zoom level
+let targetScale = 0.5         // Target zoom level (for smooth animation)
+let zoomFrameId: number | null = null  // Track animation frame
 
-    if (!canvas) return
+// Zoom anchor variables - tracks which part of character stays visible
+let anchorX = 0               // Character X coordinate at zoom center
+let anchorY = 0               // Character Y coordinate at zoom center
+let anchorScreenX = 0         // Screen X where zoom center is
+let anchorScreenY = 0         // Screen Y where zoom center is
+let anchorMarginTop = 0       // Canvas margin top for position calculation
 
-    // Get the actual current scale from the canvas transform
-    const currentTransform = canvas.style.transform
-    const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/)
-    const currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : transformScale
+// Capture the zoom anchor point (defaults to screen center)
+const captureAnchor = (screenX?: number, screenY?: number) => {
+  if (!canvas) return
+  const style = getComputedStyle(canvas)
+  const left = parseFloat(style.left) || 0
+  const top = parseFloat(style.top) || 0
+  const marginTop = parseFloat(style.marginTop) || 0
+  const width = canvas.offsetWidth
+  const height = canvas.offsetHeight
+  if (!width || !height) return
+  
+  const sw = window.innerWidth
+  const sh = window.innerHeight
+  
+  // Use provided screen coords, or default to screen center
+  anchorScreenX = screenX !== undefined ? screenX : sw / 2
+  anchorScreenY = screenY !== undefined ? screenY : sh / 2
+  
+  const visualLeft = left
+  const visualTop = top + marginTop
+  
+  // Calculate which part of the character is at the anchor point
+  anchorX = width / 2 + (anchorScreenX - visualLeft - width / 2) / transformScale
+  anchorY = height / 2 + (anchorScreenY - visualTop - height / 2) / transformScale
+  
+  anchorMarginTop = marginTop
+}
 
-    let newScale = currentScale
-
-    switch (e.deltaY > 0) {
-      case true:
-        newScale -= 0.02
-        break
-      case false:
-        newScale += 0.02
-        break
-      default:
-        break
-    }
-
-    // Clamp the transform scale to prevent going below minimum or into negative values
-    const MIN_SCALE = 0.05
-    const MAX_SCALE = 5.0
-    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale))
-
-    transformScale = newScale
-    canvas.style.transform = 'scale(' + newScale + ')'
+// Apply zoom while keeping anchor point fixed on screen
+const applyScaleWithAnchor = (scale: number) => {
+  if (!canvas) return
+  const width = canvas.offsetWidth
+  const height = canvas.offsetHeight
+  if (!width || !height) {
+    canvas.style.transform = 'scale(' + scale + ')'
+    return
   }
-})
+  
+  // Calculate new canvas position to keep anchor point at same screen location
+  const newVisualLeft = anchorScreenX - width / 2 - (anchorX - width / 2) * scale
+  const newVisualTop = anchorScreenY - height / 2 - (anchorY - height / 2) * scale
+  
+  canvas.style.left = newVisualLeft + 'px'
+  canvas.style.top = (newVisualTop - anchorMarginTop) + 'px'
+  canvas.style.transform = 'scale(' + scale + ')'
+}
+
+// Helper: clamp scale to valid bounds
+const clampScale = (value: number): number => {
+  return Math.max(MIN_SCALE, Math.min(MAX_SCALE, value))
+}
+
+// Helper: directly set zoom level (used for initial setup)
+const setTransformScale = (value: number) => {
+  transformScale = clampScale(value)
+  targetScale = transformScale
+  if (canvas) {
+    canvas.style.transform = 'scale(' + transformScale + ')'
+  }
+}
+
+// Smooth zoom animation: one frame step
+const zoomSmoothingStep = () => {
+  // Re-capture anchor each frame to preserve any drags during animation
+  captureAnchor()
+  
+  const diff = targetScale - transformScale
+  
+  if (Math.abs(diff) < 0.0005) {
+    // Close enough to target, stop animating
+    transformScale = targetScale
+    zoomFrameId = null
+  } else {
+    // Move 15% closer to target each frame
+    transformScale += diff * ZOOM_SMOOTHING
+    zoomFrameId = requestAnimationFrame(zoomSmoothingStep)
+  }
+  applyScaleWithAnchor(transformScale)
+}
+
+// Start smooth zoom animation
+const startZoomSmoothing = () => {
+  if (zoomFrameId !== null) {
+    cancelAnimationFrame(zoomFrameId)
+  }
+  zoomFrameId = requestAnimationFrame(zoomSmoothingStep)
+}
+
+// Wheel zoom handler with smooth animation
+const onWheel = (e: WheelEvent) => {
+  // Check if scrolling is over UI panels - if so, don't zoom
+  const target = e.target as HTMLElement
+  
+  // Stop zooming if scrolling over left panel (character list) or right panel (tools)
+  if (target) {
+    const isUiPanel = target.closest('#l2dsearchbox') ||  // Left character list panel
+                     target.closest('.toolList')          // Right tools panel
+    
+    if (isUiPanel) {
+      return  // Don't zoom, allow normal scroll on UI
+    }
+  }
+
+  if (!canvas) return
+
+  // Mark that user has manually zoomed
+  hasUserZoomed = true
+
+  // CRITICAL: Read the actual current scale from the canvas (fixes direction bug)
+  const currentTransform = canvas.style.transform
+  const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/)
+  const actualCurrentScale = scaleMatch ? parseFloat(scaleMatch[1]) : transformScale
+  
+  // Update our internal tracking to match reality
+  transformScale = actualCurrentScale
+
+  // Capture anchor BEFORE calculating zoom (defaults to screen center)
+  captureAnchor()
+
+  const direction = e.deltaY > 0 ? -1 : 1  // Scroll down = zoom out, up = zoom in
+  // Use the actual current scale, not the stale targetScale
+  targetScale = clampScale(actualCurrentScale * Math.pow(ZOOM_FACTOR, direction))
+  startZoomSmoothing()
+}
+
+document.addEventListener('wheel', onWheel)
 
 /**
  * Yap or talking mode for the normal people;
