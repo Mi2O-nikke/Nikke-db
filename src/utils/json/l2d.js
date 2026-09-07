@@ -103,6 +103,7 @@ const l2dGroups = {
     ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
     ['c582', 'Label', '', 'sc:0.3,0,50'],
     ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
+    ['favorite_c580', 'Phantom@Favorite', 'ac:1d3,1o10,2o8', 'fb:0.23,-60,60'],
   ],
 
   'Botanic Garden': [
@@ -110,6 +111,7 @@ const l2dGroups = {
     ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
+    ['favorite_c411', 'Flora@Favorite', 'ac:2d3,2o5,4o5', 'fb:0.31,60'],
   ],
 
   'Cafe Sweety': [
@@ -121,6 +123,7 @@ const l2dGroups = {
     ['c142', 'Frima', 'ac:3d5|re:1d4,2d4', 'sc:0.36,100'],
     ['c142_01', 'Frima Sea of Sloth', 'ac:2d5'],
     ['c143', 'Milk: Blooming Bunny', 'ac:4d5,6o5|re:3d2', 'sc:0.26'],
+    ['favorite_c140', 'Sugar@Favorite', 'ac:1o2,2o2,5d3', 'fb:0.30,60,30'],
     ['favorite_c141', 'Milk@Favorite', 'ac:2d5,3d3', 'fb:0.35,60,-60'],
     ['favorite_c142', 'Frima@Favorite', '', 'fb:0.31,60,-60'],
   ],
@@ -310,7 +313,7 @@ const l2dGroups = {
     ['c102_01', 'Maxwell Mechanic White'],
     ['c103', 'Laplace: Ultimate Hero', 'ac:1o8,2o2,3o2,5d45|re:1o1,2o8', 'fb:0,50|sc:0.26,0,60'],
     ['c103_01', 'Laplace: Prototype Hero', 'ac:2o6', 'fb:0.22,0,-20'],
-    ['c104', 'Drake: Upgrade'],
+    ['c104', 'Drake: Great Villain', 'ac:3o8,5d3|re:1d3', 'sc:0.28,0,170'],
     ['c105', 'Maxwell: Ordinary Mechanic', 'ac:3d15,5d5,6d5|re:2o6', 'sc:0.28,50,50'],
     ['c105_01', 'Maxwell: Chief Researcher', 'ac:3d5'],
     ['c9029', 'Laplace: Child'],
@@ -326,6 +329,7 @@ const l2dGroups = {
     ['c082_01', 'Liter Guardfish', 'ac:1d5,1o15,3d5', 'fb:0,60'],
     ['c082_02', 'Liter Cute Sunflower', 'ac:2o4,3o5,5d3'],
     ['c082_80', 'Liter (CN)'],
+    ['favorite_c080', 'Centi@Favorite', '', 'fb:0.25,60,50'],
   ],
 
   'Nepenthe': [
@@ -445,6 +449,7 @@ const l2dGroups = {
     ['c391', 'Ein'],
     ['c391_01', 'Ein Handmade Festa'],
     ['c392', 'Rei'],
+    ['favorite_c390', 'Zwei@Favorite', 'ac:3d3', 'fb:0.35,30'],
   ],
 
   'Seraphim': [
@@ -514,6 +519,8 @@ const l2dGroups = {
     ['c282_01', 'Sakura Midnight Stealth'],
     ['c283', 'Rosanna: Chic Oceon'],
     ['c284', 'Sakura: Bloom in Summer'],
+    ['favorite_c280', 'Rosanna@Favorite', 'ac:3o8', 'fb:0.26,20,150'],
+    ['favorite_c281', 'Moran@Favorite', 'ac:3o3', 'fb:0.26,0'],
   ],
 
   Unlimited: [
@@ -935,7 +942,7 @@ const l2dGroups = {
     ['bitterspice', 'Bitter Spice'],
     ['arkranger', 'Ark Ranger'],
     ['projectmatis', 'Project Matis'],
-    ['persona', 'Persona'],
+    ['greatvillainunion', 'Great Villain Union', '', 'fb:0.29,0,80'],
   ],
 
   '__Story': [
@@ -1100,7 +1107,14 @@ const specialClickAnimations = {
   'ce009_enemy_phantom': ['down_move'],
   'ce009_enemy_poli': ['down_move'],
   'ce009_enemy_quency': ['down_move'],
+  'favorite_c080': ['expression_0'],
+  'favorite_c140': ['expression_0_all'],
   'favorite_c170': ['expression_0'],
+  'favorite_c280': ['expression_0'],
+  'favorite_c281': ['expression_00'],
+  'favorite_c390': ['expression_0'],
+  'favorite_c411': ['expression_0'],
+  'favorite_c580': ['expression_0'],
 }
 
 //chara have foreground and background
@@ -1147,7 +1161,14 @@ export const characterDefaultAnimations = {
   c994: 'idle_02', 
   c996: 'idle_02',
   c9008: 'idle_02',
+  favorite_c080: 'idle',
+  favorite_c140: 'idle_all',
   favorite_c170: 'idle',
+  favorite_c280: 'idle',
+  favorite_c281: 'idle',
+  favorite_c390: 'idle',
+  favorite_c411: 'idle',
+  favorite_c580: 'idle',
   smol_rem: 'idle_front',
   smol_ram: 'idle_front',
   smol_emilia: 'idle_front',
@@ -1198,7 +1219,32 @@ const skillcutAnimationOverrides = {
 
 //{ motion, clickTrigger, layer} >>fullBody dun need charaIdle but skillcut does
 const charactersWithDualLayer = {
+  'favorite_c080': {
+    layers: [
+      { idle: 'bg_idle', skillcut: 'bg_expression', zIndex: 0 }
+    ]
+  },
   'favorite_c170': {
+    layers: [
+      { idle: 'bg_idle', skillcut: '', zIndex: 0 }
+    ]
+  },
+  'favorite_c280': {
+    layers: [
+      { idle: 'bg_idle', skillcut: '', zIndex: 0 }
+    ]
+  },
+  'favorite_c281': {
+    layers: [
+      { idle: 'bg_idle', skillcut: 'bg_expression_0', zIndex: 0 }
+    ]
+  },
+  'favorite_c411': {
+    layers: [
+      { idle: 'bg_idle', skillcut: 'bg_expression_0', zIndex: 0 }
+    ]
+  },
+  'favorite_c580': {
     layers: [
       { idle: 'bg_idle', skillcut: '', zIndex: 0 }
     ]

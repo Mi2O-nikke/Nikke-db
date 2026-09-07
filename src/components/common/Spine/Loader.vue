@@ -1972,16 +1972,8 @@ const handleAction = () => {
   // Determine action animation based on current pose
   let actionAnimation = 'action'
 
-  // Special case for favorite_c170 - uses expression_0 instead of expression_merged
-  if (market.live2d.current_id === 'favorite_c170') {
-    actionAnimation = 'expression_0'
-  }
-  // For favorite characters, use expression_merged instead
-  else if (market.live2d.current_id.includes('favorite')) {
-    actionAnimation = 'expression_merged'
-  }
-  // Check special click animations config - alternate between them
-  else if (specialClickAnimations[market.live2d.current_id]) {
+  // Check special click animations config first - alternate between them
+  if (specialClickAnimations[market.live2d.current_id]) {
     const animations = specialClickAnimations[market.live2d.current_id]
     // Initialize index if not exists
     if (!animationIndex[market.live2d.current_id]) {
@@ -1994,6 +1986,10 @@ const handleAction = () => {
     if (animationNames.includes(currentAnim)) {
       actionAnimation = currentAnim
     }
+  }
+  // For favorite characters, use expression_merged instead (unless already handled above)
+  else if (market.live2d.current_id.includes('favorite')) {
+    actionAnimation = 'expression_merged'
   }
 
   // Check if action animation exists, if not just play voice
@@ -2012,9 +2008,13 @@ const handleAction = () => {
   // Check characterDefaultAnimations first (for characters with custom idle states like ce009_char_01)
   if (characterDefaultAnimations[market.live2d.current_id]) {
     idleAnimation = characterDefaultAnimations[market.live2d.current_id]
-  } else if (market.live2d.current_id === 'favorite_c170') {
+  } 
+  // Check if character is in specialClickAnimations - if so, return to normal idle, not idle_merged
+  else if (specialClickAnimations[market.live2d.current_id]) {
     idleAnimation = 'idle'
-  } else if (market.live2d.current_id.includes('favorite')) {
+  } 
+  // For other favorite characters, use idle_merged
+  else if (market.live2d.current_id.includes('favorite')) {
     idleAnimation = 'idle_merged'
   } else if (['smol_anis', 'smol_prika', 'smol_mint'].includes(market.live2d.current_id)) {
     idleAnimation = 'pose_idle'
@@ -2668,7 +2668,8 @@ const onWheel = (e: WheelEvent) => {
   // Stop zooming if scrolling over left panel (character list) or right panel (tools)
   if (target) {
     const isUiPanel = target.closest('#l2dsearchbox') ||  // Left character list panel
-                     target.closest('.toolList')          // Right tools panel
+                     target.closest('.toolList') ||       // Right tools panel
+                     target.closest('.n-drawer')          // Gallery drawer/modal
     
     if (isUiPanel) {
       return  // Don't zoom, allow normal scroll on UI

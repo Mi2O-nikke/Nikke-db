@@ -165,6 +165,7 @@ import fullfoolday from '@/utils/json/Gallery/fullfoolday.json'
 import goddessfall from '@/utils/json/Gallery/goddessfall.json'
 import goldencoinrush from '@/utils/json/Gallery/goldencoinrush.json'
 import goninjathief from '@/utils/json/Gallery/goninjathief.json'
+import greatvillainunion from '@/utils/json/Gallery/greatvillainunion.json'
 import icedragonsaga from '@/utils/json/Gallery/icedragonsaga.json'
 import jinxplayer from '@/utils/json/Gallery/jinxplayer.json'
 import juveniledays from '@/utils/json/Gallery/juveniledays.json'
@@ -403,6 +404,7 @@ const buttonListEvents = [
   { data: goddessfall },
   { data: goldencoinrush },
   { data: goninjathief },
+  { data: greatvillainunion },
   { data: icedragonsaga },
   { data: jinxplayer },
   { data: juveniledays },
