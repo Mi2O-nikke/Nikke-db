@@ -76,6 +76,7 @@
             <n-image
               :src="globalParams.GALLERY + carouselData.path + data.name + (data.name.includes('.') ? '' : '.png')"
               style="height:20vw; max-height: 512px;"
+              preview-disabled
             />
             <n-h3 prefix="bar" type="info">
               {{ data.text }}

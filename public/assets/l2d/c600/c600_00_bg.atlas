@@ -1,0 +1,9 @@
+c600_00_bg.png
+size:2048,2048
+filter:Linear,Linear
+pma:true
+bg
+bounds:2,48,1099,1827
+bg_sd
+bounds:2,2,44,73
+rotate:90

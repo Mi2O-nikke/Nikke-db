@@ -89,33 +89,37 @@
       </div>
     </div>
 
-    <!-- Image Viewer Modal -->
-    <div 
-      v-if="showImageModal" 
-      class="image-viewer-overlay" 
-      @click="handleOverlayClick"
-      @wheel.prevent="handleScroll"
-      @mousedown="startPanning"
-      @mousemove="handlePanning"
-      @mouseup="stopPanning"
-      @mouseleave="handleMouseLeave"
-      @dragstart.prevent
-    >
-      <img
-        v-if="carouselData !== null && currentImageData"
-        :src="currentImageUrl"
-        :alt="currentImageData.text"
-        class="floating-image"
-        :style="{ 
-          transform: `scale(${imageScale}) translate(${panX}px, ${panY}px)`,
-          cursor: isPanning ? 'grabbing' : 'grab'
-        }"
-        loading="lazy"
-        @click.stop
-        @mousedown.stop
-        @dragstart.prevent
-      />
-    </div>
+    <!-- Image Viewer Modal - Teleported to body -->
+    <Teleport to="body" v-if="showImageModal">
+      <div 
+        class="image-viewer-overlay" 
+        @click="handleOverlayClick"
+        @wheel="handleScroll"
+        @scroll.prevent
+      >
+        <img
+          v-if="carouselData !== null && currentImageData"
+          :src="currentImageUrl"
+          :alt="currentImageData.text"
+          class="floating-image"
+          :class="{ 
+            'slide-out-left': slideDirection === 'left',
+            'slide-out-right': slideDirection === 'right'
+          }"
+          :style="{ 
+            transform: `scale(${imageScale}) translate(${panX}px, ${panY}px)`,
+            cursor: isPanning ? 'grabbing' : 'grab'
+          }"
+          loading="lazy"
+          @click.stop
+          @mousedown="startPanning"
+          @mousemove="handlePanning"
+          @mouseup="stopPanning"
+          @mouseleave="stopPanning"
+          @dragstart.prevent
+        />
+      </div>
+    </Teleport>
 
   </span>
 </template>
@@ -233,6 +237,9 @@ const panStartX = ref(0)
 const panStartY = ref(0)
 const panStartPanX = ref(0)
 const panStartPanY = ref(0)
+let dragDistance = 0
+const isTransitioning = ref(false)
+const slideDirection = ref<'left' | 'right' | null>(null)
 
 interface buttonInterface {
   data: galleryInterface
@@ -250,13 +257,18 @@ const closeGridModal = () => {
 
 const closeImageModal = () => {
   showImageModal.value = false
+  // Re-enable body scroll when image modal closes
+  document.body.style.overflow = ''
+  // Remove keyboard listener
+  window.removeEventListener('keydown', handleKeydown)
 }
 
 const handleOverlayClick = (event: MouseEvent) => {
-  // Only close if clicking on the overlay background, not during panning
-  if (event.target === event.currentTarget && !isPanning.value) {
+  // Only close if clicking directly on the overlay background and no dragging occurred
+  if (event.target === event.currentTarget && dragDistance < 5) {
     closeImageModal()
   }
+  dragDistance = 0
 }
 
 const handleGalleryButtonClick = (data: galleryInterface) => {
@@ -273,6 +285,10 @@ const openImageModal = (imageIndex: number) => {
   panX.value = 0
   panY.value = 0
   showImageModal.value = true
+  // Disable body scroll when image modal is open
+  document.body.style.overflow = 'hidden'
+  // Add keyboard listener
+  window.addEventListener('keydown', handleKeydown)
 }
 
 const currentImageData = computed(() => {
@@ -287,6 +303,9 @@ const currentImageUrl = computed(() => {
 })
 
 const handleScroll = (event: WheelEvent) => {
+  event.preventDefault()
+  event.stopPropagation()
+  
   const scaleSpeed = 0.1
   const direction = event.deltaY > 0 ? -1 : 1
   const newScale = imageScale.value + direction * scaleSpeed
@@ -294,10 +313,9 @@ const handleScroll = (event: WheelEvent) => {
 }
 
 const startPanning = (event: MouseEvent) => {
-  // Only pan if clicking on the overlay, not the image
-  if (event.target !== event.currentTarget) return
-  
+  // Start panning on image mousedown
   isPanning.value = true
+  dragDistance = 0
   panStartX.value = event.clientX
   panStartY.value = event.clientY
   panStartPanX.value = panX.value
@@ -309,6 +327,7 @@ const handlePanning = (event: MouseEvent) => {
   
   const deltaX = event.clientX - panStartX.value
   const deltaY = event.clientY - panStartY.value
+  dragDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
   
   panX.value = panStartPanX.value + deltaX
   panY.value = panStartPanY.value + deltaY
@@ -316,30 +335,55 @@ const handlePanning = (event: MouseEvent) => {
 
 const stopPanning = () => {
   isPanning.value = false
+  dragDistance = 0
 }
 
 const handleMouseLeave = () => {
-  // Only stop panning if not currently panning
-  if (!isPanning.value) {
-    stopPanning()
-  }
+  stopPanning()
 }
 
 const previousImage = () => {
-  if (index.value > 1) {
-    index.value--
-    imageScale.value = 1
-    panX.value = 0
-    panY.value = 0
+  if (index.value > 1 && !isTransitioning.value) {
+    isTransitioning.value = true
+    slideDirection.value = 'right'
+    setTimeout(() => {
+      index.value--
+      imageScale.value = 1
+      panX.value = 0
+      panY.value = 0
+      slideDirection.value = null
+      isTransitioning.value = false
+    }, 400)
   }
 }
 
 const nextImage = () => {
-  if (carouselData.value && index.value < carouselData.value.content.length) {
-    index.value++
-    imageScale.value = 1
-    panX.value = 0
-    panY.value = 0
+  if (carouselData.value && index.value < carouselData.value.content.length && !isTransitioning.value) {
+    isTransitioning.value = true
+    slideDirection.value = 'left'
+    setTimeout(() => {
+      index.value++
+      imageScale.value = 1
+      panX.value = 0
+      panY.value = 0
+      slideDirection.value = null
+      isTransitioning.value = false
+    }, 400)
+  }
+}
+
+// Keyboard navigation for gallery image preview
+const handleKeydown = (event: KeyboardEvent) => {
+  if (!showImageModal.value) return
+  
+  const key = event.key.toLowerCase()
+  
+  if (key === 'arrowright' || key === '>' || key === 'd') {
+    nextImage()
+  } else if (key === 'arrowleft' || key === '<' || key === 'a') {
+    previousImage()
+  } else if (key === 'escape') {
+    closeImageModal()
   }
 }
 
@@ -603,7 +647,7 @@ const updateIndex = (newIndex: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 999999999 !important;
   overflow: hidden;
 }
 
@@ -614,7 +658,37 @@ const updateIndex = (newIndex: number) => {
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
-  pointer-events: none;
+  pointer-events: auto;
   transition: transform 0.05s ease-out;
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.floating-image.slide-out-left {
+  animation: slideOutLeft 0.4s ease-in-out forwards;
+}
+
+.floating-image.slide-out-right {
+  animation: slideOutRight 0.4s ease-in-out forwards;
 }
 </style>
