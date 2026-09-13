@@ -524,31 +524,31 @@ const l2dGroups = {
     ['favorite_c281', 'Moran@Favorite', 'ac:3o3', 'fb:0.28,0,-20'],
   ],
 
-  Unlimited: [
-    ['c190', 'Ludmilla'],
-    ['c191', 'Alice'],
-    ['c191_01', 'Alice Sweet Home'],
-    ['c191_02', 'Alice Märchen Dream'],
-    ['c192', 'Tove'],
-    ['c192_01', 'Tove Baseball Fan'],
-    ['c192_02', 'Tove Sunblaze'],
-    ['c193', 'Neve'],
-    ['c194', 'Ludmilla: Winter Owner'],
-    ['c195', 'Alice: Wonderland Bunny'],
-    ['favorite_c192', 'Tove@Favorite'],
+  'Unlimited': [
+    ['c190', 'Ludmilla', 'ac:1d5|re:1d3,2d3,3d3,4d1', 'sc:0.25'],
+    ['c191', 'Alice', 're:2d3', 'sc:0.33,0,60'],
+    ['c191_01', 'Alice Sweet Home', '', 'fb:0.2,-5,15'],
+    ['c191_02', 'Alice Märchen Dream', 'ac:3d3,3o18,4o9,5o9,7d5,8d3,8o9', 'fb:0.26,0,30|sc:0.24,10,50'],
+    ['c192', 'Tove', 'ac:1d3,2d3|re:1d3', 'sc:0.23,0,60'],
+    ['c192_01', 'Tove Baseball Fan', 'ac:2d5,3d15'],
+    ['c192_02', 'Tove Sunblaze', 'ac:3d5'],
+    ['c193', 'Neve', 'ac:1d5,1o12|re:4d3'],
+    ['c194', 'Ludmilla: Winter Owner', 'ac:2d5,3d3,3o10,4o9|re:2d5', 'fb:0,60|sc:0.9,0,100'],
+    ['c195', 'Alice: Wonderland Bunny', 'ac:2d3,3d3|re:1d3,2d2', 'sc:0.24,0,-50'],
+    ['favorite_c192', 'Tove@Favorite', 'ac:2o8', 'fb:0.3,30,-30'],
   ],
 
   'Veiled Order': [
-    ['c620', 'Snow Crane'],
+    ['c620', 'Snow Crane', 'ac:2d3,3d3,3o13,4o5|re:1d5,2d3', 'sc:0.29,70,80'],
   ],
 
-  Wardress: [
-    ['c160', 'Yuni'],
-    ['c160_01', 'Yuni Pretty In Pink'],
-    ['c161', 'Mihara'],
-    ['c162', 'Mihara: Upgrade'],
-    ['c162_01', 'Mihara: Upgrade Paint Eater'],
-    ['c985', 'Yuni: Upgrade'],
+  'Wardress': [
+    ['c160', 'Yuni', 'ac:2d15|re:1d10', 'sc:0.26,0,75'],
+    ['c160_01', 'Yuni Pretty In Pink', 'ac:2d15', 'fb:0.21,0,-10'],
+    ['c161', 'Mihara', 'ac:2d3|re:2d5,3d3'],
+    ['c162', 'Mihara: Bonding Chain', 'ac:1d3,3d8|re:2d3,3o10', 'fb:0.23,0,35|sc:0.28,0,0'],
+    ['c162_01', 'Mihara: Bonding Chain Pain Eater', 'ac:2d8,3d5', 'fb:0.26,0,10|sc:0.27,0,60'],
+    ['c985', 'Yuni: Punishment'],
   ],
 
   'White Knight': [
@@ -1021,9 +1021,11 @@ const voiceGroupOverrides = {
   'c141': ['c141_01'],
   'c142': ['c142_01'],
   'c150': ['c150_01', 'c150_02'],
+  'c160': ['c160_01'],
   'c170': ['c170_01', 'c170_02', 'c170_03'],
   'c180': ['c180_01'],
   'c181': ['c181_01', 'c181_02'],
+  'c192': ['c192_01'],
   'c201': ['c201_01'],
   'c202': ['c202_01'],
   'c210': ['c210_02', 'c210_03'],
@@ -1096,6 +1098,7 @@ const specialClickAnimations = {
   'c980': ['angry'],
   'c981': ['angry'],
   'c982': ['special'],
+  'c985': ['delight'],
   'c989': ['special'],
   'c990': ['sad'],
   'c992': ['angry'],
@@ -1151,6 +1154,7 @@ const skillcutConfig = {
   c073: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
   c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
+  c191_02: {animations: ['skillcut_2']},
   c223_01: {animations: ['skillcut_2']},
   c231: {animations: ['skill_01']},
   c231_01: {animations: ['skill_01']},
@@ -1225,6 +1229,7 @@ const skillcutAnimationOverrides = {
   'c073': 'idle_2',
   'c094': 'idle_2',
   'c094_01': 'idle_2',
+  'c191_02': 'idle_2',
   'c225': 'idle_all',
   'c234': 'idle_2',
   'c315': 'idle_1',
@@ -1365,6 +1370,12 @@ const charactersWithDualLayer = {
       { idle: 'bg_idle', skillcut: 'bg_skillcut_1', zIndex: 0 },
     ]
   },
+  'c191_02': {
+    layers: [
+      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1000 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 1 },
+    ]
+  },
   'c200': {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
@@ -1444,7 +1455,13 @@ const charactersWithDualLayer = {
   'c590': {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
-      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 0 },
+    ]
+  },
+  'c620': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
     ]
   },
   'c870': {
