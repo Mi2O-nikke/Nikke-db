@@ -48,8 +48,8 @@ const l2dGroups = {
     ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60'],
     ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9', 'fb:0.22,0,-20'],
     ['c033', 'Quiry', 'ac:2d4|re:1d5', 'sc:0.27,0,150'],
-    ['favorite_c030', 'Poli@Favorite', '', 'fb:0.24,60'],
-    ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.3,60'],
+    ['favorite_c030', 'Poli@Favorite', '', 'fb:0.26,30'],
+    ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.32,60'],
   ],
 
   'Absolute': [
@@ -111,7 +111,7 @@ const l2dGroups = {
     ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
-    ['favorite_c411', 'Flora@Favorite', 'ac:2d3,2o5,4o5', 'fb:0.31,60'],
+    ['favorite_c411', 'Flora@Favorite', 'ac:2d3,2o5,4o5', 'fb:0.35,60,-30'],
   ],
 
   'Cafe Sweety': [
@@ -123,8 +123,8 @@ const l2dGroups = {
     ['c142', 'Frima', 'ac:3d5|re:1d4,2d4', 'sc:0.36,100'],
     ['c142_01', 'Frima Sea of Sloth', 'ac:2d5'],
     ['c143', 'Milk: Blooming Bunny', 'ac:4d5,6o5|re:3d2', 'sc:0.26'],
-    ['favorite_c140', 'Sugar@Favorite', 'ac:1o2,2o2,5d3', 'fb:0.30,60,30'],
-    ['favorite_c141', 'Milk@Favorite', 'ac:2d5,3d3', 'fb:0.35,60,-60'],
+    ['favorite_c140', 'Sugar@Favorite', 'ac:1o2,2o2,5d3', 'fb:0.35,60'],
+    ['favorite_c141', 'Milk@Favorite', 'ac:2d5,3d3', 'fb:0.4,60,-80'],
     ['favorite_c142', 'Frima@Favorite', '', 'fb:0.31,60,-60'],
   ],
 
@@ -261,7 +261,7 @@ const l2dGroups = {
     ['c073', 'Brid: Silent Track', 'ac:1d5,2d15,3d5,4d5|re:1d5', 'sc:0.29,200,200'],
     ['c074', 'Soline: Frost Ticket', 'ac:1d5,1o12,2o7|re:1d5', 'sc:0.4,-400'],
     ['c075', 'Diesel: Winter Sweets', 'ac:2o8,3o9|re:1d8', 'sc:0.25,0,100'],
-    ['favorite_c072', 'Diesel@Favorite', '', 'fb:0.27,60'],
+    ['favorite_c072', 'Diesel@Favorite', '', 'fb:0.3,60,60'],
   ],
 
   'Inherit': [
@@ -301,7 +301,7 @@ const l2dGroups = {
     ['c150', 'Julia', 'ac:1d5|re:2d3', 'sc:0.28,0,50'],
     ['c150_01', 'Julia Mild Nocturne', 'ac:1d5'],
     ['c150_02', 'Julia Summer Romance', 'ac:1d5,1o11,3d10'],
-    ['favorite_c150', 'Julia@Favorite', '', 'fb:0.25,60,-10'],
+    ['favorite_c150', 'Julia@Favorite', '', 'fb:0.28,60,-60'],
   ],
 
   'Matis': [
@@ -317,8 +317,8 @@ const l2dGroups = {
     ['c105', 'Maxwell: Ordinary Mechanic', 'ac:3d15,5d5,6d5|re:2o6', 'sc:0.28,50,50'],
     ['c105_01', 'Maxwell: Chief Researcher', 'ac:3d5'],
     ['c9029', 'Laplace: Child'],
-    ['favorite_c100', 'Laplace@Favorite', '', 'fb:0.27,60'],
-    ['favorite_c101', 'Drake@Favorite', 'ac:1d1,1o1,2o5', 'fb:0.25'],
+    ['favorite_c100', 'Laplace@Favorite', '', 'fb:0.3,60,-20'],
+    ['favorite_c101', 'Drake@Favorite', 'ac:1d1,1o1,2o5', 'fb:0.28,0,-30'],
   ],
 
   'Mighty Tools': [
@@ -416,7 +416,7 @@ const l2dGroups = {
     ['c212', 'Novel', 'ac:1d3,2d8', 'sc:0.23,0,50'],
     ['c212_01', 'Novel Penguin Holmes', 'ac:1d3,2d8'],
     ['c212_02', 'Novel Detective Nurse', 'ac:1d2,2d2'],
-    ['favorite_c210', 'Exia@Favorite', '', 'fb:0.24'],
+    ['favorite_c210', 'Exia@Favorite', '', 'fb:0.3'],
   ],
 
   'Real Kindness': [
@@ -475,52 +475,53 @@ const l2dGroups = {
     ['c9021_01', 'Anis: Training', '', 'fb:0,25'],
   ],
 
-  Talentum: [
-    ['c200', 'Rupee'],
-    ['c200_01', 'Rupee Rabbit Deluxe'],
-    ['c201', 'Yan'],
-    ['c201_01', 'Yan Sunrise Market'],
-    ['c202', 'Dolla'],
-    ['c202_01', 'Dolla Dark Rose'],
-    ['c203', 'Rupee: Winter Shopper'],
+  'Talentum': [
+    ['c200', 'Rupee', 'ac:1d3', 'sc:0.35,0,120'],
+    ['c200_01', 'Rupee Rabbit Deluxe', 'ac:1o3,3d3,3o11', 'fb:0.26,0,30|sc:0.3,0,30'],
+    ['c201', 'Yan', 'ac:2o8|re:2d3,4d3', 'fb:0|sc:0.25,60,30'],
+    ['c201_01', 'Yan Sunrise Market', 'ac:1d5', 'fb:0,60,10'],
+    ['c202', 'Dolla', 'ac:1d8|re:2d3,3d3', 'sc:0.28,60'],
+    ['c202_01', 'Dolla Dark Rose',  'ac:1d8'],
+    ['c203', 'Rupee: Winter Shopper', 'ac:3d5,4d10', 'fb:0.26,60,100|sc:0.3,0,180'],
   ],
 
   'The Carronades': [
-    ['c060', 'Belorta'],
-    ['c061', 'Mica'],
-    ['c062', 'Mica: Snow Buddy'],
+    ['c060', 'Belorta', 'ac:1d10,2d15|re:1d18'],
+    ['c061', 'Mica', 'ac:1d5|re:1d10'],
+    ['c062', 'Mica: Snow Buddy', 'ac:2o3,3o4|re:2d5', 'fb:0.23,0,20|sc:0.3,0,20'],
   ],
 
   'The Scouts': [
-    ['c020', 'Delta'],
-    ['c022', 'Signal'],
-    ['c022_01', 'Signal Dramatic Chocolate'],
-    ['c023', 'Delta: Ninja Thief'],
+    ['c020', 'Delta', 'ac:1d3,3d3|re:2d3'],
+    ['c022', 'Signal', 'ac:1d3,2d5', 'fb:0.25,25,-80|sc:0.25,0,30'],
+    ['c022_01', 'Signal Dramatic Chocolate', 'ac:4d5,5d3', 'fb:0.25,0,-80'],
+    ['c023', 'Delta: Ninja Thief', 'ac:2d5,3o3|re:2d5', 'fb:0,60|sc:0.28,0,-20'],
   ],
 
-  Triangle: [
-    ['c170', 'Privaty'],
-    ['c170_01', 'Privaty Government Grunt'],
-    ['c170_02', 'Privaty Banquet Princess'],
-    ['c170_03', 'Privaty Destined in Blue'],
-    ['c170_04', 'Privaty Sharp Lesson'],
-    ['c171', 'Yulha'],
-    ['c172', 'Admi'],
-    ['favorite_c170', 'Privaty@Favorite'],
+  'Triangle': [
+    ['c170', 'Privaty', 'ac:2d13|re:2d3', 'sc:0.3,0,250'],
+    ['c170_01', 'Privaty Government Grunt', 'ac:2d13'],
+    ['c170_02', 'Privaty Banquet Princess', 'ac:2d3,3d3,4d3'],
+    ['c170_03', 'Privaty Destined in Blue', 'ac:2d15,4d15'],
+    ['c170_04', 'Privaty Sharp Lesson', 'ac:1d3,2d2,3d8,5d10', 'sc:0.27,0,140'],
+    ['c171', 'Yulha', 'ac:1o8,3d22|re:2d5', 'sc:0.28,50,50'],
+    ['c172', 'Admi', 'ac:4d5,5d3|re:2d5', 'sc:0.27,0,70'],
+    ['favorite_c170', 'Privaty@Favorite', '', 'fb:0.23,40,80'],
   ],
 
   'Underworld Queen': [
-    ['c280', 'Rosanna'],
-    ['c280_01', 'Rosanna Ms. Dangerous'],
-    ['c281', 'Moran'],
-    ['c281_01', 'Moran Off-Duty Queen'],
-    ['c281_02', 'Moran King of Flowers'],
-    ['c282', 'Sakura'],
-    ['c282_01', 'Sakura Midnight Stealth'],
-    ['c283', 'Rosanna: Chic Oceon'],
-    ['c284', 'Sakura: Bloom in Summer'],
-    ['favorite_c280', 'Rosanna@Favorite', 'ac:3o8', 'fb:0.26,20,150'],
-    ['favorite_c281', 'Moran@Favorite', 'ac:3o3', 'fb:0.26,0'],
+    ['c280', 'Rosanna', 'ac:1d3,3d3,3o11|re:3d3', 'sc:0.67,900,-400'],
+    ['c280_01', 'Rosanna Ms. Dangerous', 'ac:1d3,2o9,5d2'],
+    ['c281', 'Moran', 're:2d3', 'sc:0.6,750,60'],
+    ['c281_01', 'Moran Off-Duty Queen', 'ac:4d5', 'fb:0,65'],
+    ['c281_02', 'Moran King of Flowers', 'ac:1d3,2o7', 'fb:0.23|sc:0.28,0,30'],
+    ['c281_98', 'Moran Darkflower the Shadow Empress'],
+    ['c282', 'Sakura', 'ac:1d3,2d3|re:1d3,3o8', 'sc:0.23,30'],
+    ['c282_01', 'Sakura Midnight Stealth', 'ac:3d3,7o3,8o8', 'fb:0,40'],
+    ['c283', 'Rosanna: Chic Oceon', 'ac:1d3,2d3,4d3,5d8', 'fb:0.28,0,-50|sc:0.38,-80,60'],
+    ['c284', 'Sakura: Bloom in Summer', 'ac:1d5,2d1,3d23|re:2d3', 'fb:0.24,40,-43|sc:0.32,10,80'],
+    ['favorite_c280', 'Rosanna@Favorite', 'ac:3o8', 'fb:0.3,20,120'],
+    ['favorite_c281', 'Moran@Favorite', 'ac:3o3', 'fb:0.28,0,-20'],
   ],
 
   Unlimited: [
@@ -1000,6 +1001,7 @@ const voiceGroupOverrides = {
   'c010': ['c010_01', 'c010_02', 'c010_03'],
   'c011': ['c011_01'],
   'c016': ['c016_03'],
+  'c022': ['c022_01'],
   'c030': ['c030_01', 'c030_02'],
   'c032': ['c032_01'],
   'c041': ['c041_01'],
@@ -1019,12 +1021,18 @@ const voiceGroupOverrides = {
   'c141': ['c141_01'],
   'c142': ['c142_01'],
   'c150': ['c150_01', 'c150_02'],
+  'c170': ['c170_01', 'c170_02', 'c170_03'],
   'c180': ['c180_01'],
   'c181': ['c181_01', 'c181_02'],
+  'c201': ['c201_01'],
+  'c202': ['c202_01'],
   'c210': ['c210_02', 'c210_03'],
   'c212': ['c212_01', 'c212_02'],
   'c242': ['c242_01'],
   'c271': ['c271_01', 'c271_02'],
+  'c280': ['c280_01'],
+  'c282': ['c282_01'],
+  'c281': ['c281_01'],
   'c310': ['c310_01'],
   'c316': ['c316_01'],
   'c350': ['c350_01', 'c350_old'],
@@ -1054,6 +1062,8 @@ const specialClickAnimations = {
   'c016_01': ['expression_1'],
   'c104': ['delight2'],
   'c227': ['smile'],
+  'c281_98': ['angry'],
+  'c282_01': ['expression_1'],
   'c290': ['expression_0'],
   'c310': ['expression_0'],
   'c412_01': ['expression_0'],
@@ -1145,6 +1155,8 @@ const skillcutConfig = {
   c231: {animations: ['skill_01']},
   c231_01: {animations: ['skill_01']},
   c234: {animations: ['skillcut_2']},
+  c282: {animations: ['skillcut_01']},
+  c282_01: {animations: ['skillcut_01']},
   c403: {animations: ['skillcut_01']},
   c403_01: {animations: ['skillcut_01']},
   c411: {animations: ['skillcut_2']},
@@ -1205,6 +1217,8 @@ const skillcutAnimationOverrides = {
   'c010_01': 'Idle',
   'c010_02': 'Idle',
   'c010_03': 'Idle',
+  'c022': 'Idle',
+  'c022_01': 'Idle',
   'c030': 'Idle',
   'c030_01': 'Idle',
   'c030_02': 'Idle',
@@ -1283,6 +1297,12 @@ const charactersWithDualLayer = {
       { idle: 'idle2', skillcut: 'skillcut_2', zIndex: 0 },
     ]
   },
+  'c023': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
   'c073': {
     layers: [
       { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
@@ -1339,6 +1359,18 @@ const charactersWithDualLayer = {
       { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
     ]
   },
+  'c170_04': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'bg_idle', skillcut: 'bg_skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c200': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'skillcut_2', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
   'c223_01': {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
@@ -1350,6 +1382,12 @@ const charactersWithDualLayer = {
     layers: [
       { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
       { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c281_02': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
     ]
   },
   'c315': {
