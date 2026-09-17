@@ -307,10 +307,24 @@ const handleScroll = (event: WheelEvent) => {
   event.preventDefault()
   event.stopPropagation()
   
-  const scaleSpeed = 0.1
-  const direction = event.deltaY > 0 ? -1 : 1
-  const newScale = imageScale.value + direction * scaleSpeed
-  imageScale.value = Math.max(1, Math.min(newScale, 5))
+  // Check if scrolling over the image
+  const target = event.target as HTMLElement
+  const isOverImage = target.classList.contains('floating-image')
+  
+  if (isOverImage) {
+    // Scroll over image = zoom
+    const scaleSpeed = 0.1
+    const direction = event.deltaY > 0 ? -1 : 1
+    const newScale = imageScale.value + direction * scaleSpeed
+    imageScale.value = Math.max(1, Math.min(newScale, 5))
+  } else {
+    // Scroll outside image = navigate
+    if (event.deltaY > 0) {
+      nextImage()
+    } else {
+      previousImage()
+    }
+  }
 }
 
 const startPanning = (event: MouseEvent) => {
