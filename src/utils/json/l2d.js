@@ -118,6 +118,7 @@ const l2dGroups = {
     ['c140', 'Sugar', 'ac:2d5|re:1d7,2d4,3d2', 'fb:0,80|sc:0.23,0,60'],
     ['c140_01', 'Sugar Hard-Boiled', '', 'fb:0,80'],
     ['c140_02', 'Sugar Wild Backyard', 'ac:2d32', 'fb:0,80'],
+    ['c140_03', 'Sugar?'],
     ['c141', 'Milk', 'ac:2d20,3d5|re:4d2', 'sc:0.26,0,70'],
     ['c141_01', 'Milk Extreme Fighter', 'ac:2d20,3d5'],
     ['c142', 'Frima', 'ac:3d5|re:1d4,2d4', 'sc:0.36,100'],
@@ -132,6 +133,7 @@ const l2dGroups = {
     ['c520', 'Bready', 'ac:1d5,2d3,3d6,4d2|re:2d4,3d3', 'sc:0.25'],
     ['c520_01', 'Bready Frosty Bite', 'ac:3d5,4d5,5d5'],
     ['c521', 'Crust', 'ac:1o12|re:2d5,3d2', 'sc:0.25'],
+    ['c521_01', 'Crust?'],
   ],
 
   'Counters': [
@@ -280,6 +282,7 @@ const l2dGroups = {
 
   'M.M.R.': [
     ['c290', 'Mana', 'ac:1o1,2o1,4o8|re:1d2', 'sc:0.28,0,50'],
+    ['c290_01', 'Mana?'],
     ['c291', 'Ether', 'ac:1d5|re:1d8'],
     ['c973', 'Jien'],
     ['c9032', 'Jien: Child'],
@@ -427,6 +430,8 @@ const l2dGroups = {
     ['c402', 'Quency', 'ac:5d3'],
     ['c403', 'Quency: Escape Queen', 'ac:1o7,2o8', 'fb:0.31,50,-50|sc:0.52,600,10'],
     ['c403_01', 'Quency: Escape Queen Masquerade Swan', 'ac:1d3,2o8', 'fb:0.33,50,-50'],
+    ['c404', 'Guilty?'],
+    ['c405', 'Sin?'],
   ],
 
   'Recall & Release': [
@@ -489,6 +494,7 @@ const l2dGroups = {
     ['c060', 'Belorta', 'ac:1d10,2d15|re:1d18'],
     ['c061', 'Mica', 'ac:1d5|re:1d10'],
     ['c062', 'Mica: Snow Buddy', 'ac:2o3,3o4|re:2d5', 'fb:0.23,0,20|sc:0.3,0,20'],
+    ['c063', 'Belorta?']
   ],
 
   'The Scouts': [
@@ -552,13 +558,13 @@ const l2dGroups = {
   ],
 
   'White Knight': [
-    ['c330', 'Crown'],
-    ['c330_01', 'Crown Naked King'],
-    ['c330_02', 'Crown Glorious Flower'],
-    ['c331', 'Chime'],
+    ['c330', 'Crown', 'ac:1o6|re:1d3,1o10,2o8', 'sc:0.3,0,130'],
+    ['c330_01', 'Crown Naked King', 'ac:1o5,2o9', 'fb:0.25,0,-60|sc:0.29,0,70'],
+    ['c330_02', 'Crown Glorious Flower', 'ac:5o5,8d3', 'fb:0.22,60'],
+    ['c331', 'Chime', 'ac:1d3,1o8,2o8,3o8|re:2d1', 'sc:0.25'],
   ],
 
-  _AI: [
+  '_AI': [
     ['c370', 'Eternity'],
     ['c371', 'Endless'],
     ['c928', 'Einkk'],
@@ -944,6 +950,7 @@ const l2dGroups = {
     ['arkranger', 'Ark Ranger'],
     ['projectmatis', 'Project Matis'],
     ['greatvillainunion', 'Great Villain Union', '', 'fb:0.29,0,80'],
+    ['coinrushshowdown', 'Coinrush Showdown'],
   ],
 
   '__Story': [
@@ -1161,6 +1168,7 @@ const skillcutConfig = {
   c234: {animations: ['skillcut_2']},
   c282: {animations: ['skillcut_01']},
   c282_01: {animations: ['skillcut_01']},
+  c331: {animations: ['skillcut_2']},
   c403: {animations: ['skillcut_01']},
   c403_01: {animations: ['skillcut_01']},
   c411: {animations: ['skillcut_2']},
@@ -1405,6 +1413,12 @@ const charactersWithDualLayer = {
     layers: [
       { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
       { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c331': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
     ]
   },
   'c411': {

@@ -155,6 +155,7 @@ import brandnewyear from '@/utils/json/Gallery/brandnewyear.json'
 import bsideidol from '@/utils/json/Gallery/bsideidol.json'
 import _777 from '@/utils/json/Gallery/777.json'
 import chocolateplease from '@/utils/json/Gallery/chocolateplease.json'
+import coinrushshowdown from '@/utils/json/Gallery/coinrushshowdown.json'
 import coinsinrush from '@/utils/json/Gallery/coinsinrush.json'
 import colorless from '@/utils/json/Gallery/colorless.json'
 import darkhero from '@/utils/json/Gallery/darkhero.json'
@@ -435,6 +436,7 @@ const buttonListEvents = [
   { data: bsideidol },
   { data: _777 },
   { data: chocolateplease },
+  { data: coinrushshowdown },
   { data: coinsinrush },
   { data: colorless },
   { data: darkhero },

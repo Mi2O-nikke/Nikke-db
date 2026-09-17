@@ -1,0 +1,68 @@
+{
+  "path": "coinrushshowdown/",
+  "type": "large",
+  "id": "coinrushshowdown",
+  "title": "Coinrush Showdown",
+  "content": [
+    {
+      "name": "coinrushshowdown_opening_dummy.png",
+      "text": ""
+    },
+    {
+      "name": "coinrushshowdown_part1_main_dummy.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_05_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinrushshowdown_10.png",
+      "text": ""
+    }
+  ]
+}
