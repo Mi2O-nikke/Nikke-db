@@ -2,7 +2,7 @@
   "path": "coinrushshowdown/",
   "type": "large",
   "id": "coinrushshowdown",
-  "title": "Coinrush Showdown",
+  "title": "Coin Rush Showdown",
   "content": [
     {
       "name": "coinrushshowdown_opening_dummy.png",
@@ -62,6 +62,46 @@
     },
     {
       "name": "EventScene_coinrushshowdown_10.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_1.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_2.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_3.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_4.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_5.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_6.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_7.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_8.png",
+      "text": ""
+    },
+    {
+      "name": "tcr_cutscene_9.png",
       "text": ""
     }
   ]

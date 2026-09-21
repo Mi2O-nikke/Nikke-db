@@ -722,6 +722,18 @@ const l2dGroups = {
     ['azxservicetime_5', 'AZX: Diesel 2'],
     ['azxservicetime_7', 'AZX: Brid 1'],
     ['azxservicetime_8', 'AZX: Brid 2'],
+  ],
+
+  '__Chibi': [
+    ['ce009_char_01', 'Smol: Queen'],
+    ['ce009_char_02', 'Smol: Yukiko'],
+    ['ce009_char_03', 'Smol: igis'],
+    ['ce009_enemy_ade', 'Smol: Ade'],
+    ['ce009_enemy_delta', 'Smol: Delta'],
+    ['ce009_enemy_miranda', 'Smol: Miranda'],
+    ['ce009_enemy_phantom', 'Smol: Phantom'],
+    ['ce009_enemy_poli', 'Smol: Poli'],
+    ['ce009_enemy_quency', 'Smol: Quency'],
     ['smol_anis', 'Smol: Anis'],
     ['smol_ade', 'Smol: Ade'],
     ['smol_anchor', 'Smol: Anchor'],
@@ -743,6 +755,19 @@ const l2dGroups = {
     ['smol_rem', 'Smol: Rem'],
     ['smol_sin_pirate', 'Smol: Sin Pirate'],
     ['smol_yan', 'Smol: Yan'],
+    ['tcr_monster_ade', 'Smol: Ade', '', 'fb:0,30'],
+    ['tcr_monster_alice', 'Smol: Alice', '', 'fb:0,150'],
+    ['tcr_monster_blanc', 'Smol: Blanc', '', 'fb:0,60'],
+    ['tcr_monster_exia', 'Smol: Exia', '', 'fb:0,30'],
+    ['tcr_monster_milk', 'Smol: Milk', '', 'fb:0,-30'],
+    ['tcr_monster_noir', 'Smol: Noir', '', 'fb:0,60'],
+    ['tcr_monster_folkwang', 'Smol: Folkwang', '', 'fb:0,70'],
+    ['tcr_monster_normal_1', 'Smol: Mob 1', '', 'fb:0,40'],
+    ['tcr_monster_normal_2', 'Smol: Mob 2', '', 'fb:0,40'],
+    ['tcr_monster_normal_3', 'Smol: Mob 3', '', 'fb:0,40'],
+    ['tcr_monster_normal_4', 'Smol: Mob 4', '', 'fb:0,40'],
+    ['tcr_monster_normal_5', 'Smol: Mob 5', '', 'fb:0,40'],
+    ['tcr_monster_soda', 'Smol: Soda', '', 'fb:0,60'],
   ],
 
   '__Collab Airborne Squad': [
@@ -826,16 +851,7 @@ const l2dGroups = {
     ['c872', 'Aigis', 'ac:1d3,1o7,3o7|re:1d2,1o13,2o5', 'fb:0,0,20|sc:0.24,-100'],
     ['c9038', '_Teddie'],
     ['c9039', '_Mona'],
-    ['c9040', '_Cat'],
-    ['ce009_char_01', '__Queen'],
-    ['ce009_char_02', '__Yukiko'],
-    ['ce009_char_03', '__Aigis'],
-    ['ce009_enemy_ade', '__Ade'],
-    ['ce009_enemy_delta', '__Delta'],
-    ['ce009_enemy_miranda', '__Miranda'],
-    ['ce009_enemy_phantom', '__Phantom'],
-    ['ce009_enemy_poli', '__Poli'],
-    ['ce009_enemy_quency', '__Quency'],
+    ['c9040', '_Morgana'],
   ],
 
   '__Collab WILLE': [
@@ -950,7 +966,7 @@ const l2dGroups = {
     ['arkranger', 'Ark Ranger'],
     ['projectmatis', 'Project Matis'],
     ['greatvillainunion', 'Great Villain Union', '', 'fb:0.29,0,80'],
-    ['coinrushshowdown', 'Coinrush Showdown'],
+    ['coinrushshowdown', 'Coin Rush Showdown', '', 'fb:0.29,100'],
   ],
 
   '__Story': [
@@ -1070,7 +1086,6 @@ const voiceGroupOverrides = {
 const specialClickAnimations = {
   'c011': ['expression_0'],
   'c016_01': ['expression_1'],
-  'c104': ['delight2'],
   'c227': ['smile'],
   'c281_98': ['angry'],
   'c282_01': ['expression_1'],
@@ -1143,6 +1158,19 @@ const specialClickAnimations = {
   'favorite_c390': ['expression_0'],
   'favorite_c411': ['expression_0'],
   'favorite_c580': ['expression_0'],
+  'tcr_monster_ade': ['die'],
+  'tcr_monster_alice': ['jump_loop'],
+  'tcr_monster_blanc': ['die'],
+  'tcr_monster_exia': ['stop'],
+  'tcr_monster_milk': ['stop'],
+  'tcr_monster_noir': ['die'],
+  'tcr_monster_folkwang': ['die'],
+  'tcr_monster_normal_1': ['die'],
+  'tcr_monster_normal_2': ['die'],
+  'tcr_monster_normal_3': ['die'],
+  'tcr_monster_normal_4': ['die'],
+  'tcr_monster_normal_5': ['die'],
+  'tcr_monster_soda': ['moveback'],
 }
 
 //chara have foreground and background
@@ -1222,6 +1250,19 @@ export const characterDefaultAnimations = {
   ce009_enemy_phantom: 'down_idle',
   ce009_enemy_poli: 'down_idle',
   ce009_enemy_quency: 'down_idle',
+  tcr_monster_ade: 'move',
+  tcr_monster_alice: 'jump_fall',
+  tcr_monster_blanc: 'move',
+  tcr_monster_exia: 'move',
+  tcr_monster_milk: 'move',
+  tcr_monster_noir: 'move',
+  tcr_monster_folkwang: 'move',
+  tcr_monster_normal_1: 'move',
+  tcr_monster_normal_2: 'move',
+  tcr_monster_normal_3: 'move',
+  tcr_monster_normal_4: 'move',
+  tcr_monster_normal_5: 'move',
+  tcr_monster_soda: 'move',
 }
 
 //skillcut special default motion other than "idle"

@@ -1969,11 +1969,20 @@ const handleAction = () => {
   const animations = spinePlayer.animationState.data.skeletonData.animations
   const animationNames = animations.map((a: { name: string }) => a.name)
 
+  // Helper to check if character ID is a "special" (non-standard) character
+  // Standard = c + 3-4 digits, optionally with _XX suffix (like c011, c9021, c282_01, favorite_c080)
+  // Special = anything else (like smol_*, ce009_*, tcr_*, eba*, etc.)
+  const isSpecialCharacter = (id) => {
+    const standardPattern = /^c\d{3,4}(?:_\d{1,2})?$|^favorite_c\d{3,4}(?:_\d{1,2})?$/
+    return !standardPattern.test(id) // Special if NOT standard
+  }
+
   // Determine action animation based on current pose
   let actionAnimation = 'action'
+  let loopDurationMs = 0 // 0 means don't loop, play once
 
-  // Check special click animations config first - alternate between them
-  if (specialClickAnimations[market.live2d.current_id]) {
+  // Check special click animations config - but only for truly SPECIAL (non-standard) characters
+  if (specialClickAnimations[market.live2d.current_id] && isSpecialCharacter(market.live2d.current_id)) {
     const animations = specialClickAnimations[market.live2d.current_id]
     // Initialize index if not exists
     if (!animationIndex[market.live2d.current_id]) {
@@ -1985,6 +1994,23 @@ const handleAction = () => {
 
     if (animationNames.includes(currentAnim)) {
       actionAnimation = currentAnim
+      loopDurationMs = 2000 // Loop this motion for 2 seconds
+    }
+  }
+  // For standard c-series characters in specialClickAnimations, play normally without delay
+  else if (specialClickAnimations[market.live2d.current_id]) {
+    const animations = specialClickAnimations[market.live2d.current_id]
+    // Initialize index if not exists
+    if (!animationIndex[market.live2d.current_id]) {
+      animationIndex[market.live2d.current_id] = 0
+    }
+    // Get current animation and move to next
+    const currentAnim = animations[animationIndex[market.live2d.current_id]]
+    animationIndex[market.live2d.current_id] = (animationIndex[market.live2d.current_id] + 1) % animations.length
+
+    if (animationNames.includes(currentAnim)) {
+      actionAnimation = currentAnim
+      loopDurationMs = 0 // No delay for standard characters
     }
   }
   // For favorite characters, use expression_merged instead (unless already handled above)
@@ -1998,7 +2024,9 @@ const handleAction = () => {
     return
   }
 
-  spinePlayer.animationState.setAnimation(0, actionAnimation, false)
+  // For special animations with loop duration, play them as looping
+  // For normal animations (action, expression_merged), play them once
+  spinePlayer.animationState.setAnimation(0, actionAnimation, loopDurationMs > 0)
 
   playVoice()
 
@@ -2027,8 +2055,18 @@ const handleAction = () => {
   }
 
   // back to idle after action finish (only if idle animation exists)
+  // If loopDurationMs > 0, delay the idle switch by that duration
+  const delayMs = loopDurationMs > 0 ? loopDurationMs : 0
   if (animationNames.includes(idleAnimation)) {
-    spinePlayer.animationState.addAnimation(0, idleAnimation, true, 0)
+    if (delayMs > 0) {
+      // Delay the return to idle by loopDurationMs
+      setTimeout(() => {
+        spinePlayer.animationState.setAnimation(0, idleAnimation, true)
+      }, delayMs)
+    } else {
+      // No delay, add animation normally
+      spinePlayer.animationState.addAnimation(0, idleAnimation, true, 0)
+    }
   }
 }
 
