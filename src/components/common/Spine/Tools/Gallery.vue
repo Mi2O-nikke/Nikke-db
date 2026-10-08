@@ -176,6 +176,7 @@ import jinxplayer from '@/utils/json/Gallery/jinxplayer.json'
 import juveniledays from '@/utils/json/Gallery/juveniledays.json'
 import killthelord from '@/utils/json/Gallery/killthelord.json'
 import lastkingdom from '@/utils/json/Gallery/lastkingdom.json'
+import littlewitchtrick from '@/utils/json/Gallery/littlewitchtrick.json'
 import liarsend from '@/utils/json/Gallery/liarsend.json'
 import liecauserecoil from '@/utils/json/Gallery/liecauserecoil.json'
 import madeinrush from '@/utils/json/Gallery/madeinrush.json'
@@ -199,6 +200,7 @@ import side02 from '@/utils/json/Gallery/side02.json'
 import side03 from '@/utils/json/Gallery/side03.json'
 import side04 from '@/utils/json/Gallery/side04.json'
 import side05 from '@/utils/json/Gallery/side05.json'
+import side06 from '@/utils/json/Gallery/side06.json'
 import sineditor from '@/utils/json/Gallery/sineditor.json'
 import snowfalloasis from '@/utils/json/Gallery/snowfalloasis.json'
 import staranis from '@/utils/json/Gallery/staranis.json'
@@ -433,7 +435,8 @@ const buttonListSideStory = [
   { data: side02 },
   { data: side03 },
   { data: side04 },
-  { data: side05 }
+  { data: side05 },
+  { data: side06 }
 ] as buttonInterface[]
 
 const buttonListEvents = [
@@ -470,6 +473,7 @@ const buttonListEvents = [
   { data: juveniledays },
   { data: killthelord },
   { data: lastkingdom },
+  { data: littlewitchtrick },
   { data: liarsend },
   { data: liecauserecoil },
   { data: memoriesteller },

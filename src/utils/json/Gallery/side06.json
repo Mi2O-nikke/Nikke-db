@@ -1,0 +1,52 @@
+{
+  "path": "side06/",
+  "type": "large",
+  "id": "side06",
+  "title": "Gingerbread House",
+  "content": [
+    {
+      "name": "EventScene_Side_06_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_03_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_03_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_04_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_04_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_06_06.png",
+      "text": ""
+    }
+  ]
+}

@@ -102,6 +102,7 @@ const l2dGroups = {
     ['c580_01', 'Phantom Saint Thief', 'ac:3d5,4d58', 'sc:0.47,50,120'],
     ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
     ['c582', 'Label', '', 'sc:0.3,0,50'],
+    ['c582_01', 'Label Occultist', 'ac:1o5,2o8,5d3,6d3', 'fb:0,-35,-15'],
     ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
     ['favorite_c580', 'Phantom@Favorite', 'ac:1d3,1o10,2o8', 'fb:0.23,-60,60'],
   ],
@@ -344,9 +345,10 @@ const l2dGroups = {
 
   'Old Tales': [
     ['c510', 'Grave: Abe Nikke', '', 'fb:0.22,0,-40'],
-    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5', 'fb:0.25,100,0|sc:0.25,0,40'],
+    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5|re:1d3,1o10,2o9', 'fb:0.25,100,0|sc:0.25,0,40'],
     ['c511_01', 'Anachiro | Cinderella Glass Princess', '', 'fb:0.23,0,20|sc:0.22,0,20'],
     ['c511_02', 'Anachiro | Cinderella Beautiful Me', 'ac:2d6,3d4', 'fb:0.21'],
+    ['c511_03', 'Anachiro | Cinderella Glass Curtsy', 'ac:1d5,2d5,3d3', 'fb:0.22,30|sc:0.3,60,120'],
     ['c513', 'Little Mermaid | Siren', 'ac:1o7,3o8', 'sc:0.3'],
     ['c513_01', 'Little Mermaid | Siren Abyss Flower', 'ac:1d3,1o8,3d3,3o8', 'fb:0.28,0,20|sc:0.3,0,-40'],
     ['c513_02', 'Little Mermaid | Siren Beautiful Bubble'],
@@ -494,7 +496,7 @@ const l2dGroups = {
     ['c060', 'Belorta', 'ac:1d10,2d15|re:1d18'],
     ['c061', 'Mica', 'ac:1d5|re:1d10'],
     ['c062', 'Mica: Snow Buddy', 'ac:2o3,3o4|re:2d5', 'fb:0.23,0,20|sc:0.3,0,20'],
-    ['c063', 'Belorta: Trick or Treat', 'ac:1d5,1o12,6d3', 'fb:0.22|sc:0.45,30,30']
+    ['c063', 'Belorta: Pumpkin Witch', 'ac:1d5,1o12,6d3', 'fb:0.22|sc:0.45,30,30']
   ],
 
   'The Scouts': [
@@ -619,6 +621,7 @@ const l2dGroups = {
     ['c9014', 'Mass-Produced Heretic'],
     ['c9017', 'Altruia'],
     ['c9025', 'Egovista'],
+    ['c9042', 'Bernoullia'],
   ],
 
   _Melee: [
@@ -967,6 +970,7 @@ const l2dGroups = {
     ['projectmatis', 'Project Matis'],
     ['greatvillainunion', 'Great Villain Union', '', 'fb:0.29,0,80'],
     ['coinrushshowdown', 'Coin Rush Showdown', '', 'fb:0.29,100'],
+    ['littlewitchtrick', 'Little Witch Trick', '', 'fb:0.32'],
   ],
 
   '__Story': [
@@ -1005,7 +1009,7 @@ const l2dGroups = {
     ['bbg003', 'Boss: Blacksmith'],
     ['c9005', 'Predator'],
     ['c9005_01', 'Predator: leader'],
-    ['eba001', 'Boss: Storm Bringer'],
+    ['eba001', 'Boss: Storm Bringer'],  
     ['eba003', 'Boss: Gatekeeper Blue'],
     ['eba003_green', 'Boss: Gatekeeper Green'],
     ['eba003_hsta', 'Boss: Gatekeeper Red'],
@@ -1141,6 +1145,7 @@ const specialClickAnimations = {
   'c9032': ['smile'],
   'c9038': ['special'],
   'c9039': ['special'],
+  'c9042': ['smile'],
   'ce009_char_01': ['down_move'],
   'ce009_char_02': ['down_move'],
   'ce009_char_03': ['down_move'],
@@ -1177,7 +1182,7 @@ const specialClickAnimations = {
 const charactersWithFgBgOverlays = [
   'c103', 'c105', 'c017_01', 'c017_02', 
   'c441', 'c450_03', 'c451_03',
-  'c513_03', 'c515', 'c580_01',
+  'c511_03', 'c513_03', 'c515', 'c580_01', 'c582_01',
   'c600', 'c601',
   'c870_02', 'c871', 'c871_01', 'c871_02', 'c872',
 ]
@@ -1290,6 +1295,7 @@ const skillcutAnimationOverrides = {
   'c570': 'idle_0',
   'c570_99': 'idle_0',
   'c582': 'idle_0',
+  'c582_01': 'idle_0',
   'c583': 'idle_all',
   'c871': 'idle_0',
   'c871_01': 'idle_0',
@@ -1509,6 +1515,12 @@ const charactersWithDualLayer = {
     ]
   },
   'c582': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
+    ]
+  },
+  'c582_01': {
     layers: [
       { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
       { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },

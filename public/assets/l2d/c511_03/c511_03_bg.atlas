@@ -1,0 +1,13 @@
+c511_03_bg.png
+size:512,512
+filter:Linear,Linear
+pma:true
+scale:1.05
+bg_bedding2
+bounds:2,287,305,212
+bg_foot1
+bounds:2,2,141,299
+rotate:90
+bg_foot2
+bounds:2,144,160,313
+rotate:90
