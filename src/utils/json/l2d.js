@@ -567,25 +567,25 @@ const l2dGroups = {
   ],
 
   '_AI': [
-    ['c370', 'Eternity'],
-    ['c371', 'Endless'],
-    ['c928', 'Einkk'],
-    ['c904', 'Enikk'],
+    ['c370', 'Eternity', '', 'fb:0.22,0,-20'],
+    ['c371', 'Endless', '', 'fb:0.22,0,-10'],
+    ['c928', 'Einkk', '', 'fb:0.25,60,-30'],
+    ['c904', 'Enikk', '', 'fb:0.22,0,-20'],
   ],
 
   _Ark: [
-    ['c610', 'Mekami Shifty'],
-    ['c905', 'Rian'],
-    ['c907', 'Shifty'],
+    ['c610', 'Mekami Shifty', 'ac:3d8,4d3|re:2o5,3o8', 'fb:0,60'],
+    ['c905', 'Rian', '', 'fb:0,30'],
+    ['c907', 'Shifty', 'ac:1d20,1o35,5d3', 'fb:0,20|sc:0.42,0,200'],
     ['c907_01', 'Shifty_old'],
     ['c908', 'Papillon'],
   ],
 
   _CEO: [
     ['c900', 'Ingrid'],
-    ['c901', 'Syuen', 'ac:1d10,2d5,3d9'],
-    ['c902', 'Mustang'],
-    ['c902_01', 'Mustang (CN)'],
+    ['c901', 'Syuen', 'ac:1d10,2d5,3d9', 'sc:0.3,0,30'],
+    ['c902', 'Mustang', '', 'fb:0.23,30,-50'],
+    ['c902_01', 'Mustang (CN)', '', 'fb:0,30'],
     ['c9022', 'Mustang: Origin'],
     ['c9023', 'Mustang: Hanson'],
     ['c9030', 'Enme'],
@@ -594,10 +594,10 @@ const l2dGroups = {
 
   _Commander: [
     ['c903', 'Andersen'],
-    ['c903_01', 'Andersen Soaked'],
+    ['c903_01', 'Andersen Soaked', '', 'fb:0,30'],
     ['c914', 'Burningum'],
     ['c939', 'Doban'],
-    ['c942', 'Commander (GODDESS)'],
+    ['c942', 'Andersen: Commander'],
     ['c961', 'Oswald'],
     ['c961_01', 'Oswald Casual'],
   ],
@@ -608,20 +608,20 @@ const l2dGroups = {
   ],
 
   _Heretic: [
-    ['c013', 'Modernia: Marian'],
-    ['c260', 'Modernia'],
-    ['c260_01', 'Modernia First Affection'],
-    ['c260_02', 'Modernia Second Affection'],
+    ['c013', 'Modernia: Marian', 're:1d3,2d2', 'sc:0.25,0,60'],
+    ['c260', 'Modernia', 'ac:1d3,2d38|re:1o5,2o8,3o8', 'sc:0.23,30,-10'],
+    ['c260_01', 'Modernia First Affection', 'ac:2d3', 'fb:0.23,0,35|sc:0.21'],
+    ['c260_02', 'Modernia Second Affection', 'ac:2o8,3o6', 'fb:0.22,0,10|sc:0.34,30,160'],
     ['c260_80', 'Modernia (CN)'],
-    ['c261', 'Nihilister'],
-    ['c262', 'Liberalio'],
-    ['c262_01', 'Liberalio Dreaming Lake'],
-    ['c263', 'Indivilia'],
+    ['c261', 'Nihilister', 'ac:2o9,3o5|re:2o5,4o3', 'sc:0.4,0,-60'],
+    ['c262', 'Liberalio', 'ac:1o6,2o5,3o7|re:1o5', 'fb:0.33,0,30|sc:0.26,60,100'],
+    ['c262_01', 'Liberalio Dreaming Lake', 'ac:1d3,1o8,2o5,4o8', 'fb:0.23,30,60'],
+    ['c263', 'Indivilia', '', 'fb:0.23,30,-20'],
     ['c9009', 'Nihilister Hood'],
-    ['c9014', 'Mass-Produced Heretic'],
-    ['c9017', 'Altruia'],
+    ['c9014', 'Mass Produced Heretic'],
+    ['c9017', 'Altruia', '', 'fb:0.23,0,-30'],
     ['c9025', 'Egovista'],
-    ['c9042', 'Bernoullia'],
+    ['c9042', 'Bernoullia', '', 'fb:0.23,0,-20'],
   ],
 
   _Melee: [
@@ -1091,10 +1091,12 @@ const specialClickAnimations = {
   'c011': ['expression_0'],
   'c016_01': ['expression_1'],
   'c227': ['smile'],
+  'c263': ['surprise'],
   'c281_98': ['angry'],
   'c282_01': ['expression_1'],
   'c290': ['expression_0'],
   'c310': ['expression_0'],
+  'c371': ['angry'],
   'c412_01': ['expression_0'],
   'c440': ['shy'],
   'c472': ['pain'],
@@ -1115,10 +1117,27 @@ const specialClickAnimations = {
   'c572': ['angry'],
   'c600_02': ['bad'],
   'c601_02': ['angry'],
+  'c900': ['angry'],
+  'c902': ['good'],
+  'c902_01': ['delight'],
+  'c903': ['delight'],
+  'c903_01': ['good'],
+  'c904': ['delight'],
+  'c905': ['special'],
+  'c907_01': ['no'],
+  'c914': ['think'],
+  'c925': ['no'],
+  'c928': ['angry'],
+  'c929': ['surprise'],
+  'c939': ['delight'],
   'c940': ['sad'],
+  'c942': ['angry'],
   'c943': ['surprise'],
   'c944': ['special_02'],
+  'c961': ['angry'],
+  'c961_01': ['pain'],
   'c966': ['pain_02'],
+  'c971_01': ['delight'],
   'c973': ['smile'],
   'c977': ['surprise'],
   'c979': ['delight'],
@@ -1132,12 +1151,19 @@ const specialClickAnimations = {
   'c994': ['angry_02'],
   'c996': ['special_02'],
   'c997': ['angry'],
+  'c9003': ['worry'],
   'c9004': ['good'],
   'c9008': ['special_02'],
+  'c9009': ['angry2'],
+  'c9017': ['sad'],
   'c9018': ['delight'],
   'c9019': ['delight'],
   'c9021': ['pain'],
   'c9021_01': ['rage'],
+  'c9022': ['good'],
+  'c9023': ['pain'],
+  'c9024': ['delight'],
+  'c9025': ['delight'],
   'c9028': ['special'],
   'c9029': ['delight'],
   'c9030': ['delight'],
@@ -1181,6 +1207,7 @@ const specialClickAnimations = {
 //chara have foreground and background
 const charactersWithFgBgOverlays = [
   'c103', 'c105', 'c017_01', 'c017_02', 
+  'c262_01',
   'c441', 'c450_03', 'c451_03',
   'c511_03', 'c513_03', 'c515', 'c580_01', 'c582_01',
   'c600', 'c601',
@@ -1219,6 +1246,11 @@ export const characterSkins = {
   c223: 'part_1',
   c223_01: 'part_1',
   c570: 'part_0',
+}
+
+//fullbody mode skin other than acc
+export const characterFullbodySkins = {
+  c260: 'default',
 }
 
 //fullbody other than idle
@@ -1450,11 +1482,23 @@ const charactersWithDualLayer = {
       { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1 },
       { idle: 'idle', skillcut: 'skillcut_3', zIndex: 1000 },
     ]
-  },  
+  },
   'c234': {
     layers: [
       { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
       { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+    ]
+  },
+  'c262': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_0', zIndex: 0 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 1 },
+    ]
+  },
+  'c262_01': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle2', skillcut: 'skillcut_2', zIndex: 1 },
     ]
   },
   'c281_02': {

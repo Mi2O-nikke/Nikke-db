@@ -13,7 +13,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterDefaultAnimations } from '@/utils/json/l2d'
+import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterFullbodySkins, characterDefaultAnimations } from '@/utils/json/l2d'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -1502,6 +1502,20 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
             const skinNames = availableSkins.map((s: any) => s.name)
             if (skinNames.includes(skinName)) {
               player.skeleton.setSkinByName(skinName)
+            }
+          }
+        }
+
+        // Apply special fullbody skins from config (for fb pose)
+        if (market.live2d.current_pose === 'fb') {
+          const fullbodySkinName = characterFullbodySkins[market.live2d.current_id]
+          if (fullbodySkinName) {
+            const availableSkins = player.animationState.data.skeletonData.skins
+            if (availableSkins && availableSkins.length > 0) {
+              const skinNames = availableSkins.map((s: any) => s.name)
+              if (skinNames.includes(fullbodySkinName)) {
+                player.skeleton.setSkinByName(fullbodySkinName)
+              }
             }
           }
         }
