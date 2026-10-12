@@ -120,7 +120,7 @@ const l2dGroups = {
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.35'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', ''],
     ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2'],
-    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100'],
+    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100', 'ti:0.6,0.6'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
     ['c271_02', 'Noir Baseball Cheerleader'],
     ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.4,0,0', 'ti:1.3,1.3,r|hit'],
@@ -1552,8 +1552,8 @@ const charactersWithDualLayer = {
   },
   'c191_02': {
     layers: [
-      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1000 },
-      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'idle_2', skillcut: 'skillcut_2', zIndex: 1 },
+      { idle: 'idle_1', skillcut: 'skillcut_1', zIndex: 0 },
     ]
   },
   'c200': {
@@ -1589,7 +1589,7 @@ const charactersWithDualLayer = {
   },
   'c281_02': {
     layers: [
-      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
       { idle: 'idle', skillcut: 'skillcut_2', zIndex: 1000 },
     ]
   },

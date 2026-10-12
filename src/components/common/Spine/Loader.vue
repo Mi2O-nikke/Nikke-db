@@ -1482,6 +1482,7 @@ let spinePlayer: any = null
 
 // Load dual-layer skeleton (same skeleton rendered twice with different animations)
 function loadDualLayerSkeleton() {
+  // Dual layers work for any pose, not just skillcut
   if (!spineCanvas?.context || !charactersWithDualLayer[market.live2d.current_id]) {
     dualLayerInstance = null
     return Promise.resolve()
@@ -1504,20 +1505,69 @@ function loadDualLayerSkeleton() {
         return
       }
 
+      // Determine what animations the layers use
+      const firstLayer = dualConfig.layers[0]
+      const usesSkillcutAnimations = firstLayer?.skillcut?.includes('skillcut') || 
+                                     firstLayer?.skillcut?.includes('_OFF') ||
+                                     firstLayer?.skillcut?.includes('_BIG')
+
+      // Skip loading if pose doesn't match layer type
+      if (usesSkillcutAnimations && market.live2d.current_pose !== 'skillcut') {
+        console.log('[DualLayer] Skipping skillcut layers in non-skillcut pose:', market.live2d.current_pose)
+        dualLayerInstance = null
+        resolve()
+        return
+      }
+      if (!usesSkillcutAnimations && market.live2d.current_pose === 'skillcut') {
+        console.log('[DualLayer] Skipping FB layers in skillcut pose')
+        dualLayerInstance = null
+        resolve()
+        return
+      }
+
       // Load skeleton once for all layers
       const assetMgr = new SpineLib.AssetManager(spineCanvas.context, '')
 
       let skelPath = ''
       let atlasPath = ''
 
-      if (spineCanvas.config?.atlasUrl) {
-        atlasPath = spineCanvas.config.atlasUrl
-        skelPath = atlasPath.replace('.atlas', '.skel')
+      // For dual layers in skillcut mode, just use the already-loaded skillcut skeleton from spineCanvas
+      // This ensures we have all the animations the layers need
+      if (market.live2d.current_pose === 'skillcut' && usesSkillcutAnimations) {
+        // Use current pose's skeleton (already loaded)
+        if (spineCanvas.config?.atlasUrl) {
+          atlasPath = spineCanvas.config.atlasUrl
+          skelPath = atlasPath.replace('.atlas', '.skel')
+        }
+      } else if (usesSkillcutAnimations) {
+        // Load from skillcut skeleton (for FB mode with skillcut animations)
+        const charId = market.live2d.current_id
+        const baseCharId = charId.split('_')[0]
+        skelPath = globalParams.PATH_L2D + charId + '/' + globalParams.PATH_L2D_SKILLCUT + charId + '_00_skillcut.skel'
+        atlasPath = globalParams.PATH_L2D + charId + '/' + globalParams.PATH_L2D_SKILLCUT + charId + '_00_skillcut.atlas'
+        
+        if (charId.includes('_')) {
+          skelPath = globalParams.PATH_L2D + baseCharId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharId + '_00_skillcut.skel'
+          atlasPath = globalParams.PATH_L2D + baseCharId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharId + '_00_skillcut.atlas'
+        }
       } else {
-        console.warn(`Could not determine skeleton paths for ${market.live2d.current_id}`)
-        dualLayerInstance = null
-        resolve()
-        return
+        // Load from current pose's skeleton (already loaded by spineCanvas)
+        if (spineCanvas.config?.atlasUrl) {
+          atlasPath = spineCanvas.config.atlasUrl
+          skelPath = atlasPath.replace('.atlas', '.skel')
+        } else {
+          console.warn('[DualLayer] Could not determine skeleton path, falling back to skillcut')
+          // Fallback to skillcut skeleton if current pose config is missing
+          const charId = market.live2d.current_id
+          const baseCharId = charId.split('_')[0]
+          skelPath = globalParams.PATH_L2D + charId + '/' + globalParams.PATH_L2D_SKILLCUT + charId + '_00_skillcut.skel'
+          atlasPath = globalParams.PATH_L2D + charId + '/' + globalParams.PATH_L2D_SKILLCUT + charId + '_00_skillcut.atlas'
+          
+          if (charId.includes('_')) {
+            skelPath = globalParams.PATH_L2D + baseCharId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharId + '_00_skillcut.skel'
+            atlasPath = globalParams.PATH_L2D + baseCharId + '/' + globalParams.PATH_L2D_SKILLCUT + baseCharId + '_00_skillcut.atlas'
+          }
+        }
       }
 
       assetMgr.loadBinary(skelPath)
@@ -1539,6 +1589,7 @@ function loadDualLayerSkeleton() {
         const skillcutExists = !layerConfig.skillcut || skeletonData.animations.some((a: any) => a.name === layerConfig.skillcut)
 
         if (!idleExists || !skillcutExists) {
+          console.warn(`[DualLayer] Layer filtered out: idle="${layerConfig.idle}" (exists=${idleExists}), skillcut="${layerConfig.skillcut}" (exists=${skillcutExists})`)
           return null
         }
 
@@ -1555,10 +1606,13 @@ function loadDualLayerSkeleton() {
       }).filter((layer: any) => layer !== null)
 
       if (layerInstances.length === 0) {
+        console.warn('[DualLayer] No valid layer instances created for', market.live2d.current_id)
         dualLayerInstance = null
         resolve()
         return
       }
+
+      console.log('[DualLayer] Loaded', layerInstances.length, 'layers for', market.live2d.current_id)
 
       dualLayerInstance = {
         layers: layerInstances,
@@ -1974,6 +2028,7 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
       viewport: getSpineViewport(market.live2d.current_pose),
       defaultMix: SPINE_DEFAULT_MIX,
       success: (player: any) => {
+        console.log('[SC] Spine loaded successfully. Pose:', market.live2d.current_pose)
         // Now that skeleton is loaded, try to set the desired skin
         const requestedSkin = market.live2d.getSkin()
         const availableSkins = player.animationState.data.skeletonData.skins
@@ -2075,6 +2130,144 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
               }
             }
           }
+        }
+
+        // Load dual-layer skeleton if this character supports it (works for skillcut pose only)
+        console.log('[SC] Checking dual layer condition:', {
+          hasConfig: !!charactersWithDualLayer[market.live2d.current_id],
+          currentId: market.live2d.current_id,
+          currentPose: market.live2d.current_pose,
+          shouldLoad: !!charactersWithDualLayer[market.live2d.current_id]
+        })
+        if (charactersWithDualLayer[market.live2d.current_id]) {
+          console.log('[SC] Loading dual layers for', market.live2d.current_id)
+          loadDualLayerSkeleton().then(() => {
+            console.log('[SC] loadDualLayerSkeleton complete. dualLayerInstance:', !!dualLayerInstance, 'layers:', dualLayerInstance?.layers?.length)
+            if (dualLayerInstance) {
+              console.log('[SC] Setting up renderer override')
+              // Set up syncing between main and dual-layer
+              const renderer = spineCanvas.sceneRenderer
+              const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
+              const mainSkeleton = spineCanvas.skeleton
+              let isRenderingMain = false
+
+              // Get layers config
+              const dualConfig = charactersWithDualLayer[market.live2d.current_id]
+              
+              let lastFrontAnimName = '' // Track last animation to detect changes
+
+              renderer.drawSkeleton = function (skeleton: any, premultipliedAlpha: boolean) {
+                console.log('[SC] drawSkeleton called, mainSkeleton match:', skeleton === mainSkeleton, 'isRenderingMain:', isRenderingMain)
+                if (skeleton === mainSkeleton && !isRenderingMain) {
+                  isRenderingMain = true
+
+                  // Get current animation from main skeleton
+                  const mainAnimEntry = player?.animationState?.getCurrent(0)
+                  const animName = mainAnimEntry?.animation?.name
+
+                  // Sync all layers
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    dualLayerInstance.layers.forEach((layer: any, idx: number) => {
+                      const { config, state } = layer
+
+                      // Check if main skeleton is playing ANY skillcut animation (from any layer)
+                      const isPlayingAnySkillcut = dualConfig && dualConfig.layers && 
+                        dualConfig.layers.some((l: any) => l.skillcut && animName === l.skillcut)
+
+                      // Debug: log once when animation changes
+                      if (animName !== lastFrontAnimName) {
+                        console.log(`[SC] Main anim changed to: "${animName}", isPlayingAnySkillcut=${isPlayingAnySkillcut}`)
+                        console.log(`[SC] Layer config: idle="${config.idle}", skillcut="${config.skillcut}"`)
+                        console.log(`[SC] dualConfig.layers:`, dualConfig?.layers?.map((l: any) => `{idle:"${l.idle}", skillcut:"${l.skillcut}"}`))
+                      }
+
+                      // If any layer's skillcut is playing on main skeleton, sync all layers to their skillcuts
+                      if (isPlayingAnySkillcut && animName !== lastFrontAnimName && config.skillcut) {
+                        console.log(`[DualLayer] Layer ${idx} syncing to skillcut: ${config.skillcut}`)
+                        state.clearTracks()
+                        state.setAnimation(0, config.skillcut, false)
+                        // Return to idle after skillcut with a slight delay
+                        if (config.idle) {
+                          state.addAnimation(0, config.idle, true, 0)
+                        }
+                      }
+                      // Handle idle animation (if not in skillcut mode)
+                      else if (!isPlayingAnySkillcut && animName === config.idle && config.idle) {
+                        const currentLayerAnim = state.getCurrent(0)?.animation?.name
+                        if (currentLayerAnim !== config.idle) {
+                          state.setAnimation(0, config.idle, true)
+                        }
+                      }
+                    })
+                    lastFrontAnimName = animName || ''
+                  }
+
+                  // Render layers sorted by zIndex
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    const sortedLayers = [...dualLayerInstance.layers].sort((a: any, b: any) => a.config.zIndex - b.config.zIndex)
+                    
+                    // Render layers with lower zIndex first (background), then main skeleton, then higher zIndex (foreground)
+                    const mainZIndex = 1000 // Main skeleton rendered in the middle
+                    
+                    for (const layer of sortedLayers) {
+                      if (layer.config.zIndex < mainZIndex) {
+                        // Skip rendering if this layer's current animation matches the main skeleton's animation (avoid duplication)
+                        const layerCurrentAnim = layer.state.getCurrent(0)?.animation?.name
+                        if (layerCurrentAnim === animName) {
+                          continue
+                        }
+
+                        // Hide shadow attachments on additional layers to avoid double shadow
+                        const shadowSlot = layer.skeleton.findSlot('shadow')
+                        if (shadowSlot) {
+                          shadowSlot.attachment = null
+                        }
+                        
+                        layer.state.update(1 / 60)
+                        layer.state.apply(layer.skeleton)
+                        layer.skeleton.updateWorldTransform()
+                        originalDrawSkeleton(layer.skeleton, premultipliedAlpha)
+                      }
+                    }
+                  }
+
+                  // Render main skeleton
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+
+                  // Render foreground layers
+                  if (dualLayerInstance && dualLayerInstance.layers) {
+                    const sortedLayers = [...dualLayerInstance.layers].sort((a: any, b: any) => a.config.zIndex - b.config.zIndex)
+                    const mainZIndex = 1000
+
+                    for (const layer of sortedLayers) {
+                      if (layer.config.zIndex >= mainZIndex) {
+                        // Skip rendering if this layer's current animation matches the main skeleton's animation (avoid duplication)
+                        const layerCurrentAnim = layer.state.getCurrent(0)?.animation?.name
+                        if (layerCurrentAnim === animName) {
+                          continue
+                        }
+
+                        // Hide shadow attachments on additional layers to avoid double shadow
+                        const shadowSlot = layer.skeleton.findSlot('shadow')
+                        if (shadowSlot) {
+                          shadowSlot.attachment = null
+                        }
+                        
+                        layer.state.update(1 / 60)
+                        layer.state.apply(layer.skeleton)
+                        layer.skeleton.updateWorldTransform()
+                        originalDrawSkeleton(layer.skeleton, premultipliedAlpha)
+                      }
+                    }
+                  }
+
+                  isRenderingMain = false
+                } else if (skeleton !== mainSkeleton) {
+                  originalDrawSkeleton(skeleton, premultipliedAlpha)
+                }
+              }
+            }
+          })
         }
 
         // Load overlay skeletons if they exist (bg, fg layers)
@@ -2192,10 +2385,19 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
           }
         }
 
-        // Load dual-layer skeleton if this character supports it (works for any pose)
+        // Load dual-layer skeleton if this character supports it (works for skillcut pose only)
+        console.log('[SC] Checking dual layer condition:', {
+          hasConfig: !!charactersWithDualLayer[market.live2d.current_id],
+          currentId: market.live2d.current_id,
+          currentPose: market.live2d.current_pose,
+          shouldLoad: !!charactersWithDualLayer[market.live2d.current_id]
+        })
         if (charactersWithDualLayer[market.live2d.current_id]) {
+          console.log('[SC] Loading dual layers for', market.live2d.current_id)
           loadDualLayerSkeleton().then(() => {
+            console.log('[SC] loadDualLayerSkeleton complete. dualLayerInstance:', !!dualLayerInstance, 'layers:', dualLayerInstance?.layers?.length)
             if (dualLayerInstance) {
+              console.log('[SC] Setting up renderer override')
               // Set up syncing between main and dual-layer
               const renderer = spineCanvas.sceneRenderer
               const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
@@ -2208,6 +2410,7 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
               let lastFrontAnimName = '' // Track last animation to detect changes
 
               renderer.drawSkeleton = function (skeleton: any, premultipliedAlpha: boolean) {
+                console.log('[SC] drawSkeleton called, mainSkeleton match:', skeleton === mainSkeleton, 'isRenderingMain:', isRenderingMain)
                 if (skeleton === mainSkeleton && !isRenderingMain) {
                   isRenderingMain = true
 
@@ -2215,17 +2418,27 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
                   const mainAnimEntry = player?.animationState?.getCurrent(0)
                   const animName = mainAnimEntry?.animation?.name
 
+                  console.log('[SC] Rendering main skeleton, animName:', animName)
+
                   // Sync all layers
                   if (dualLayerInstance && dualLayerInstance.layers) {
-                    dualLayerInstance.layers.forEach((layer: any) => {
+                    dualLayerInstance.layers.forEach((layer: any, idx: number) => {
                       const { config, state } = layer
 
                       // Check if main skeleton is playing ANY skillcut animation (from any layer)
                       const isPlayingAnySkillcut = dualConfig && dualConfig.layers && 
                         dualConfig.layers.some((l: any) => l.skillcut && animName === l.skillcut)
 
+                      // Debug: log once when animation changes
+                      if (animName !== lastFrontAnimName) {
+                        console.log(`[SC] Main anim changed to: "${animName}", isPlayingAnySkillcut=${isPlayingAnySkillcut}`)
+                        console.log(`[SC] Layer config: idle="${config.idle}", skillcut="${config.skillcut}"`)
+                        console.log(`[SC] dualConfig.layers:`, dualConfig?.layers?.map((l: any) => `{idle:"${l.idle}", skillcut:"${l.skillcut}"}`))
+                      }
+
                       // If any layer's skillcut is playing on main skeleton, sync all layers to their skillcuts
                       if (isPlayingAnySkillcut && animName !== lastFrontAnimName && config.skillcut) {
+                        console.log(`[DualLayer] Layer ${idx} syncing to skillcut: ${config.skillcut}`)
                         state.clearTracks()
                         state.setAnimation(0, config.skillcut, false)
                         // Return to idle after skillcut with a slight delay
@@ -2235,7 +2448,8 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
                       }
                       // Handle idle animation (if not in skillcut mode)
                       else if (!isPlayingAnySkillcut && animName === config.idle && config.idle) {
-                        if (state.getCurrent(0)?.animation?.name !== config.idle) {
+                        const currentLayerAnim = state.getCurrent(0)?.animation?.name
+                        if (currentLayerAnim !== config.idle) {
                           state.setAnimation(0, config.idle, true)
                         }
                       }
