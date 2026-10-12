@@ -249,7 +249,10 @@ const handleActionStart = async (e?: MouseEvent) => {
           const shouldAlternate = repeatFlag === 'r'
           if (!(useAimHit && shouldAlternate)) {
             // Normal case: add initial animation
-            aimState.addAnimation(0, targetAnim, false, delay)
+            // But if loopDuration is set, skip this - let startLooping handle all animations
+            if (!(loopDuration > 0)) {
+              aimState.addAnimation(0, targetAnim, false, delay)
+            }
           }
           
           // Check if we should play fire sound immediately when delay = 0
@@ -277,6 +280,20 @@ const handleActionStart = async (e?: MouseEvent) => {
             const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
             const toAimDuration = toAimAnim?.duration || 0.5
             setTimeout(playFireLoop, toAimDuration * 1000)
+            
+            // Also restart animation every loopDuration if loopDuration is set
+            if (loopDuration > 0) {
+              let animLoopTimer: NodeJS.Timeout | null = null
+              const loopAnimation = () => {
+                if (isAimHolding) {
+                  aimState.setAnimation(0, targetAnim, false, 0)
+                  animLoopTimer = setTimeout(loopAnimation, loopDuration * 1000)
+                } else if (animLoopTimer) {
+                  clearTimeout(animLoopTimer)
+                }
+              }
+              setTimeout(loopAnimation, toAimDuration * 1000)
+            }
           }
           
           // If loop duration is set, use timer to restart animation at fixed intervals
@@ -298,8 +315,8 @@ const handleActionStart = async (e?: MouseEvent) => {
             const playGaugeUp = delay > 0  // Only play gaugeup if delay > 0
             const fireStartDelay = playGaugeUp ? 0 : 0.5  // Fire starts after gaugeup, or after 0.5s if no gaugeup
             
-            // Check if we should play any sounds (alternating mode OR delay=0)
-            const shouldPlaySounds = shouldAlternate || delay === 0
+            // Check if we should play any sounds (alternating mode OR delay=0 OR playGaugeUp)
+            const shouldPlaySounds = shouldAlternate || delay === 0 || playGaugeUp
             
             const startLooping = () => {
               if (!isAimHolding) {
@@ -316,22 +333,48 @@ const handleActionStart = async (e?: MouseEvent) => {
               
               aimState.setAnimation(0, animToPlay, false)
               
-              // Play voice for this cycle (skip if already played on first immediate call)
-              if (shouldPlaySounds && !(delay === 0 && cycleCount === 0)) {
-                if (playGaugeUp) {
-                  // Play gaugeup + fire sequence
+              // Play voice for this cycle
+              // Skip gaugeup on first cycle for non-alternating (already played immediately on click)
+              if (shouldPlaySounds) {
+                console.log(`[Loop Cycle ${cycleCount}] isFirstCycle=${isFirstCycle}, playGaugeUp=${playGaugeUp}, shouldAlternate=${shouldAlternate}`)
+                
+                if (playGaugeUp && isFirstCycle && shouldAlternate) {
+                  // For alternating (c272): play gaugeup on first cycle
+                  console.log(`[Loop] Playing gaugeup + fire (first cycle, alternating)`)
                   playAimGaugeUpSound(charId, () => {
+                    console.log(`[Loop] Gaugeup complete, now playing fire`)
                     if (isAimHolding) {
                       playAimFireSound(charId, targetAnim)
                     }
                   })
-                } else {
-                  // Only play fire sound after 0.5s delay
+                } else if (!playGaugeUp) {
+                  // No gaugeup, just play fire sound after delay
+                  console.log(`[Loop] Playing fire only (no gaugeup, delay=${fireStartDelay}s)`)
                   setTimeout(() => {
+                    console.log(`[Loop] Fire delay complete, playing fire`)
                     if (isAimHolding) {
                       playAimFireSound(charId, targetAnim)
                     }
                   }, fireStartDelay * 1000)
+                } else if (playGaugeUp && isFirstCycle && !shouldAlternate) {
+                  // For non-alternating (c511): gaugeup already played, just play fire
+                  console.log(`[Loop] Playing fire only (gaugeup played immediately on click)`)
+                  playAimFireSound(charId, targetAnim)
+                } else if (playGaugeUp && !isFirstCycle) {
+                  // For alternating case (c272): keep playing gaugeup every cycle
+                  if (shouldAlternate) {
+                    console.log(`[Loop] Playing gaugeup + fire (alternating mode, cycle ${cycleCount})`)
+                    playAimGaugeUpSound(charId, () => {
+                      console.log(`[Loop] Gaugeup complete, now playing fire`)
+                      if (isAimHolding) {
+                        playAimFireSound(charId, targetAnim)
+                      }
+                    })
+                  } else {
+                    // Non-alternating but with gaugeup - only play fire on subsequent cycles
+                    console.log(`[Loop] Playing fire only (not first cycle)`)
+                    playAimFireSound(charId, targetAnim)
+                  }
                 }
               }
               
@@ -340,21 +383,40 @@ const handleActionStart = async (e?: MouseEvent) => {
               // Determine next cycle time
               let nextCycleTime = loopDuration
               if (shouldAlternate && useAimHit) {
-                // First cycle uses delay, then always use loopDuration
+                // For alternating (c272): first cycle uses delay, then always use loopDuration
                 nextCycleTime = isFirstCycle ? delay : loopDuration
-                isFirstCycle = false  // After first cycle, always use loopDuration
+                isFirstCycle = false
+              } else {
+                // For non-alternating (c511): always use loopDuration after first cycle
+                // (delay was already added before first startLooping call)
+                nextCycleTime = loopDuration
+                isFirstCycle = false
               }
               
               loopTimer = setTimeout(startLooping, nextCycleTime * 1000)
             }
+      // For non-alternating with gaugeup (like c511): play gaugeup sound immediately when holding
+      // Sound plays immediately, but animation waits for delay
+      if (playGaugeUp && !shouldAlternate && loopDuration > 0) {
+        console.log(`[Cover] Playing gaugeup immediately on click (c511 style)`)
+        playAimGaugeUpSound(charId, () => {
+          console.log(`[Cover] Gaugeup complete, fire will play on animation cycle`)
+          // Fire sound will be played when animation loop starts
+        })
+      }
+      
             // Start loop after to_aim finishes (for alternating case)
             if (useAimHit && shouldAlternate) {
               const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
               const toAimDuration = toAimAnim?.duration || 0.5
               setTimeout(startLooping, toAimDuration * 1000)
             } else {
-              // For normal case, start after animation delay
-              setTimeout(startLooping, (delay + targetAnimDuration) * 1000)
+              // For normal case (like c511), start after to_aim + initial delay
+              const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
+              const toAimDuration = toAimAnim?.duration || 0.5
+              // Add delay before first cycle
+              const initialDelay = isFirstCycle ? delay : 0
+              setTimeout(startLooping, (toAimDuration + initialDelay) * 1000)
             }
           } else {
             // No loop duration set, just loop normally
@@ -861,14 +923,40 @@ const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
   
   const tryCustomThenGeneric = () => {
     audio1.src = customGaugeUpPath
+    console.log(`[Gaugeup] Trying custom: ${customGaugeUpPath}`)
+    
     audio1.onloadeddata = () => {
-      audio1.play().catch(() => {
-        // If custom fails, play generic sequence
+      console.log(`[Gaugeup] Custom loaded successfully, playing...`)
+      currentAimGaugeUpAudio = audio1
+      audio1.play().then(() => {
+        console.log(`[Gaugeup] Custom playing`)
+      }).catch((err) => {
+        // If custom fails to play, fall back to generic sequence
+        console.log(`[Gaugeup] Custom play failed:`, err)
+        currentAimGaugeUpAudio = null
         playGenericGaugeUpSequence()
       })
+      
+      // Call completion callback when custom gaugeup ends
+      audio1.onended = () => {
+        console.log(`[Gaugeup] Custom ended, calling onComplete`)
+        currentAimGaugeUpAudio = null
+        if (onComplete) onComplete()
+      }
+      
+      // Safety timeout in case onended doesn't fire
+      // Assume custom gaugeup is around 2-3 seconds
+      setTimeout(() => {
+        if (currentAimGaugeUpAudio === audio1) {
+          console.log(`[Gaugeup] Custom timeout, calling onComplete`)
+          currentAimGaugeUpAudio = null
+          if (onComplete) onComplete()
+        }
+      }, 3000)
     }
     audio1.onerror = () => {
       // Custom not found, play generic sequence
+      console.log(`[Gaugeup] Custom not found, using generic`)
       playGenericGaugeUpSequence()
     }
     audio1.load()
@@ -876,22 +964,28 @@ const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
   
   const playGenericGaugeUpSequence = () => {
     // Play gaugeup_1 first
+    console.log(`[Gaugeup] Playing generic sequence`)
     const audio1 = new Audio()
     audio1.volume = 0.5
     audio1.src = `/assets/l2d/_/gaugeup_1.ogg`
     currentAimGaugeUpAudio = audio1
+    console.log(`[Gaugeup] Playing gaugeup_1`)
     audio1.play().catch(() => console.log('Could not play gaugeup_1'))
     
     // Then play gaugeup_2 after gaugeup_1 ends
     audio1.onended = () => {
+      console.log(`[Gaugeup] gaugeup_1 ended, playing gaugeup_2`)
       const audio2 = new Audio()
       audio2.volume = 0.5
       audio2.src = `/assets/l2d/_/gaugeup_2.ogg`
       currentAimGaugeUpAudio = audio2
+      console.log(`[Gaugeup] Playing gaugeup_2`)
       audio2.play().catch(() => console.log('Could not play gaugeup_2'))
       
       // Call completion callback after gaugeup_2 ends
       audio2.onended = () => {
+        console.log(`[Gaugeup] gaugeup_2 ended, calling onComplete`)
+        currentAimGaugeUpAudio = null
         if (onComplete) onComplete()
       }
     }

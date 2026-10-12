@@ -117,14 +117,14 @@ const l2dGroups = {
 
   '777': [
     ['c270', 'Blanc', '', 'sc:0.49,-200,490|co:0.6,30,30', 'ti:0,0.1'],
-    ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.35'],
-    ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', ''],
-    ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2'],
-    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100', 'ti:0.6,0.6'],
-    ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
-    ['c271_02', 'Noir Baseball Cheerleader'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.4,0,0', 'ti:1.3,1.3,r|hit'],
-    ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
+    ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.4,-150,60'],
+    ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', 'co:0.6,30,45'],
+    ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2|co:0.6,-5,60'],
+    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,20', 'ti:0,0.6'],
+    ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5', 'co:0.45,-100,10'],
+    ['c271_02', 'Noir Baseball Cheerleader', '', 'co:0.4,-160'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,60,10', 'ti:1.3,1.3,r|hit'],
+    ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50|co:0.5,60,-15'],
   ],
 
   'A.C.P.U.': [
@@ -431,7 +431,7 @@ const l2dGroups = {
 
   'Old Tales': [
     ['c510', 'Grave: Abe Nikke', '', 'fb:0.22,0,-40'],
-    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5|re:1d3,1o10,2o9', 'fb:0.25,100,0|sc:0.25,0,40'],
+    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5|re:1d3,1o10,2o9', 'fb:0.25,100,0|sc:0.25,0,40|co:0.55,10', 'ti:0.7,0.3'],
     ['c511_01', 'Anachiro | Cinderella Glass Princess', '', 'fb:0.23,0,20|sc:0.22,0,20'],
     ['c511_02', 'Anachiro | Cinderella Beautiful Me', 'ac:2d6,3d4', 'fb:0.21'],
     ['c511_03', 'Anachiro | Cinderella Glass Curtsy', 'ac:1d5,2d5,3d3', 'fb:0.22,30|sc:0.3,60,120'],
