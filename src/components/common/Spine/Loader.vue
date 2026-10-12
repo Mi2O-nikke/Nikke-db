@@ -1,5 +1,5 @@
 <template>
-  <div id="player-container" :class="[checkMobile() ? 'mobile' : 'computer', { 'spine-hidden': isSpineHidden }]"></div>
+  <div id="player-container" :class="[checkMobile() ? 'mobile' : 'computer', { 'spine-hidden': isSpineHidden, 'cover': market.live2d.current_pose === 'cover' }]"></div>
 </template>
 
 <script setup lang="ts">
@@ -35,6 +35,11 @@ let aimSpinePlayer: any = null
 let coverSpinePlayer: any = null
 let currentActiveSpine: 'aim' | 'cover' | null = null
 
+// Track aim hold state
+let isAimHolding = false
+let hasLoadedAimSpine = false
+let pendingSwitchTimeout: NodeJS.Timeout | null = null
+
 // Multi-skeleton support for c515
 interface OverlayInstance {
   skeleton: any
@@ -67,11 +72,24 @@ declare global {
 }
 
 // http://esotericsoftware.com/spine-player#Viewports
-const spineViewport = {
-  padLeft: '20%',
-  padRight: '20%',
-  padTop: '20%',
-  padBottom: '20%'
+const getSpineViewport = (pose?: string) => {
+  // Cover mode needs more space for aim skeleton (less padding)
+  if (pose === 'cover') {
+    return {
+      padLeft: '20%',
+      padRight: '85%',
+      padTop: '20%',
+      padBottom: '20%'
+    }
+  }
+  
+  // Default for other modes
+  return {
+    padLeft: '20%',
+    padRight: '20%',
+    padTop: '20%',
+    padBottom: '20%'
+  }
 }
 
 const spineScale = 1.2
@@ -96,7 +114,7 @@ const setupClickListener = () => {
   document.addEventListener('mouseup', handleActionEnd)
 }
 
-const handleActionStart = (e?: MouseEvent) => {
+const handleActionStart = async (e?: MouseEvent) => {
   if (!spinePlayer || !canvas) return
 
   const target = e?.target as HTMLElement
@@ -118,21 +136,257 @@ const handleActionStart = (e?: MouseEvent) => {
     return  // Don't trigger action on UI
   }
 
-  // For cover pose - just play cover_reload then back to cover_idle
+  // For cover pose - click to show aim, release to show cover
   if (market.live2d.current_pose === 'cover') {
-    // Check if cover_reload animation exists
-    const animations = spinePlayer.animationState.data.skeletonData.animations
-    const hasCoverReload = animations.some((a: { name: string }) => a.name === 'cover_reload')
-
-    if (!hasCoverReload) {
-      // Fallback to action if cover_reload doesn't exist
-      handleAction()
-      return
+    
+    // Set holding flag
+    isAimHolding = true
+    
+    try {
+      const charId = market.live2d.current_id
+      
+      // Step 1: Load aim skeleton immediately (no to_aim on cover)
+      const aimSkelResponse = await fetch(`/assets/l2d/${charId}/aim/${charId}_aim_00.skel`)
+      const aimAtlasResponse = await fetch(`/assets/l2d/${charId}/aim/${charId}_aim_00.atlas`)
+      
+      if (!aimSkelResponse.ok || !aimAtlasResponse.ok) {
+        throw new Error('Failed to fetch aim files')
+      }
+      
+      const aimSkelBuffer = await aimSkelResponse.arrayBuffer()
+      
+      const SpineLib = (window as any).usedSpineGlobal
+      const assetMgr = new SpineLib.AssetManager(spineCanvas.context, '')
+      
+      // Create blob for skeleton
+      const skelBlob = new Blob([aimSkelBuffer])
+      const skelUrl = URL.createObjectURL(skelBlob)
+      
+      assetMgr.loadBinary(skelUrl)
+      assetMgr.loadTextureAtlas(`/assets/l2d/${charId}/aim/${charId}_aim_00.atlas`)
+      await assetMgr.loadAll()
+      
+      const binary = assetMgr.require(skelUrl)
+      const atlas = assetMgr.require(`/assets/l2d/${charId}/aim/${charId}_aim_00.atlas`)
+      const skeletonBinary = new SpineLib.SkeletonBinary(new SpineLib.AtlasAttachmentLoader(atlas))
+      const skeletonData = skeletonBinary.readSkeletonData(binary)
+      
+      const aimSkeleton = new SpineLib.Skeleton(skeletonData)
+      aimSkeleton.scaleX = spinePlayer.skeleton.scaleX
+      aimSkeleton.scaleY = spinePlayer.skeleton.scaleY
+      aimSkeleton.x = spinePlayer.skeleton.x
+      aimSkeleton.y = spinePlayer.skeleton.y
+      
+      // Sync root bone position to match cover skeleton exactly
+      try {
+        if (aimSkeleton.getRootBone && spinePlayer.skeleton.getRootBone) {
+          const aimRootBone = aimSkeleton.getRootBone()
+          const coverRootBone = spinePlayer.skeleton.getRootBone()
+          if (aimRootBone && coverRootBone) {
+            aimRootBone.x = coverRootBone.x
+            aimRootBone.y = coverRootBone.y
+            aimRootBone.scaleX = coverRootBone.scaleX
+            aimRootBone.scaleY = coverRootBone.scaleY
+            aimRootBone.rotation = coverRootBone.rotation
+          }
+        }
+      } catch (e) {
+        // Ignore if getRootBone doesn't exist
+      }
+      
+      const aimState = new SpineLib.AnimationState(new SpineLib.AnimationStateData(skeletonData))
+      
+      // Apply skin to aim skeleton if configured
+      const aimSkinName = characterSkins[charId]
+      if (aimSkinName) {
+        const availableSkins = skeletonData.skins
+        if (availableSkins && availableSkins.length > 0) {
+          const skinNames = availableSkins.map((s: any) => s.name)
+          if (skinNames.includes(aimSkinName)) {
+            aimSkeleton.setSkinByName(aimSkinName)
+          }
+        }
+      }
+      
+      // Store aim skeleton as overlay
+      const aimOverlay = {
+        skeleton: aimSkeleton,
+        state: aimState,
+        segments: [],
+        source: `${charId}_aim`
+      }
+      
+      overlayInstances = [aimOverlay]
+      
+      // Step 2: Play to_aim on aim skeleton, then chain to aim_fire or aim_hit
+      const aimAnimations = aimState.data.skeletonData.animations
+      const hasToAim = aimAnimations.some((a: any) => a.name === 'to_aim')
+      const hasAimFire = aimAnimations.some((a: any) => a.name === 'aim_fire')
+      const hasAimHit = aimAnimations.some((a: any) => a.name === 'aim_hit')
+      
+      // Check if character config specifies aim_hit instead of aim_fire
+      const charConfig = l2dData.find(c => c.id === charId)
+      const useAimHit = charConfig?.zoomAnimationType === 'hit'
+      const targetAnim = useAimHit && hasAimHit ? 'aim_hit' : (hasAimFire ? 'aim_fire' : (hasAimHit ? 'aim_hit' : null))
+    
+      
+      if (hasToAim) {
+        // Play to_aim then chain aim_fire or aim_hit (depending on config)
+        aimState.setAnimation(0, 'to_aim', false)
+        
+        // Chain first animation after to_aim (non-looping) with delay if configured
+        if (targetAnim) {
+          let delay = 0
+          let loopDuration = 0
+          // Get timing from separate timing config
+          if (charConfig?.timing) {
+            delay = charConfig.timing.delay || 0
+            loopDuration = charConfig.timing.loopDuration || 0
+          }
+          
+          // For alternating hit/idle, skip the initial animation and let the loop handle it
+          const repeatFlag = charConfig?.timing?.repeatFlag || ''
+          const shouldAlternate = repeatFlag === 'r'
+          if (!(useAimHit && shouldAlternate)) {
+            // Normal case: add initial animation
+            aimState.addAnimation(0, targetAnim, false, delay)
+          }
+          
+          // Check if we should play fire sound immediately when delay = 0
+          let playedFireLoop = false
+          if (delay === 0) {
+            playedFireLoop = true
+            
+            // Use loopDuration as the interval, or default to sound file duration
+            const fireInterval = loopDuration > 0 ? loopDuration : 0.5
+            
+            // Play fire sound immediately and loop on timer
+            let fireTimer: NodeJS.Timeout | null = null
+            const playFireLoop = () => {
+              if (isAimHolding) {
+                playAimFireSound(charId, targetAnim)
+                
+                // Schedule next loop
+                fireTimer = setTimeout(playFireLoop, fireInterval * 1000)
+              } else if (fireTimer) {
+                clearTimeout(fireTimer)
+              }
+            }
+            
+            // Start immediately after to_aim finishes
+            const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
+            const toAimDuration = toAimAnim?.duration || 0.5
+            setTimeout(playFireLoop, toAimDuration * 1000)
+          }
+          
+          // If loop duration is set, use timer to restart animation at fixed intervals
+          // (but skip if we already played the fire loop above)
+          if (loopDuration > 0 && !playedFireLoop) {
+            // Get animation duration
+            const targetAnimObj = aimAnimations.find((a: any) => a.name === targetAnim)
+            const targetAnimDuration = targetAnimObj?.duration || 0.5
+            
+            // Check if we should alternate between delay and loopDuration
+            let shouldAlternate = repeatFlag === 'r'
+            let isAlternatingDelay = false  // Track which value we're using
+            
+            let loopTimer: NodeJS.Timeout | null = null
+            let cycleCount = 0  // Track which cycle we're on
+            let isFirstCycle = true  // Track if this is the first cycle
+            
+            // Determine if we should play gaugeup or just fire
+            const playGaugeUp = delay > 0  // Only play gaugeup if delay > 0
+            const fireStartDelay = playGaugeUp ? 0 : 0.5  // Fire starts after gaugeup, or after 0.5s if no gaugeup
+            
+            // Check if we should play any sounds (alternating mode OR delay=0)
+            const shouldPlaySounds = shouldAlternate || delay === 0
+            
+            const startLooping = () => {
+              if (!isAimHolding) {
+                if (loopTimer) clearTimeout(loopTimer)
+                return
+              }
+              
+              // Determine which animation to play
+              let animToPlay = targetAnim
+              if (useAimHit && shouldAlternate) {
+                // First cycle: idle, then all subsequent: hit
+                animToPlay = isFirstCycle ? 'aim_idle' : 'aim_hit'
+              }
+              
+              aimState.setAnimation(0, animToPlay, false)
+              
+              // Play voice for this cycle (skip if already played on first immediate call)
+              if (shouldPlaySounds && !(delay === 0 && cycleCount === 0)) {
+                if (playGaugeUp) {
+                  // Play gaugeup + fire sequence
+                  playAimGaugeUpSound(charId, () => {
+                    if (isAimHolding) {
+                      playAimFireSound(charId, targetAnim)
+                    }
+                  })
+                } else {
+                  // Only play fire sound after 0.5s delay
+                  setTimeout(() => {
+                    if (isAimHolding) {
+                      playAimFireSound(charId, targetAnim)
+                    }
+                  }, fireStartDelay * 1000)
+                }
+              }
+              
+              cycleCount++
+              
+              // Determine next cycle time
+              let nextCycleTime = loopDuration
+              if (shouldAlternate && useAimHit) {
+                // First cycle uses delay, then always use loopDuration
+                nextCycleTime = isFirstCycle ? delay : loopDuration
+                isFirstCycle = false  // After first cycle, always use loopDuration
+              }
+              
+              loopTimer = setTimeout(startLooping, nextCycleTime * 1000)
+            }
+            // Start loop after to_aim finishes (for alternating case)
+            if (useAimHit && shouldAlternate) {
+              const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
+              const toAimDuration = toAimAnim?.duration || 0.5
+              setTimeout(startLooping, toAimDuration * 1000)
+            } else {
+              // For normal case, start after animation delay
+              setTimeout(startLooping, (delay + targetAnimDuration) * 1000)
+            }
+          } else {
+            // No loop duration set, just loop normally
+            aimState.addAnimation(0, targetAnim, true, 0)
+          }
+        }
+      } else if (targetAnim) {
+        // Fallback: play target animation (non-looping) with delay, then loop with duration
+        let delay = 0
+        let loopDuration = 0
+        // Get timing from separate timing config
+        if (charConfig?.timing) {
+          delay = charConfig.timing.delay || 0
+          loopDuration = charConfig.timing.loopDuration || 0
+        }
+        aimState.setAnimation(0, targetAnim, false, delay)
+        aimState.addAnimation(0, targetAnim, true, loopDuration)  // loop with duration delay
+      } else {
+      }
+      
+      // Hide cover skeleton so only aim is visible
+      spinePlayer.skeleton.scaleX = 0
+      spinePlayer.skeleton.scaleY = 0
+      
+    } catch (error) {
+      console.error('❌ Error in cover aim sequence:', error)
+      isAimHolding = false
+      
+      // Fallback: show cover normally
+      spinePlayer.skeleton.scaleX = 1
+      spinePlayer.skeleton.scaleY = 1
     }
-
-    spinePlayer.animationState.setAnimation(0, 'cover_reload', false)
-    spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
-    playVoice()
     return
   }
 
@@ -269,6 +523,206 @@ const handleActionStart = (e?: MouseEvent) => {
   handleAction()
 }
 
+// Handle mouse release - show cover again and play reload
+const handleActionEnd = async () => {
+  if (!isAimHolding) {
+    return
+  }
+
+  isAimHolding = false
+  
+  // Stop any aim sounds immediately when releasing
+  stopAimSounds()
+  
+  // Cancel any pending aim skeleton switch
+  if (pendingSwitchTimeout) {
+    clearTimeout(pendingSwitchTimeout)
+    pendingSwitchTimeout = null
+  }
+
+  if (market.live2d.current_pose === 'cover') {
+    
+    // Get aim overlay if it exists
+    const aimOverlay = overlayInstances.find((o) => o.source.includes('aim'))
+    
+    if (aimOverlay) {
+      // Play to_cover on aim skeleton first
+      const aimAnimations = aimOverlay.state.data.skeletonData.animations
+      const hasToCover = aimAnimations.some((a: any) => a.name === 'to_cover')
+      
+      if (hasToCover) {
+        // Get to_cover duration
+        const toCoverAnimation = aimAnimations.find((a: any) => a.name === 'to_cover')
+        const toCoverDuration = toCoverAnimation?.duration || 0.5
+        
+        aimOverlay.state.setAnimation(0, 'to_cover', false)
+        
+        // After to_cover completes on aim, switch back to cover spine
+        setTimeout(() => {
+          
+          // Hide aim overlay
+          aimOverlay.skeleton.scaleX = 0
+          aimOverlay.skeleton.scaleY = 0
+          
+          // Clear overlay instances
+          overlayInstances = []
+          
+          // Show cover skeleton again
+          if (spinePlayer) {
+            spinePlayer.skeleton.scaleX = 1
+            spinePlayer.skeleton.scaleY = 1
+            
+            // Play animation sequence: to_cover -> cover_reload -> cover_idle
+            const coverAnimations = spinePlayer.animationState.data.skeletonData.animations
+            const hasCoverToCover = coverAnimations.some((a: { name: string }) => a.name === 'to_cover')
+            const hasCoverReload = coverAnimations.some((a: { name: string }) => a.name === 'cover_reload')
+            
+            if (hasCoverToCover) {
+              spinePlayer.animationState.setAnimation(0, 'to_cover', false)
+              spinePlayer.animationState.addAnimation(0, 'cover_reload', false, 0)
+              spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
+              playVoice()
+            } else if (hasCoverReload) {
+              spinePlayer.animationState.setAnimation(0, 'cover_reload', false)
+              spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
+              playVoice()
+            } else {
+              spinePlayer.animationState.setAnimation(0, 'cover_idle', true)
+            }
+          }
+        }, toCoverDuration * 1000)
+      } else {
+        // Fallback: no to_cover, just switch back
+        aimOverlay.skeleton.scaleX = 0
+        aimOverlay.skeleton.scaleY = 0
+        overlayInstances = []
+        
+        if (spinePlayer) {
+          spinePlayer.skeleton.scaleX = 1
+          spinePlayer.skeleton.scaleY = 1
+          
+          const coverAnimations = spinePlayer.animationState.data.skeletonData.animations
+          const hasCoverReload = coverAnimations.some((a: { name: string }) => a.name === 'cover_reload')
+          
+          if (hasCoverReload) {
+            spinePlayer.animationState.setAnimation(0, 'cover_reload', false)
+            spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
+            playVoice()
+          } else {
+            spinePlayer.animationState.setAnimation(0, 'cover_idle', true)
+          }
+        }
+      }
+    } else {
+      // No aim overlay found, just play cover sequence
+      
+      if (spinePlayer) {
+        spinePlayer.skeleton.scaleX = 1
+        spinePlayer.skeleton.scaleY = 1
+        
+        const coverAnimations = spinePlayer.animationState.data.skeletonData.animations
+        const hasCoverReload = coverAnimations.some((a: { name: string }) => a.name === 'cover_reload')
+        
+        if (hasCoverReload) {
+          spinePlayer.animationState.setAnimation(0, 'cover_reload', false)
+          spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
+          playVoice()
+        } else {
+          spinePlayer.animationState.setAnimation(0, 'cover_idle', true)
+        }
+      }
+    }
+  }
+}
+
+// Swap to aim spine with aim_hit animation ready to play on hold
+const swapToCoverAimSpine = async () => {
+  
+  if (!spinePlayer || !canvas) {
+    return
+  }
+
+  try {
+    // Dispose of current spine player first
+    if (spinePlayer?.canvas?.dispose) {
+      spinePlayer.canvas.dispose()
+    }
+    spinePlayer = null
+    
+    // Load aim spine data for this character
+    const aimData = await loadSpineData('aim')
+    
+    const uintArray = new Uint8Array(aimData.buffer)
+    const versionBytes = uintArray.slice(0, 16)
+    const versionString = new TextDecoder().decode(versionBytes).replace(/\0/g, '')
+
+    let usedSpine
+    if (/4\.0\.\d+/.test(versionString)) {
+      usedSpine = spine40
+    } else if (/4\.1\.\d+/.test(versionString)) {
+      usedSpine = spine41
+    } else {
+      usedSpine = spine41
+    }
+
+    // Create aim player with aim_hit animation
+    return new Promise((resolve, reject) => {
+      try {
+        const aimPlayer = new usedSpine.SpinePlayer('player-container', {
+          skelUrl: market.live2d.current_id + '_aim',
+          rawDataURIs: {
+            [market.live2d.current_id + '_aim']: aimData.skelURL
+          },
+          atlasUrl: getPathing('atlas', 'aim'),
+          animation: '',  // Empty animation - don't try to play any animation on init
+          skin: 'default',
+          backgroundColor: '#00000000',
+          alpha: true,
+          premultipliedAlpha: true,
+          mipmaps: false,
+          debug: true,  // Enable debug to see more info
+          preserveDrawingBuffer: true,
+          viewport: getSpineViewport('cover'),
+          scale: spineScale,
+          defaultMix: SPINE_DEFAULT_MIX,
+          success: (player: any) => {
+            aimSpinePlayer = player
+            spinePlayer = player
+            
+            // Play aim_hit animation while holding
+            if (isAimHolding) {
+              const animations = player.animationState.data.skeletonData.animations
+              const hasAimHit = animations.some((a: { name: string }) => a.name === 'aim_hit')
+              
+              if (hasAimHit) {
+                player.animationState.setAnimation(0, 'aim_hit', true) // true = loop while holding
+                playVoice()
+              } else {
+                // List available animations
+                const availableAnims = animations.map((a: { name: string }) => a.name)
+              }
+            } else {
+            }
+            
+            resolve(player)
+          },
+          error: (error: any) => {
+            console.error('❌ Failed to load aim spine - error:', error)
+            console.error('❌ SpinePlayer config:', aimPlayer.config)
+            reject(error)
+          }
+        })
+      } catch (error) {
+        console.error('❌ Error creating SpinePlayer:', error)
+        reject(error)
+      }
+    })
+  } catch (error) {
+    console.warn('❌ Aim spine not available:', error)
+    throw error
+  }
+}
+
 const swapToAimSpine = async () => {
   if (!spineCanvas) return
 
@@ -381,6 +835,91 @@ const swapBackToCoverSpine = async () => {
     // Fallback: reload the fullbody spine
     loadSpineAfterWatcher()
   }
+}
+
+// Stop aim sounds (gaugeup only - let fire play to completion)
+let currentAimGaugeUpAudio: HTMLAudioElement | null = null
+let currentAimFireAudio: HTMLAudioElement | null = null
+
+const stopAimSounds = () => {
+  // Stop gaugeup sound immediately
+  if (currentAimGaugeUpAudio) {
+    currentAimGaugeUpAudio.pause()
+    currentAimGaugeUpAudio.currentTime = 0
+    currentAimGaugeUpAudio = null
+  }
+  // Let fire sound play to completion - don't stop it
+}
+
+const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
+  // First check if character has custom gaugeup in their fx folder
+  const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
+  
+  // Try custom first, fall back to generic gaugeup sequence (1 then 2)
+  const audio1 = new Audio()
+  audio1.volume = 0.5
+  
+  const tryCustomThenGeneric = () => {
+    audio1.src = customGaugeUpPath
+    audio1.onloadeddata = () => {
+      audio1.play().catch(() => {
+        // If custom fails, play generic sequence
+        playGenericGaugeUpSequence()
+      })
+    }
+    audio1.onerror = () => {
+      // Custom not found, play generic sequence
+      playGenericGaugeUpSequence()
+    }
+    audio1.load()
+  }
+  
+  const playGenericGaugeUpSequence = () => {
+    // Play gaugeup_1 first
+    const audio1 = new Audio()
+    audio1.volume = 0.5
+    audio1.src = `/assets/l2d/_/gaugeup_1.ogg`
+    currentAimGaugeUpAudio = audio1
+    audio1.play().catch(() => console.log('Could not play gaugeup_1'))
+    
+    // Then play gaugeup_2 after gaugeup_1 ends
+    audio1.onended = () => {
+      const audio2 = new Audio()
+      audio2.volume = 0.5
+      audio2.src = `/assets/l2d/_/gaugeup_2.ogg`
+      currentAimGaugeUpAudio = audio2
+      audio2.play().catch(() => console.log('Could not play gaugeup_2'))
+      
+      // Call completion callback after gaugeup_2 ends
+      audio2.onended = () => {
+        if (onComplete) onComplete()
+      }
+    }
+  }
+  
+  tryCustomThenGeneric()
+}
+
+const playAimFireSound = (characterId: string, animationType: string) => {
+  // Voice is always "fire", regardless of animation type (aim_hit vs aim_fire)
+  const baseCharacterId = characterId.split('_')[0]
+  const primaryPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire.ogg`
+  const fallbackPath = baseCharacterId !== characterId 
+    ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire.ogg`
+    : primaryPath
+  
+  const audio = new Audio()
+  audio.volume = 0.5
+  currentAimFireAudio = audio
+  
+  // For variants, default to fallback (base character fire sound)
+  // This way it plays base fire sound unless variant has its own
+  const soundPath = baseCharacterId !== characterId ? fallbackPath : primaryPath
+  
+  audio.src = soundPath
+  audio.play().catch((err) => {
+    console.log(`Could not play fire sound at ${soundPath}:`, err)
+  })
 }
 
 const playVoiceWithRetry = (characterId: string, pose: string, attemptCount = 0): boolean => {
@@ -938,16 +1477,6 @@ const playSkillcutSound = async () => {
   })
 }
 
-const handleActionEnd = () => {
-  if (!spinePlayer) return
-
-  // Release aim_hit animation when mouse is released
-  if (isAimHolding && market.live2d.current_pose === 'aim') {
-    isAimHolding = false
-    spinePlayer.animationState.setAnimation(0, 'aim_idle', true)
-  }
-}
-
 const SPINE_DEFAULT_MIX = 0.25
 let spinePlayer: any = null
 
@@ -1064,12 +1593,16 @@ function loadOverlaySkeletons() {
       overlayInstances = []
       const characterId = market.live2d.current_id
       const charFolder = `assets/l2d/${characterId}`
+      
 
       // Characters known to have fg/bg overlays (most don't)
-      if (!charactersWithFgBgOverlays.includes(characterId)) {
+      // For cover mode, always load overlays (for all characters with aim folders)
+      // For other poses, only load if character is in the list
+      if (market.live2d.current_pose !== 'cover' && !charactersWithFgBgOverlays.includes(characterId)) {
         resolve()
         return
       }
+      
 
       // Determine the suffix pattern from main skeleton
       // First, try to find what suffix the main skeleton uses by checking common patterns
@@ -1089,18 +1622,29 @@ function loadOverlaySkeletons() {
       }
 
       // Helper function to load overlay with detected suffix
-      const tryLoadOverlay = async (overlayType: 'bg' | 'fg'): Promise<boolean> => {
+      const tryLoadOverlay = async (overlayType: 'bg' | 'fg' | 'aim'): Promise<boolean> => {
         // Determine suffix for overlays based on character ID pattern
         // Characters with _01, _02, etc don't have _00 suffix for overlays
         // Characters without variant suffix use _00 for overlays
         const hasVariant = /_\d{2}$/.test(characterId)
         const overlaySuffix = hasVariant ? '' : mainSuffix
 
-        // Try with the appropriate suffix
-        const pathPatterns = [
-          { skel: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.atlas` },
-          { skel: `${charFolder}/${characterId}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}_${overlayType}.atlas` }
-        ]
+        // For aim overlay, check the subfolder first
+        let pathPatterns = []
+        
+        if (overlayType === 'aim') {
+          pathPatterns = [
+            // Check aim subfolder with _aim_00 naming
+            { skel: `${charFolder}/aim/${characterId}_aim${overlaySuffix}.skel`, atlas: `${charFolder}/aim/${characterId}_aim${overlaySuffix}.atlas` },
+            { skel: `${charFolder}/aim/${characterId}_aim_00.skel`, atlas: `${charFolder}/aim/${characterId}_aim_00.atlas` },
+            { skel: `${charFolder}/${characterId}_aim.skel`, atlas: `${charFolder}/${characterId}_aim.atlas` }
+          ]
+        } else {
+          pathPatterns = [
+            { skel: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}${overlaySuffix}_${overlayType}.atlas` },
+            { skel: `${charFolder}/${characterId}_${overlayType}.skel`, atlas: `${charFolder}/${characterId}_${overlayType}.atlas` }
+          ]
+        }
 
         for (const paths of pathPatterns) {
           try {
@@ -1132,6 +1676,8 @@ function loadOverlaySkeletons() {
                 defaultAnim = 'bg_idle'
               } else if (overlayType === 'fg' && animations.includes('fg_idle')) {
                 defaultAnim = 'fg_idle'
+              } else if (overlayType === 'aim' && animations.includes('aim_idle')) {
+                defaultAnim = 'aim_idle'
               } else if (animations.includes('bg_idle')) {
                 defaultAnim = 'bg_idle'
               } else if (animations.length > 0) {
@@ -1158,11 +1704,23 @@ function loadOverlaySkeletons() {
       }
 
       // Try to load background
-      await tryLoadOverlay('bg')
+      const bgLoaded = await tryLoadOverlay('bg')
 
       // Try to load foreground
-      await tryLoadOverlay('fg')
-
+      const fgLoaded = await tryLoadOverlay('fg')
+      
+      // Try to load aim overlay (for characters with aim/cover modes in cover pose)
+      if (market.live2d.current_pose === 'cover') {
+        const aimLoaded = await tryLoadOverlay('aim')
+        
+        // Hide aim skeleton by default (will be shown on click)
+        const aimOverlay = overlayInstances.find((o) => o.source.includes('_aim'))
+        if (aimOverlay) {
+          aimOverlay.skeleton.scaleX = 0
+          aimOverlay.skeleton.scaleY = 0
+        }
+      }
+      
       resolve()
     } catch (error) {
       overlayInstances = []
@@ -1224,6 +1782,8 @@ function renderWithOverlays() {
 const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
   return new Promise((resolve, reject) => {
     const skelUrl = getPathing('skel', pose)
+    const atlasUrl = getPathing('atlas', pose)
+    
     const request = new XMLHttpRequest()
 
     request.responseType = 'arraybuffer'
@@ -1244,17 +1804,14 @@ const loadSpineData = (pose: 'aim' | 'cover'): Promise<any> => {
       }
 
       const buffer = request.response
-      const frURL = new FileReader()
-      frURL.readAsArrayURL(new Blob([buffer]))
-      frURL.onload = () => {
-        resolve({
-          skelURL: frURL.result,
-          buffer: buffer
-        })
-      }
-      frURL.onerror = () => {
-        reject(new Error(`Failed to read ${pose} skel file`))
-      }
+      // Create a blob URL directly from the buffer
+      const blob = new Blob([buffer], { type: 'application/octet-stream' })
+      const skelURL = URL.createObjectURL(blob)
+      
+      resolve({
+        skelURL: skelURL,
+        buffer: buffer
+      })
     }
 
     request.onerror = () => {
@@ -1414,7 +1971,7 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
       mipmaps: market.live2d.current_pose === 'fb' ? true : false,
       debug: false,
       preserveDrawingBuffer: true,
-      viewport: spineViewport,
+      viewport: getSpineViewport(market.live2d.current_pose),
       defaultMix: SPINE_DEFAULT_MIX,
       success: (player: any) => {
         // Now that skeleton is loaded, try to set the desired skin
@@ -1521,8 +2078,14 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
         }
 
         // Load overlay skeletons if they exist (bg, fg layers)
-        if (market.live2d.current_pose === 'fb') {
-          loadOverlaySkeletons().then(() => {
+        if (market.live2d.current_pose === 'fb' || market.live2d.current_pose === 'cover') {
+          // For cover mode, ALWAYS set up overlay rendering (for all characters with aim folder)
+          // For fb mode, only set up if character is in the list
+          const shouldLoadOverlays = market.live2d.current_pose === 'cover' || 
+                                     charactersWithFgBgOverlays.includes(market.live2d.current_id)
+          
+          if (shouldLoadOverlays) {
+            loadOverlaySkeletons().then(() => {
             if (overlayInstances.length > 0) {
               const renderer = spineCanvas.sceneRenderer
               const originalDrawSkeleton = renderer.drawSkeleton.bind(renderer)
@@ -1590,6 +2153,19 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
                   // Render main skeleton in the middle
                   originalDrawSkeleton(skeleton, premultipliedAlpha)
 
+                  // Render aim overlay (for cover mode aim/fire mechanic)
+                  const aimOverlay = overlayInstances.find((o) => o.source.includes('_aim'))
+                  if (aimOverlay && aimOverlay.skeleton.scaleX !== 0) {
+                    // Keep aim skeleton aligned with cover skeleton during render
+                    aimOverlay.skeleton.x = skeleton.x
+                    aimOverlay.skeleton.y = skeleton.y
+                    
+                    aimOverlay.state.update(1 / 60)
+                    aimOverlay.state.apply(aimOverlay.skeleton)
+                    aimOverlay.skeleton.updateWorldTransform()
+                    originalDrawSkeleton(aimOverlay.skeleton, premultipliedAlpha)
+                  }
+
                   // Render foreground last (in front of main)
                   const fgOverlay = overlayInstances.find((o) => o.source.includes('_fg'))
                   if (fgOverlay) {
@@ -1609,7 +2185,11 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
             }
           })
         } else {
-          overlayInstances = []
+          // Don't clear overlays if we have aim overlays (from click-to-aim mechanic)
+          const hasAimOverlay = overlayInstances.some((o) => o.source.includes('_aim'))
+          if (!hasAimOverlay) {
+            overlayInstances = []
+          }
         }
 
         // Load dual-layer skeleton if this character supports it (works for any pose)
@@ -1729,6 +2309,7 @@ const loadSpineWithBuffer = (buffer: ArrayBuffer, characterId: string) => {
               }
             }
           })
+            }
         }
 
         market.live2d.triggerFinishedLoading()
@@ -1951,7 +2532,6 @@ import l2dData, { voiceMap, voiceGroupOverrides, setCustomZoom, actionSoundConfi
 let currentVoice = null as null | HTMLAudioElement
 let currentReloadSound = null as null | HTMLAudioElement
 let currentActionSound = null as null | HTMLAudioElement
-let isAimHolding = false
 
 // Track ALL active audio objects to stop them when character changes
 let activeAudioObjects: HTMLAudioElement[] = []
@@ -2484,12 +3064,22 @@ const applyDefaultStyle2Canvas = () => {
     if (checkMobile()) {
       setCanvasStyleMobile()
     } else {
-      canvas.style.height = market.live2d.HQassets ? '438vh' : '168vh'
-      canvas.style.marginTop = market.live2d.HQassets ? 'calc(-171vh)' : 'calc(-30vh)'
-      canvas.style.transform = market.live2d.HQassets ? 'scale(0.294)' : 'scale(0.7)'
-      canvas.style.position = 'absolute'
-      canvas.style.left = '0px'
-      canvas.style.top = '0px'
+      // Cover mode needs larger canvas to show full character
+      if (market.live2d.current_pose === 'cover') {
+        canvas.style.height = '250vh'
+        canvas.style.marginTop = 'calc(-75vh)'
+        canvas.style.transform = 'scale(0.5)'
+        canvas.style.position = 'absolute'
+        canvas.style.left = '100px'  // Offset right for cover mode
+        canvas.style.top = '0px'
+      } else {
+        canvas.style.height = market.live2d.HQassets ? '438vh' : '168vh'
+        canvas.style.marginTop = market.live2d.HQassets ? 'calc(-171vh)' : 'calc(-30vh)'
+        canvas.style.transform = market.live2d.HQassets ? 'scale(0.294)' : 'scale(0.7)'
+        canvas.style.position = 'absolute'
+        canvas.style.left = '0px'
+        canvas.style.top = '0px'
+      }
       const baseZoom = market.live2d.HQassets ? 0.18 : 0.5
       transformScale = baseZoom
       targetScale = baseZoom
@@ -2509,12 +3099,22 @@ const applyDefaultStyle2CanvasImmediate = () => {
   if (checkMobile()) {
     setCanvasStyleMobile()
   } else {
-    canvas.style.height = market.live2d.HQassets ? '438vh' : '168vh'
-    canvas.style.marginTop = market.live2d.HQassets ? 'calc(-171vh)' : 'calc(-30vh)'
-    canvas.style.transform = market.live2d.HQassets ? 'scale(0.294)' : 'scale(0.7)'
-    canvas.style.position = 'absolute'
-    canvas.style.left = '0px'
-    canvas.style.top = '0px'
+    // Cover mode needs larger canvas to show full character
+    if (market.live2d.current_pose === 'cover') {
+      canvas.style.height = '250vh'
+      canvas.style.marginTop = 'calc(-75vh)'
+      canvas.style.transform = 'scale(0.5)'
+      canvas.style.position = 'absolute'
+      canvas.style.left = '400px'
+      canvas.style.top = '0px'
+    } else {
+      canvas.style.height = market.live2d.HQassets ? '438vh' : '168vh'
+      canvas.style.marginTop = market.live2d.HQassets ? 'calc(-171vh)' : 'calc(-30vh)'
+      canvas.style.transform = market.live2d.HQassets ? 'scale(0.294)' : 'scale(0.7)'
+      canvas.style.position = 'absolute'
+      canvas.style.left = '0px'
+      canvas.style.top = '0px'
+    }
     const baseZoom = market.live2d.HQassets ? 0.18 : 0.5
     transformScale = baseZoom
     targetScale = baseZoom
@@ -2537,6 +3137,11 @@ const checkMobile = () => {
 }
 
 const centerForPC = () => {
+  // Skip centering for cover mode - let the custom positioning from applyDefaultStyle2Canvas take effect
+  if (market.live2d.current_pose === 'cover') {
+    return
+  }
+  
   const canvas_width = canvas ? canvas.offsetWidth : 0
   const viewport_width = window.innerWidth
   canvas && (canvas.style.left = (viewport_width - canvas_width) / 2 + 'px')
@@ -2560,7 +3165,8 @@ let oldY: number
 let move = false as boolean
 
 document.addEventListener('mousedown', (e) => {
-  if (filterDomEvents(e)) {
+  // Only allow left-click drag (button 0), disable middle-click (button 2) and right-click (button 1)
+  if (filterDomEvents(e) && e.button === 0) {
     oldX = e.clientX
     oldY = e.clientY
     move = true
@@ -2574,7 +3180,8 @@ document.addEventListener('mouseup', () => {
 })
 
 document.addEventListener('mousemove', (e) => {
-  if (move && canvas) {
+  // Only allow left-click drag (buttons bitmask: 1 = left-click)
+  if (move && canvas && (e.buttons & 1) === 1) {
     const newX = e.clientX
     const newY = e.clientY
 
@@ -2874,6 +3481,10 @@ const triggerPreview1 = () => {
 
   &.spine-hidden {
     visibility: hidden;
+  }
+  
+  &.cover {
+    overflow: visible;
   }
 }
 .mobile {

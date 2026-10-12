@@ -1,5 +1,5 @@
 const convertL2dData = (groups) => {
-  const allCharacters = Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr]) => {
+  const allCharacters = Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr, timingStr]) => {
     const obj = { group, name, id }
     if (soundStr && soundStr !== '') {
       soundStr.split('|').forEach(part => {
@@ -8,11 +8,79 @@ const convertL2dData = (groups) => {
         if (type === 're' && values) obj.re = values})}
     if (zoomStr && typeof zoomStr === 'string') {
       const zoomConfig = {}
+      let timingConfig = {}  // Separate timing config
+      let animationType = 'fire'  // default to aim_fire
+      
       zoomStr.split('|').forEach(part => {
+        // Check for animation type flags
+        if (part === 'hit') {
+          animationType = 'hit'
+          return
+        }
+        
         const [pose, values] = part.split(':')
-        const [zoom, offsetX, offsetY] = values.split(',').map(Number)
-        zoomConfig[pose] = { zoom: zoom || 0.21, offsetX: offsetX || 0, offsetY: offsetY || 0 }})
-      if (Object.keys(zoomConfig).length > 0) obj.zoom = zoomConfig}
+        if (values) {
+          const valueParts = values.split(',')
+          
+          if (pose === 'ti') {
+            // Timing format: ti:delay,loopDuration,repeatFlag
+            timingConfig = {
+              delay: parseFloat(valueParts[0]) || 0,
+              loopDuration: parseFloat(valueParts[1]) || 0,
+              repeatFlag: valueParts[2] || ''
+            }
+          } else {
+            // Zoom format: co/sc/fb/a:zoom,offsetX,offsetY[,delay,loopDuration,repeatFlag]
+            const zoom = parseFloat(valueParts[0]) || 0.21
+            const offsetX = parseFloat(valueParts[1]) || 0
+            const offsetY = parseFloat(valueParts[2]) || 0
+            const delay = parseFloat(valueParts[3]) || 0
+            const loopDuration = parseFloat(valueParts[4]) || 0
+            const repeatFlag = valueParts[5] || ''
+            zoomConfig[pose] = { zoom, offsetX, offsetY, delay, loopDuration, repeatFlag }
+          }
+        }
+      })
+      
+      // If timing was defined separately, apply it to all zoom poses
+      if (Object.keys(timingConfig).length > 0) {
+        Object.keys(zoomConfig).forEach(pose => {
+          zoomConfig[pose] = { ...zoomConfig[pose], ...timingConfig }
+        })
+      }
+      
+      if (Object.keys(zoomConfig).length > 0) {
+        obj.zoom = zoomConfig
+        if (animationType === 'hit') obj.zoomAnimationType = 'hit'
+      }
+    }
+    
+    // Parse separate timing string (5th parameter)
+    if (timingStr && typeof timingStr === 'string') {
+      let animationType = 'fire'
+      
+      // Check for animation type flag
+      if (timingStr.includes('|hit')) {
+        animationType = 'hit'
+        timingStr = timingStr.replace('|hit', '')  // Remove flag before parsing
+      }
+      
+      const [type, values] = timingStr.split(':')
+      if (type === 'ti' && values) {
+        const valueParts = values.split(',')
+        obj.timing = {
+          delay: parseFloat(valueParts[0]) || 0,
+          loopDuration: parseFloat(valueParts[1]) || 0,
+          repeatFlag: valueParts[2] || ''
+        }
+      }
+      
+      // Set animation type from timing string
+      if (animationType === 'hit') {
+        obj.zoomAnimationType = 'hit'
+      }
+    }
+    
     return obj}))
 
   const charMap = Object.fromEntries(allCharacters.map(c => [c.id, c]))
@@ -20,24 +88,42 @@ const convertL2dData = (groups) => {
     const match = char.id.match(/^(.+?)_(\d+|0[0-9a-z]+|old|80)$/)
     if (match) {
       const baseChar = charMap[match[1]]
+      // Inherit missing pose configs from base character
       if (baseChar?.zoom) {
-        if (!char.zoom) char.zoom = { ...baseChar.zoom }
-        else if (baseChar.zoom.sc && !char.zoom.sc) char.zoom.sc = { ...baseChar.zoom.sc }}}})
-  return allCharacters}
-
-// code, name, actionFx|reloadFx (track, d=delayMs(*100) o=overlay%, time), fullbody|skillcut (zoom, offsetX, offsetY)
+        if (!char.zoom) {
+          char.zoom = { ...baseChar.zoom }
+        } else {
+          if (baseChar.zoom.fb && !char.zoom.fb) char.zoom.fb = { ...baseChar.zoom.fb }
+          if (baseChar.zoom.sc && !char.zoom.sc) char.zoom.sc = { ...baseChar.zoom.sc }
+          if (baseChar.zoom.co && !char.zoom.co) char.zoom.co = { ...baseChar.zoom.co }
+          if (baseChar.zoom.a && !char.zoom.a) char.zoom.a = { ...baseChar.zoom.a }
+          if (baseChar.zoom.c && !char.zoom.c) char.zoom.c = { ...baseChar.zoom.c }
+        }
+      }
+      // Inherit timing from base character
+      if (baseChar?.timing && !char.timing) {
+        char.timing = { ...baseChar.timing }
+      }
+      // Always inherit zoomAnimationType if base has it (for |hit flag)
+      if (baseChar?.zoomAnimationType && !char.zoomAnimationType) {
+        char.zoomAnimationType = baseChar.zoomAnimationType
+      }
+    }
+  })
+  return allCharacters
+}
 const l2dGroups = {
 
 
   '777': [
-    ['c270', 'Blanc', '', 'sc:0.49,-200,490'],
-    ['c270_01', 'Blanc White Rabbit', 'ac:3d15'],
-    ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12'],
+    ['c270', 'Blanc', '', 'sc:0.49,-200,490|co:0.6,30,30', 'ti:0,0.1'],
+    ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.35'],
+    ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', ''],
     ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2'],
     ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5'],
     ['c271_02', 'Noir Baseball Cheerleader'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.4,0,0', 'ti:1.3,1.3,r|hit'],
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50'],
   ],
 
@@ -1687,17 +1773,17 @@ const setCustomZoom = (characterId, canvas, transformScale, currentPose) => {
     return transformScale
   }
 
-  // Handle new format: { fb: {...}, sc: {...}, a: {...}, c: {...} }
+  // Handle new format: { fb: {...}, sc: {...}, a: {...}, co: {...}, c: {...} }
   let settings
-  if (characterSettings.fb || characterSettings.sc || characterSettings.a || characterSettings.c) {
+  if (characterSettings.fb || characterSettings.sc || characterSettings.a || characterSettings.c || characterSettings.co) {
     // New format with pose-specific settings
     let poseKey = currentPose
-    // Map pose names to short keys
+    // Map pose names to short keys (prefer 'co' over 'c' for cover)
     if (currentPose === 'skillcut') poseKey = 'sc'
     else if (currentPose === 'aim') poseKey = 'a'
-    else if (currentPose === 'cover') poseKey = 'c'
+    else if (currentPose === 'cover') poseKey = 'co'  // Use 'co', not 'c'
     
-    settings = characterSettings[poseKey]
+    settings = characterSettings[poseKey] || characterSettings[currentPose === 'cover' ? 'c' : poseKey]  // Fallback to 'c' if 'co' not found
   } else {
     // Old format: direct settings (assumed to be fullbody)
     settings = characterSettings
