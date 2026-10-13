@@ -1,5 +1,18 @@
+const timingAliases = {
+  'smg': '',
+  'ar': 'ti:0,0.1',
+  'sg': 'ti:0,0.6',
+  'mg': 'ti:0,0.5,m',
+  'rl': 'ti:1.3,1.3,e|hit',
+  'sr': 'ti:1.3,1.3,r|hit',
+}
+
 const convertL2dData = (groups) => {
   const allCharacters = Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr, timingStr]) => {
+    // Expand timing aliases
+    if (timingStr && timingStr in timingAliases) {
+      timingStr = timingAliases[timingStr]
+    }
     const obj = { group, name, id }
     if (soundStr && soundStr !== '') {
       soundStr.split('|').forEach(part => {
@@ -24,10 +37,21 @@ const convertL2dData = (groups) => {
           
           if (pose === 'ti') {
             // Timing format: ti:delay,loopDuration,repeatFlag
+            // repeatFlag can be 'r' or 'e' (these control both animation AND gaugeup)
+            let repeatFlag = valueParts[2] || ''
+            let gaugeupFlag = ''
+            
+            // If flag is r or e, it's used for both animation and gaugeup
+            if (repeatFlag === 'r' || repeatFlag === 'e') {
+              gaugeupFlag = repeatFlag
+              // Keep repeatFlag as-is for animation alternation
+            }
+            
             timingConfig = {
               delay: parseFloat(valueParts[0]) || 0,
               loopDuration: parseFloat(valueParts[1]) || 0,
-              repeatFlag: valueParts[2] || ''
+              repeatFlag: repeatFlag,
+              gaugeupFlag: gaugeupFlag
             }
           } else {
             // Zoom format: co/sc/fb/a:zoom,offsetX,offsetY[,delay,loopDuration,repeatFlag]
@@ -58,6 +82,7 @@ const convertL2dData = (groups) => {
     // Parse separate timing string (5th parameter)
     if (timingStr && typeof timingStr === 'string') {
       let animationType = 'fire'
+      let gaugeupFlag = ''  // r or e flag for gaugeup sequence
       
       // Check for animation type flag
       if (timingStr.includes('|hit')) {
@@ -68,10 +93,26 @@ const convertL2dData = (groups) => {
       const [type, values] = timingStr.split(':')
       if (type === 'ti' && values) {
         const valueParts = values.split(',')
+        
+        // Parse flags from 3rd parameter
+        let repeatFlag = valueParts[2] || ''
+        let gaugeupFlag = ''
+        let audioMode = ''  // 'm' for ramping mode
+        
+        // r and e are gaugeup flags
+        // m is audio ramping mode
+        if (repeatFlag === 'r' || repeatFlag === 'e') {
+          gaugeupFlag = repeatFlag
+        } else if (repeatFlag === 'm') {
+          audioMode = 'm'
+        }
+        
         obj.timing = {
           delay: parseFloat(valueParts[0]) || 0,
           loopDuration: parseFloat(valueParts[1]) || 0,
-          repeatFlag: valueParts[2] || ''
+          repeatFlag: repeatFlag,
+          gaugeupFlag: gaugeupFlag,
+          audioMode: audioMode
         }
       }
       
@@ -116,30 +157,30 @@ const l2dGroups = {
 
 
   '777': [
-    ['c270', 'Blanc', '', 'sc:0.49,-200,490|co:0.6,30,30', 'ti:0,0.1'],
+    ['c270', 'Blanc', '', 'sc:0.49,-200,490|co:0.6,30,30', 'ar'],
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.4,-150,60'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', 'co:0.6,30,45'],
     ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2|co:0.6,-5,60'],
-    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,20', 'ti:0,0.6'],
+    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,20', 'sg'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5', 'co:0.45,-100,10'],
     ['c271_02', 'Noir Baseball Cheerleader', '', 'co:0.4,-160'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,60,10', 'ti:1.3,1.3,r|hit'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,60,10', 'sr'],
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50|co:0.5,60,-15'],
   ],
 
   'A.C.P.U.': [
-    ['c030', 'Poli', 're:1d4,2d2', 'fb:0,80|sc:0.36,0,30'],
+    ['c030', 'Poli', 're:1d4,2d2', 'fb:0,80|sc:0.36,0,30|co:0.4,-40,40', 'sg'],
     ['c030_01', 'Poli Sweet Holic', '', 'fb:0,0'],
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8', 'fb:0,-30'],
-    ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60'],
+    ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60|co:0.35,-160', 'smg'],
     ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9', 'fb:0.22,0,-20'],
-    ['c033', 'Quiry', 'ac:2d4|re:1d5', 'sc:0.27,0,150'],
+    ['c033', 'Quiry', 'ac:2d4|re:1d5,3d1', 'sc:0.27,0,150|co:0.4,-60,10', 'rl'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.26,30'],
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.32,60'],
   ],
 
   'Absolute': [
-    ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50'],
+    ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50|co:0.35,-170,10', 'mg'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
     ['c091', 'Vesti', 're:1d8,2d4', 'sc:0.23,0,100'],

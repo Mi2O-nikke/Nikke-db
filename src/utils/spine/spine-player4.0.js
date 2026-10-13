@@ -14134,7 +14134,7 @@ var spine40 = (() => {
         : ''
       this.parent.appendChild(
         (this.dom = createElement(
-          `<div class="spine-player" style="position:relative;height:100%"><canvas class="spine-player-canvas" style=""></canvas>${controls}</div>`
+          `<div class="spine-player" style="position:relative;height:100%" oncontextmenu="return false" draggable="false" onmousedown="if(event.button===1) return false"><canvas class="spine-player-canvas" style=""></canvas>${controls}</div>`
         ))
       )
       try {

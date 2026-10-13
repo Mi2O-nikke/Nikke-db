@@ -14,6 +14,7 @@ import spine41 from '@/utils/spine/spine-player4.1'
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
 import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterFullbodySkins, characterDefaultAnimations } from '@/utils/json/l2d'
+import { preloadCoverModeAssets, isPreloaded } from '@/utils/spine/preloadManager'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -39,6 +40,13 @@ let currentActiveSpine: 'aim' | 'cover' | null = null
 let isAimHolding = false
 let hasLoadedAimSpine = false
 let pendingSwitchTimeout: NodeJS.Timeout | null = null
+let lastAimClickTime = 0  // Track last aim click time for debouncing
+let currentFireLoopTimer: NodeJS.Timeout | null = null  // Track fire loop so we can stop it on click
+let currentGaugeupFlag = ''  // Track which gaugeup flag (r or e) is used for this hold session
+let currentAudioMode = ''  // Track audio mode (m for ramping)
+let rampingFireTimeouts: NodeJS.Timeout[] = []  // Track ramping fire timeouts so we can clear them
+let rampingStarted = false  // Track if ramping sequence has already been started
+let currentWebAudioSource: any = null  // Track Web Audio BufferSource for fire_loop
 
 // Multi-skeleton support for c515
 interface OverlayInstance {
@@ -100,6 +108,21 @@ onMounted(() => {
   setupClickListener()
 })
 
+// Watch for pose changes - preload cover mode assets
+watch(
+  () => market.live2d.current_pose,
+  (newPose) => {
+    if (newPose === 'cover') {
+      const charId = market.live2d.current_id
+      console.log(`[Cover Mode] Preloading assets for ${charId}...`)
+      // Preload in background, don't wait for it
+      preloadCoverModeAssets(charId, true).catch(e => {
+        console.warn('[Cover Mode] Preload failed:', e)
+      })
+    }
+  }
+)
+
 // Clean up zoom animation frame on unmount
 onUnmounted(() => {
   if (zoomFrameId !== null) {
@@ -112,10 +135,37 @@ const setupClickListener = () => {
   // Listen on document to catch all clicks, then filter
   document.addEventListener('mousedown', (e) => handleActionStart(e))
   document.addEventListener('mouseup', handleActionEnd)
+  
+  // Middle-click (button 1) for cover_hit motion in cover mode
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 1) {  // Middle-click
+      handleCoverHit(e)
+    }
+  })
+  
+  // Disable middle-click auto-scrolling on cover mode
+  document.addEventListener('mousedown', (e) => {
+    const container = document.getElementById('player-container')
+    if (container?.classList.contains('cover') && e.button === 1) {
+      e.preventDefault()
+    }
+  }, true)
+  
+  // Disable right-click context menu on canvas
+  document.addEventListener('contextmenu', (e) => {
+    const target = e.target as HTMLElement
+    const isOnCanvas = target === canvas || canvas?.contains(target)
+    if (isOnCanvas) {
+      e.preventDefault()
+    }
+  })
 }
 
 const handleActionStart = async (e?: MouseEvent) => {
   if (!spinePlayer || !canvas) return
+  
+  // Only trigger on left-click (button 0)
+  if (e?.button !== 0) return
 
   const target = e?.target as HTMLElement
   if (!target) return
@@ -139,15 +189,40 @@ const handleActionStart = async (e?: MouseEvent) => {
   // For cover pose - click to show aim, release to show cover
   if (market.live2d.current_pose === 'cover') {
     
+    // Debounce rapid clicks - ignore if less than 100ms since last click
+    const now = Date.now()
+    if (now - lastAimClickTime < 100) {
+      console.log(`[Cover] Click ignored (too fast, ${now - lastAimClickTime}ms since last)`)
+      return
+    }
+    lastAimClickTime = now
+    
     // Set holding flag
     isAimHolding = true
+    rampingStarted = false  // Reset ramping flag for new hold
+    
+    // Set gaugeup flag and audio mode from character config
+    const charId = market.live2d.current_id
+    const charConfig = l2dData.find(c => c.id === charId)
+    currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
+    currentAudioMode = charConfig?.timing?.audioMode || ''
+    
+    // Stop only FX timeouts (let voice play to end)
+    stopReloadFxOnly()
     
     try {
       const charId = market.live2d.current_id
+      const clickStartTime = performance.now()
+      const preloaded = isPreloaded(charId)
+      
+      console.log(`[Cover Click] ${preloaded ? '✅ PRELOADED - Using cache' : '⏳ Loading on demand...'} for ${charId}`)
       
       // Step 1: Load aim skeleton immediately (no to_aim on cover)
       const aimSkelResponse = await fetch(`/assets/l2d/${charId}/aim/${charId}_aim_00.skel`)
       const aimAtlasResponse = await fetch(`/assets/l2d/${charId}/aim/${charId}_aim_00.atlas`)
+      
+      const fetchTime = performance.now() - clickStartTime
+      console.log(`[Cover Click] Fetch complete in ${fetchTime.toFixed(0)}ms`)
       
       if (!aimSkelResponse.ok || !aimAtlasResponse.ok) {
         throw new Error('Failed to fetch aim files')
@@ -218,6 +293,9 @@ const handleActionStart = async (e?: MouseEvent) => {
       
       overlayInstances = [aimOverlay]
       
+      const setupTime = performance.now() - clickStartTime
+      console.log(`[Cover Click] ✅ Aim skeleton loaded & ready in ${setupTime.toFixed(0)}ms`)
+      
       // Step 2: Play to_aim on aim skeleton, then chain to aim_fire or aim_hit
       const aimAnimations = aimState.data.skeletonData.animations
       const hasToAim = aimAnimations.some((a: any) => a.name === 'to_aim')
@@ -246,7 +324,7 @@ const handleActionStart = async (e?: MouseEvent) => {
           
           // For alternating hit/idle, skip the initial animation and let the loop handle it
           const repeatFlag = charConfig?.timing?.repeatFlag || ''
-          const shouldAlternate = repeatFlag === 'r'
+          const shouldAlternate = repeatFlag === 'r' || repeatFlag === 'e'
           if (!(useAimHit && shouldAlternate)) {
             // Normal case: add initial animation
             // But if loopDuration is set, skip this - let startLooping handle all animations
@@ -257,7 +335,7 @@ const handleActionStart = async (e?: MouseEvent) => {
           
           // Check if we should play fire sound immediately when delay = 0
           let playedFireLoop = false
-          if (delay === 0) {
+          if (delay === 0 && currentAudioMode !== 'm') {  // Skip this for ramping mode
             playedFireLoop = true
             
             // Use loopDuration as the interval, or default to sound file duration
@@ -271,8 +349,10 @@ const handleActionStart = async (e?: MouseEvent) => {
                 
                 // Schedule next loop
                 fireTimer = setTimeout(playFireLoop, fireInterval * 1000)
+                currentFireLoopTimer = fireTimer  // Track globally
               } else if (fireTimer) {
                 clearTimeout(fireTimer)
+                currentFireLoopTimer = null
               }
             }
             
@@ -304,7 +384,7 @@ const handleActionStart = async (e?: MouseEvent) => {
             const targetAnimDuration = targetAnimObj?.duration || 0.5
             
             // Check if we should alternate between delay and loopDuration
-            let shouldAlternate = repeatFlag === 'r'
+            let shouldAlternate = repeatFlag === 'r' || repeatFlag === 'e'
             let isAlternatingDelay = false  // Track which value we're using
             
             let loopTimer: NodeJS.Timeout | null = null
@@ -312,7 +392,8 @@ const handleActionStart = async (e?: MouseEvent) => {
             let isFirstCycle = true  // Track if this is the first cycle
             
             // Determine if we should play gaugeup or just fire
-            const playGaugeUp = delay > 0  // Only play gaugeup if delay > 0
+            // Play gaugeup if: currentGaugeupFlag is set (r or e flag) OR delay > 0
+            const playGaugeUp = currentGaugeupFlag !== '' || delay > 0
             const fireStartDelay = playGaugeUp ? 0 : 0.5  // Fire starts after gaugeup, or after 0.5s if no gaugeup
             
             // Check if we should play any sounds (alternating mode OR delay=0 OR playGaugeUp)
@@ -341,7 +422,16 @@ const handleActionStart = async (e?: MouseEvent) => {
                 if (playGaugeUp && isFirstCycle && shouldAlternate) {
                   // For alternating (c272): play gaugeup on first cycle
                   console.log(`[Loop] Playing gaugeup + fire (first cycle, alternating)`)
-                  playAimGaugeUpSound(charId, () => {
+                  playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
+                    console.log(`[Loop] Gaugeup complete, now playing fire`)
+                    if (isAimHolding) {
+                      playAimFireSound(charId, targetAnim)
+                    }
+                  })
+                } else if (playGaugeUp && isFirstCycle && !shouldAlternate && currentGaugeupFlag !== '') {
+                  // For gaugeup flag (e): play gaugeup on first cycle too
+                  console.log(`[Loop] Playing gaugeup + fire (first cycle, flag=${currentGaugeupFlag})`)
+                  playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
                     console.log(`[Loop] Gaugeup complete, now playing fire`)
                     if (isAimHolding) {
                       playAimFireSound(charId, targetAnim)
@@ -350,31 +440,38 @@ const handleActionStart = async (e?: MouseEvent) => {
                 } else if (!playGaugeUp) {
                   // No gaugeup, just play fire sound after delay
                   console.log(`[Loop] Playing fire only (no gaugeup, delay=${fireStartDelay}s)`)
-                  setTimeout(() => {
-                    console.log(`[Loop] Fire delay complete, playing fire`)
-                    if (isAimHolding) {
-                      playAimFireSound(charId, targetAnim)
-                    }
-                  }, fireStartDelay * 1000)
+                  
+                  // If in ramping audio mode, play ramping sequence on FIRST TIME ONLY
+                  if (currentAudioMode === 'm' && !rampingStarted) {
+                    console.log(`[Loop] Playing ramping fire sequence (m mode, duration=${loopDuration}s)`)
+                    rampingStarted = true
+                    playRampingFireSequence(charId, targetAnim, loopDuration)
+                    
+                    // Also sync animation with audio ramping timings
+                    playRampingAnimationSequence(aimState, targetAnim, loopDuration)
+                  } else if (currentAudioMode !== 'm') {
+                    // Normal fire mode (not ramping)
+                    setTimeout(() => {
+                      console.log(`[Loop] Fire delay complete, playing fire`)
+                      if (isAimHolding) {
+                        playAimFireSound(charId, targetAnim)
+                      }
+                    }, fireStartDelay * 1000)
+                  }
+                  // If ramping mode and already started, don't do anything (fire_loop is playing)
                 } else if (playGaugeUp && isFirstCycle && !shouldAlternate) {
                   // For non-alternating (c511): gaugeup already played, just play fire
                   console.log(`[Loop] Playing fire only (gaugeup played immediately on click)`)
                   playAimFireSound(charId, targetAnim)
                 } else if (playGaugeUp && !isFirstCycle) {
-                  // For alternating case (c272): keep playing gaugeup every cycle
-                  if (shouldAlternate) {
-                    console.log(`[Loop] Playing gaugeup + fire (alternating mode, cycle ${cycleCount})`)
-                    playAimGaugeUpSound(charId, () => {
-                      console.log(`[Loop] Gaugeup complete, now playing fire`)
-                      if (isAimHolding) {
-                        playAimFireSound(charId, targetAnim)
-                      }
-                    })
-                  } else {
-                    // Non-alternating but with gaugeup - only play fire on subsequent cycles
-                    console.log(`[Loop] Playing fire only (not first cycle)`)
-                    playAimFireSound(charId, targetAnim)
-                  }
+                  // For subsequent cycles: keep playing gaugeup if currentGaugeupFlag is set
+                  console.log(`[Loop] Playing gaugeup + fire (cycle ${cycleCount}, flag=${currentGaugeupFlag})`)
+                  playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
+                    console.log(`[Loop] Gaugeup complete, now playing fire`)
+                    if (isAimHolding) {
+                      playAimFireSound(charId, targetAnim)
+                    }
+                  })
                 }
               }
               
@@ -395,11 +492,11 @@ const handleActionStart = async (e?: MouseEvent) => {
               
               loopTimer = setTimeout(startLooping, nextCycleTime * 1000)
             }
-      // For non-alternating with gaugeup (like c511): play gaugeup sound immediately when holding
-      // Sound plays immediately, but animation waits for delay
-      if (playGaugeUp && !shouldAlternate && loopDuration > 0) {
+      // For non-alternating with gaugeup AND delay (like c511): play gaugeup sound immediately when holding
+      // Sound plays immediately before loop starts, but only if there's an actual delay
+      if (playGaugeUp && !shouldAlternate && loopDuration > 0 && delay > 0 && currentGaugeupFlag === '') {
         console.log(`[Cover] Playing gaugeup immediately on click (c511 style)`)
-        playAimGaugeUpSound(charId, () => {
+        playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
           console.log(`[Cover] Gaugeup complete, fire will play on animation cycle`)
           // Fire sound will be played when animation loop starts
         })
@@ -411,11 +508,11 @@ const handleActionStart = async (e?: MouseEvent) => {
               const toAimDuration = toAimAnim?.duration || 0.5
               setTimeout(startLooping, toAimDuration * 1000)
             } else {
-              // For normal case (like c511), start after to_aim + initial delay
+              // For normal case, start after to_aim finishes
               const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
               const toAimDuration = toAimAnim?.duration || 0.5
-              // Add delay before first cycle
-              const initialDelay = isFirstCycle ? delay : 0
+              // Only add delay if no gaugeup flag (c511 style that plays gaugeup immediately)
+              const initialDelay = (isFirstCycle && delay > 0 && currentGaugeupFlag === '') ? delay : 0
               setTimeout(startLooping, (toAimDuration + initialDelay) * 1000)
             }
           } else {
@@ -465,6 +562,14 @@ const handleActionStart = async (e?: MouseEvent) => {
     }
 
     isAimHolding = true
+    rampingStarted = false  // Reset ramping flag for new hold
+    
+    // Set gaugeup flag and audio mode from character config
+    const charId = market.live2d.current_id
+    const charConfig = l2dData.find(c => c.id === charId)
+    currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
+    currentAudioMode = charConfig?.timing?.audioMode || ''
+    
     spinePlayer.animationState.setAnimation(0, 'aim_hit', true) // true = loop
     return
   }
@@ -596,6 +701,24 @@ const handleActionEnd = async () => {
   // Stop any aim sounds immediately when releasing
   stopAimSounds()
   
+  // Play fire_echo if in ramping audio mode
+  if (currentAudioMode === 'm') {
+    const charId = market.live2d.current_id
+    const baseCharacterId = charId.split('_')[0]
+    const echoPath = `/assets/l2d/${charId}/voice/fx/${charId}_fire_echo.ogg`
+    const echoFallback = baseCharacterId !== charId 
+      ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire_echo.ogg`
+      : echoPath
+    
+    const echoAudio = new Audio()
+    echoAudio.volume = 0.5
+    echoAudio.src = baseCharacterId !== charId ? echoFallback : echoPath
+    echoAudio.play().catch((err) => {
+      console.log(`Could not play fire_echo sound:`, err)
+    })
+    console.log(`[Ramping] Playing fire_echo on release`)
+  }
+  
   // Cancel any pending aim skeleton switch
   if (pendingSwitchTimeout) {
     clearTimeout(pendingSwitchTimeout)
@@ -694,6 +817,124 @@ const handleActionEnd = async () => {
         }
       }
     }
+  }
+}
+
+// Track cover hit voice sequence
+let coverHitDamageIndex = 1  // Which damage voice to play next (1-3)
+
+// Handle middle-click (button 1) for cover_hit motion in cover mode
+const handleCoverHit = async (e?: MouseEvent) => {
+  if (!spinePlayer || !canvas || market.live2d.current_pose !== 'cover') return
+
+  const target = e?.target as HTMLElement
+  if (!target) return
+
+  // Only trigger on canvas
+  const isOnCanvas = target === canvas || canvas.contains(target)
+  if (!isOnCanvas) return
+
+  // Check if clicking is over UI panels
+  const isUiPanel = target.closest('#l2dsearchbox') || target.closest('.toolList')
+  if (isUiPanel) return
+
+  try {
+    // Check if cover_hit animation exists
+    const animations = spinePlayer.animationState.data.skeletonData.animations
+    const hasCoverHit = animations.some((a: { name: string }) => a.name === 'cover_hit')
+
+    if (!hasCoverHit) {
+      console.log(`[Cover Hit] cover_hit animation not found for ${market.live2d.current_id}`)
+      return
+    }
+
+    // Play cover_hit animation, then return to cover_idle
+    console.log(`[Cover Hit] Playing cover_hit`)
+    spinePlayer.animationState.setAnimation(0, 'cover_hit', false)
+    spinePlayer.animationState.addAnimation(0, 'cover_idle', true, 0)
+    
+    // Play damage voice sequence (Damage_1, Damage_2, Damage_3, then repeat)
+    playDamageVoice()
+  } catch (error) {
+    console.error('❌ Error in cover hit:', error)
+  }
+}
+
+const playDamageVoice = () => {
+  // Stop only the previous damage voice if it's playing
+  if (currentDamageVoiceAudio) {
+    console.log(`[Damage Voice] Stopping previous damage voice`)
+    currentDamageVoiceAudio.pause()
+    currentDamageVoiceAudio.currentTime = 0
+    currentDamageVoiceAudio = null
+  }
+  
+  // Stop current reload sound that's playing
+  if (currentReloadSound) {
+    console.log(`[Damage Voice] Stopping current reload sound`)
+    currentReloadSound.pause()
+    currentReloadSound.currentTime = 0
+    currentReloadSound = null
+  }
+  
+  // Stop main voice (reload voice)
+  if (currentVoice) {
+    console.log(`[Damage Voice] Stopping main voice`)
+    currentVoice.pause()
+    currentVoice.currentTime = 0
+    currentVoice = null
+  }
+  
+  // Stop reload FX timeouts
+  shouldStopReloadFx = true
+  pendingReloadFxTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
+  pendingReloadFxTimeouts = []
+  
+  const charId = market.live2d.current_id
+  const baseCharId = charId.split('_')[0]  // Get base character ID
+  
+  // Try character-specific damage voice first, then fallback to base character
+  const damageVoicePath = `/assets/l2d/${charId}/voice/${charId}_Damage_${coverHitDamageIndex}.ogg`
+  const fallbackDamageVoicePath = `/assets/l2d/${baseCharId}/voice/${baseCharId}_Damage_${coverHitDamageIndex}.ogg`
+  
+  console.log(`[Damage Voice] Trying ${damageVoicePath}`)
+  
+  const audio = new Audio()
+  audio.volume = 0.7
+  currentDamageVoiceAudio = audio
+  
+  // Try loading character-specific first
+  const tryLoadDamageVoice = (path: string, isFallback: boolean) => {
+    fetch(path, { method: 'HEAD' })
+      .then((response) => {
+        if (response.ok) {
+          console.log(`[Damage Voice] Found: ${path}`)
+          audio.src = path
+          audio.play().catch((err) => {
+            console.log(`[Damage Voice] Failed to play: ${err}`)
+          })
+        } else if (!isFallback) {
+          // Try fallback if character-specific not found
+          console.log(`[Damage Voice] Not found, trying fallback: ${fallbackDamageVoicePath}`)
+          tryLoadDamageVoice(fallbackDamageVoicePath, true)
+        } else {
+          console.log(`[Damage Voice] File not found: ${path}`)
+        }
+      })
+      .catch((err) => {
+        if (!isFallback) {
+          console.log(`[Damage Voice] Error checking file, trying fallback`)
+          tryLoadDamageVoice(fallbackDamageVoicePath, true)
+        }
+      })
+  }
+  
+  tryLoadDamageVoice(damageVoicePath, false)
+  
+  // Move to next damage voice (cycle 1 → 2 → 3 → 1)
+  coverHitDamageIndex++
+  if (coverHitDamageIndex > 3) {
+    coverHitDamageIndex = 1
   }
 }
 
@@ -901,19 +1142,55 @@ const swapBackToCoverSpine = async () => {
 
 // Stop aim sounds (gaugeup only - let fire play to completion)
 let currentAimGaugeUpAudio: HTMLAudioElement | null = null
+let allAimGaugeUpAudios: HTMLAudioElement[] = []  // Track all gaugeup audio instances
 let currentAimFireAudio: HTMLAudioElement | null = null
+let currentReloadFxAudio: HTMLAudioElement | null = null  // Track reload fx to stop if clicked again
+let isGaugeUpStopped = false  // Track if gaugeup was manually stopped
+let currentDamageVoiceAudio: HTMLAudioElement | null = null  // Separate channel for damage voice
 
 const stopAimSounds = () => {
-  // Stop gaugeup sound immediately
+  console.log(`[StopAim] Stopping all aim sounds`)
+  
+  // Stop Web Audio source if it exists
+  if (currentWebAudioSource) {
+    try {
+      currentWebAudioSource.stop()
+      console.log(`[StopAim] Stopped Web Audio source`)
+    } catch (err) {
+      console.log(`[StopAim] Error stopping Web Audio source:`, err)
+    }
+    currentWebAudioSource = null
+  }
+  
+  // Stop ALL gaugeup sounds immediately and completely
   if (currentAimGaugeUpAudio) {
     currentAimGaugeUpAudio.pause()
     currentAimGaugeUpAudio.currentTime = 0
+    currentAimGaugeUpAudio.src = ''  // Clear source completely
+    currentAimGaugeUpAudio.load()  // Force reload to clear buffer
     currentAimGaugeUpAudio = null
   }
+  
+  // Also stop any other active gaugeup audio instances
+  allAimGaugeUpAudios.forEach((audio) => {
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+      audio.src = ''
+      audio.load()
+    }
+  })
+  allAimGaugeUpAudios = []
+  
+  isGaugeUpStopped = true  // Mark gaugeup as stopped
   // Let fire sound play to completion - don't stop it
+  
+  // Stop reload FX if it's playing (when user releases during reload)
+  // Voice will continue to play
+  stopReloadFxOnly()
 }
 
-const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
+const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onComplete?: () => void) => {
   // First check if character has custom gaugeup in their fx folder
   const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
   
@@ -963,28 +1240,42 @@ const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
   }
   
   const playGenericGaugeUpSequence = () => {
-    // Play gaugeup_1 first
-    console.log(`[Gaugeup] Playing generic sequence`)
+    // Determine first sound based on gaugeupFlag
+    // r or empty = gaugeup_1 (default)
+    // e = gaugeup_2
+    const gaugeupStartFile = (gaugeupFlag === 'e') ? 'gaugeup_2' : 'gaugeup_1'
+    
+    // Play first gaugeup sound
+    console.log(`[Gaugeup] Playing generic sequence with flag '${gaugeupFlag}' (${gaugeupStartFile})`)
     const audio1 = new Audio()
     audio1.volume = 0.5
-    audio1.src = `/assets/l2d/_/gaugeup_1.ogg`
+    audio1.src = `/assets/l2d/_/${gaugeupStartFile}.ogg`
     currentAimGaugeUpAudio = audio1
-    console.log(`[Gaugeup] Playing gaugeup_1`)
-    audio1.play().catch(() => console.log('Could not play gaugeup_1'))
+    allAimGaugeUpAudios.push(audio1)  // Track this instance
+    isGaugeUpStopped = false  // Reset stopped flag when starting sequence
+    console.log(`[Gaugeup] Playing ${gaugeupStartFile}`)
+    audio1.play().catch(() => console.log(`Could not play ${gaugeupStartFile}`))
     
-    // Then play gaugeup_2 after gaugeup_1 ends
+    // Then play gaugeup_max after first sound ends
     audio1.onended = () => {
-      console.log(`[Gaugeup] gaugeup_1 ended, playing gaugeup_2`)
+      // Check if gaugeup was manually stopped (released click)
+      if (isGaugeUpStopped) {
+        console.log(`[Gaugeup] ${gaugeupStartFile} ended but gaugeup was stopped, skipping gaugeup_max`)
+        return
+      }
+      
+      console.log(`[Gaugeup] ${gaugeupStartFile} ended, playing gaugeup_max`)
       const audio2 = new Audio()
       audio2.volume = 0.5
-      audio2.src = `/assets/l2d/_/gaugeup_2.ogg`
+      audio2.src = `/assets/l2d/_/gaugeup_max.ogg`
       currentAimGaugeUpAudio = audio2
-      console.log(`[Gaugeup] Playing gaugeup_2`)
-      audio2.play().catch(() => console.log('Could not play gaugeup_2'))
+      allAimGaugeUpAudios.push(audio2)  // Track this instance
+      console.log(`[Gaugeup] Playing gaugeup_max`)
+      audio2.play().catch(() => console.log('Could not play gaugeup_max'))
       
-      // Call completion callback after gaugeup_2 ends
+      // Call completion callback after gaugeup_max ends
       audio2.onended = () => {
-        console.log(`[Gaugeup] gaugeup_2 ended, calling onComplete`)
+        console.log(`[Gaugeup] gaugeup_max ended, calling onComplete`)
         currentAimGaugeUpAudio = null
         if (onComplete) onComplete()
       }
@@ -992,6 +1283,202 @@ const playAimGaugeUpSound = (characterId: string, onComplete?: () => void) => {
   }
   
   tryCustomThenGeneric()
+}
+
+const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDuration: number) => {
+  // Sync animation with audio ramping timings
+  const stepSize = 0.1
+  
+  // Calculate animation restart timings to match audio
+  let cumulativeTime = 0
+  let waitTime = loopDuration
+  
+  while (waitTime > 0) {
+    // Restart animation at each timing point
+    const timing = cumulativeTime
+    const timeout = setTimeout(() => {
+      if (!isAimHolding) return
+      aimState.setAnimation(0, targetAnim, false)
+      console.log(`[RampAnim] Restarting ${targetAnim} at ${timing}ms`)
+    }, timing)
+    
+    rampingFireTimeouts.push(timeout)
+    cumulativeTime += waitTime * 1000
+    waitTime -= stepSize
+  }
+  
+  // After ramping fires finish (fire 6 sequence), animation continues looping
+  const fire6StartTiming = cumulativeTime
+  const fire6Interval = 50
+  for (let i = 0; i < 5; i++) {
+    const timing = fire6StartTiming + (i * fire6Interval)
+    const timeout = setTimeout(() => {
+      if (!isAimHolding) return
+      aimState.setAnimation(0, targetAnim, false)
+      console.log(`[RampAnim] Restarting ${targetAnim} (fire 6 #${i + 1}) at ${timing}ms`)
+    }, timing)
+    
+    rampingFireTimeouts.push(timeout)
+  }
+  
+  // After fire_loop starts (1600ms), loop animation continuously at faster speed
+  // Get animation duration to know how often to restart
+  const targetAnimObj = aimState.data.skeletonData.animations.find((a: any) => a.name === targetAnim)
+  const animDuration = targetAnimObj?.duration || 0.3  // Default ~300ms per loop
+  const loopStartTime = fire6StartTiming + (4 * fire6Interval)  // ~1600ms
+  
+  let loopAnimTimeout: NodeJS.Timeout | null = null
+  const loopAnimation = () => {
+    if (!isAimHolding) {
+      if (loopAnimTimeout) clearTimeout(loopAnimTimeout)
+      return
+    }
+    
+    aimState.setAnimation(0, targetAnim, false)
+    loopAnimTimeout = setTimeout(loopAnimation, animDuration * 1000)
+  }
+  
+  const loopStartTimeout = setTimeout(loopAnimation, loopStartTime)
+  rampingFireTimeouts.push(loopStartTimeout)
+}
+
+const playRampingFireSequence = (characterId: string, animationType: string, loopDuration: number = 1) => {
+  // Audio ramping mode: play fire at decreasing intervals based on loopDuration
+  // Overlaps with spin sound at the start, then switches to loop
+  
+  const baseCharacterId = characterId.split('_')[0]
+  
+  // Play spin sound at start (overlaps with first fire)
+  const spinPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire_spin.ogg`
+  const spinFallback = baseCharacterId !== characterId 
+    ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire_spin.ogg`
+    : spinPath
+  
+  const spinAudio = new Audio()
+  spinAudio.volume = 0.5
+  spinAudio.src = baseCharacterId !== characterId ? spinFallback : spinPath
+  spinAudio.play().catch((err) => {
+    console.log(`Could not play fire_spin sound:`, err)
+  })
+  console.log(`[Ramping] Playing fire_spin at 0ms`)
+  
+  // Ramping fire timings: fires play at decreasing wait intervals
+  // Step size determines the speed of ramping (0.1 = 0.5 > 0.4 > 0.3 > 0.2 > 0.1)
+  const stepSize = 0.1
+  
+  // Calculate fires until wait time reaches 0
+  const rampTimings: number[] = []
+  let cumulativeTime = 0
+  let waitTime = loopDuration
+  
+  while (waitTime > 0) {
+    rampTimings.push(cumulativeTime)
+    cumulativeTime += waitTime * 1000  // Convert to ms
+    waitTime -= stepSize
+  }
+  
+  // After last fire (fire 5), add fire 6 playing 5 times sequentially with 50ms spacing
+  // Fire 6 at 1400ms, 1450ms, 1500ms, 1550ms, 1600ms
+  const fire6StartTiming = cumulativeTime  // Start right after fire 5
+  const fire6Interval = 50  // 50ms between each fire 6
+  
+  for (let i = 0; i < 5; i++) {
+    rampTimings.push(fire6StartTiming + (i * fire6Interval))
+  }
+  
+  // Total ramping duration (when to start fire_loop) - at the same time as last fire 6
+  const totalRampingDuration = fire6StartTiming + (4 * fire6Interval)  // Same time as fire 6 #5 (1600ms)
+  
+  rampingFireTimeouts = []  // Clear any previous timeouts
+  
+  rampTimings.forEach((timing, index) => {
+    const timeout = setTimeout(() => {
+      if (!isAimHolding) return
+      
+      const fireAudio = new Audio()
+      fireAudio.volume = 0.5
+      const firePath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire.ogg`
+      const fireFallback = baseCharacterId !== characterId 
+        ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire.ogg`
+        : firePath
+      
+      fireAudio.src = baseCharacterId !== characterId ? fireFallback : firePath
+      fireAudio.play().catch((err) => {
+        console.log(`Could not play ramping fire ${index + 1}:`, err)
+      })
+      const waitValue = loopDuration - (index * stepSize)
+      console.log(`[Ramping] Fire ${index + 1} (wait: ${waitValue.toFixed(1)}s) at ${timing}ms`)
+    }, timing)
+    
+    rampingFireTimeouts.push(timeout)
+  })
+  
+  // After ramping finishes, switch to fire_loop
+  const loopStartTimeout = setTimeout(() => {
+    if (!isAimHolding) return
+    
+    console.log(`[Ramping] Ramping complete (${totalRampingDuration}ms), starting fire_loop`)
+    
+    const loopPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire_loop.ogg`
+    const loopFallback = baseCharacterId !== characterId 
+      ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire_loop.ogg`
+      : loopPath
+    
+    // Fetch and decode the audio file once
+    fetch(baseCharacterId !== characterId ? loopFallback : loopPath)
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => {
+        // Create Web Audio context
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        
+        // Decode the audio
+        audioContext.decodeAudioData(arrayBuffer, (audioBuffer) => {
+          console.log(`[FireLoop] Decoded fire_loop, duration: ${audioBuffer.duration}s`)
+          
+          // Create a BufferSource that will loop
+          const playFireLoopWithWebAudio = () => {
+            if (!isAimHolding) return
+            
+            const source = audioContext.createBufferSource()
+            const gainNode = audioContext.createGain()
+            
+            source.buffer = audioBuffer
+            source.loop = true
+            source.loopStart = 0
+            source.loopEnd = audioBuffer.duration
+            
+            gainNode.gain.value = 0.5  // volume
+            
+            source.connect(gainNode)
+            gainNode.connect(audioContext.destination)
+            
+            source.start(0)
+            
+            // Store for stopping on release
+            currentWebAudioSource = source
+            console.log(`[FireLoop] Started Web Audio looping`)
+          }
+          
+          playFireLoopWithWebAudio()
+        }, (error) => {
+          console.log(`Could not decode fire_loop:`, error)
+          // Fallback to HTML5 Audio if Web Audio fails
+          const loopAudio = new Audio()
+          loopAudio.volume = 0.5
+          loopAudio.loop = true
+          loopAudio.src = baseCharacterId !== characterId ? loopFallback : loopPath
+          currentAimFireAudio = loopAudio
+          loopAudio.play().catch((err) => {
+            console.log(`Could not play fire_loop:`, err)
+          })
+        })
+      })
+      .catch((err) => {
+        console.log(`Could not fetch fire_loop:`, err)
+      })
+  }, totalRampingDuration)
+  
+  rampingFireTimeouts.push(loopStartTimeout)
 }
 
 const playAimFireSound = (characterId: string, animationType: string) => {
@@ -1169,6 +1656,56 @@ const stopAllSoundEffects = () => {
   reloadSoundIndex = 1
 }
 
+const stopReloadFxOnly = () => {
+  // Only stop FX timeouts and current FX audio, let voice continue
+  console.log(`[Stop FX] Clearing ${pendingReloadFxTimeouts.length} pending FX timeouts`)
+  shouldStopReloadFx = true  // Prevent new FX from starting
+  
+  pendingReloadFxTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
+  pendingReloadFxTimeouts = []
+  
+  // Clear ramping fire timeouts
+  if (rampingFireTimeouts.length > 0) {
+    console.log(`[Stop FX] Clearing ${rampingFireTimeouts.length} ramping fire timeouts`)
+    rampingFireTimeouts.forEach((timeoutId) => clearTimeout(timeoutId))
+    rampingFireTimeouts = []
+  }
+
+  // Stop current reload FX audio - completely remove it
+  if (currentReloadFxAudio) {
+    console.log(`[Stop FX] Stopping and removing currentReloadFxAudio`)
+    currentReloadFxAudio.pause()
+    currentReloadFxAudio.currentTime = 0
+    currentReloadFxAudio.src = ''  // Clear source completely
+    currentReloadFxAudio = null
+  }
+  
+  // Also check currentReloadSound in case it's an FX file
+  if (currentReloadSound && currentReloadSound.src && currentReloadSound.src.includes('/fx/')) {
+    console.log(`[Stop FX] Stopping and removing currentReloadSound (it's an FX file)`)
+    currentReloadSound.pause()
+    currentReloadSound.currentTime = 0
+    currentReloadSound.src = ''  // Clear source completely
+    currentReloadSound = null
+  }
+  
+  // Stop fire sound loop timer when clicking
+  if (currentFireLoopTimer) {
+    console.log(`[Stop FX] Clearing fire loop timer`)
+    clearTimeout(currentFireLoopTimer)
+    currentFireLoopTimer = null
+  }
+  
+  // Also stop fire sound when clicking (fire FX should stop)
+  if (currentAimFireAudio) {
+    console.log(`[Stop FX] Stopping fire sound`)
+    currentAimFireAudio.pause()
+    currentAimFireAudio.currentTime = 0
+    currentAimFireAudio.src = ''
+    currentAimFireAudio = null
+  }
+}
+
 const playReloadSound = () => {
   // Get base character ID for reload sound (always stored in base folder)
   // e.g., 'c271_01' -> 'c271'
@@ -1176,6 +1713,9 @@ const playReloadSound = () => {
 
   // Track which character this reload sound belongs to
   reloadSoundCharacterId = baseCharacterId
+  
+  // Reset the stop flag when starting new reload
+  shouldStopReloadFx = false
 
   // Reset to start of sequence when new reload sound starts
   reloadSoundIndex = 1
@@ -1183,6 +1723,12 @@ const playReloadSound = () => {
 }
 
 const playNextReloadSound = (baseCharacterId: string) => {
+  // Stop if user clicked during reload (FX should be stopped)
+  if (shouldStopReloadFx) {
+    console.log(`[Reload] FX stopped, skipping reload_${reloadSoundIndex}`)
+    return
+  }
+  
   // Stop if this sound sequence belongs to a different character (user switched)
   if (reloadSoundCharacterId !== baseCharacterId) {
     return
@@ -1207,7 +1753,7 @@ const playNextReloadSound = (baseCharacterId: string) => {
       eventHandled = true
       reloadSoundIndex++
       const timeoutId = setTimeout(() => playNextReloadSound(baseCharacterId), 50)
-      pendingReloadTimeouts.push(timeoutId)
+      pendingReloadFxTimeouts.push(timeoutId)  // Use FX timeouts, not voice timeouts
     }
   }
 
@@ -1223,6 +1769,7 @@ const playNextReloadSound = (baseCharacterId: string) => {
 
         // File exists, proceed with playback
         currentReloadSound = new Audio(soundPath)
+        currentReloadFxAudio = currentReloadSound  // Also track for stopping on click
         activeAudioObjects.push(currentReloadSound) // Track all audio objects
 
         // Set up trim if configured
@@ -1279,7 +1826,7 @@ const playNextReloadSound = (baseCharacterId: string) => {
                   playNextReloadSound(baseCharacterId)
                 }
               }, overlapStart)
-              pendingReloadTimeouts.push(timeoutId)
+              pendingReloadFxTimeouts.push(timeoutId)  // Use FX timeouts, not voice timeouts
             },
             { once: true }
           )
@@ -2859,9 +3406,11 @@ let actionSoundIndex = 1
 
 // Track reload sound sequence - which number (1-3) should play next
 let reloadSoundIndex = 1
+let shouldStopReloadFx = false  // Flag to prevent new FX from starting when user clicks
 
 // Track pending timeouts so we can cancel them when switching poses
 let pendingReloadTimeouts: number[] = []
+let pendingReloadFxTimeouts: number[] = []  // Separate timeouts for FX only (can be stopped on click)
 let pendingActionTimeouts: number[] = []
 
 const handleAction = () => {
@@ -3123,6 +3672,9 @@ watch(
   async () => {
     // Reset zoom flag when switching pose (allow custom zoom for new pose)
     hasUserZoomed = false
+
+    // Hide spine while loading new pose
+    isSpineHidden.value = true
 
     // Stop any playing sound effects when switching poses
     stopAllSoundEffects()
@@ -3803,5 +4355,20 @@ const triggerPreview1 = () => {
 .computer {
   height: 100vh;
   margin-top: -100px;
+}
+</style>
+
+
+<style scoped>
+/* Disable HTML5 Drag and Drop API for cover mode */
+#player-container.cover .spine-player-canvas {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+#player-container.cover .spine-player {
+  user-select: none;
+  -webkit-user-select: none;
 }
 </style>
