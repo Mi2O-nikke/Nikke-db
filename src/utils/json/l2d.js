@@ -1,8 +1,9 @@
 const timingAliases = {
   'smg': '',
   'ar': 'ti:0,0.1',
-  'sg': 'ti:0,0.6',
+  'sg': 'ti:0,0.7',
   'mg': 'ti:0,0.5,m',
+  'srl': 'ti:0.7,0.3,s',
   'rl': 'ti:1.3,1.3,e|hit',
   'sr': 'ti:1.3,1.3,r|hit',
 }
@@ -98,13 +99,17 @@ const convertL2dData = (groups) => {
         let repeatFlag = valueParts[2] || ''
         let gaugeupFlag = ''
         let audioMode = ''  // 'm' for ramping mode
+        let customGaugeup = false  // 's' for custom character gaugeup
         
         // r and e are gaugeup flags
         // m is audio ramping mode
+        // s is custom character gaugeup
         if (repeatFlag === 'r' || repeatFlag === 'e') {
           gaugeupFlag = repeatFlag
         } else if (repeatFlag === 'm') {
           audioMode = 'm'
+        } else if (repeatFlag === 's') {
+          customGaugeup = true
         }
         
         obj.timing = {
@@ -112,7 +117,8 @@ const convertL2dData = (groups) => {
           loopDuration: parseFloat(valueParts[1]) || 0,
           repeatFlag: repeatFlag,
           gaugeupFlag: gaugeupFlag,
-          audioMode: audioMode
+          audioMode: audioMode,
+          customGaugeup: customGaugeup
         }
       }
       
@@ -183,21 +189,21 @@ const l2dGroups = {
     ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50|co:0.35,-170,10', 'mg'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
     ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10'],
-    ['c091', 'Vesti', 're:1d8,2d4', 'sc:0.23,0,100'],
-    ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40'],
-    ['c092', 'Eunhwa', 'ac:1d5|re:3d5,4d3', 'fb:0.23,0,-50|sc:0.3,0,80'],
-    ['c093', 'Emma: Tactical Upgrade', '', 'sc:0.28'],
-    ['c093_01', 'Emma: Tactical Upgrade Secret Therapy'],
-    ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5'],
+    ['c091', 'Vesti', 're:1d8,2d4', 'sc:0.23,0,100|co:0.28,-160,30', 'rl'],
+    ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.23,0,-40|co:0.35,-180,15'],
+    ['c092', 'Eunhwa', 'ac:1d5|re:3d5,4d3', 'fb:0.23,0,-50|sc:0.3,0,80|co:0.5,90,30', 'sr'],
+    ['c093', 'Emma: Tactical Upgrade', 're:2o8', 'sc:0.28|co:0.55,60,30', 'mg'],
+    ['c093_01', 'Emma: Tactical Upgrade Secret Therapy', '', 'co:0.58,60,30'],
+    ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5,2o8', 'co:0.5,-20,20', 'rl'],
     ['c094_01', 'Vesti: Tactical Upgrade Pure Beginner', '', 'fb:0.22,-150,-40'],
-    ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|sc:0.3,60'],
-    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30'],
+    ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|re:3d3|sc:0.3,60|co:0.42,-160,100', 'sr'],
+    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30|co:0.38,-210,100'],
   ],
 
   'Academia': [
-    ['c321', 'Marciana', 're:3d5', 'sc:0.28,100,90'],
+    ['c321', 'Marciana', 're:3d3', 'sc:0.28,100,90|co:0.4,0,40', 'sg'],
     ['c321_01', 'Marciana School Days', '', 'fb:0.25,0,-80|sc:0.25,0,100'],
-    ['c322', 'Marciana: Marine Study', '', 'sc:0.27,0,90'],
+    ['c322', 'Marciana: Marine Study', 're:2o8', 'sc:0.27,0,90|co:0.35,-160,30', 'ar'],
   ],
 
   'Aegis': [
@@ -205,15 +211,15 @@ const l2dGroups = {
     ['c350_01', 'Mast A Pirate\'s Heart', 'ac:3d5,5d10'],
     ['c350_02', 'Mast the Driver'],
     ['c350_old', 'Mast: Outdated'],
-    ['c351', 'Anchor', 're:2d3,3d3', 'sc:0.31'],
-    ['c351_01', 'Anchor the Diver', 'ac:1d5', 'fb:0.20,-10,30'],
+    ['c351', 'Anchor', 're:2d3,3d3', 'sc:0.31|co:0.3,-150', 'rl'],
+    ['c351_01', 'Anchor the Diver', 'ac:1d5', 'fb:0.20,-10,30|co:0.33,-120,30'],
     ['c352', 'Helm', 'ac:2o5|re:1d5,3d3', 'sc:0.3,0,150'],
     ['c352_01', 'Helm Chandelier', 'ac:3d10', 'fb:0.3,0,-180'],
     ['c352_02', 'Helm Post-Shower Moment', 'ac:2d10,3d5', 'fb:0.24,0,-50|sc:0.2,0,30'],
     ['c353', 'Helm: Aquamarine', 'ac:4o9', 'sc:0.66,-500,-30'],
     ['c354', 'Mast: Romantic Maid', 're:2d5,3d3', 'sc:0.24,0,90'],
     ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'sc:0.23,0,20'],
-    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'fb:0.23,0,10|sc:0.3,0,100'],
+    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'fb:0.23,0,10|sc:0.3,0,100|co:0.33,-160', 'rl'],
     ['favorite_c352', 'Helm@Favorite', 'ac:1o5,3d5,4o5', 'fb:0.34,60'],
   ],
 
@@ -472,7 +478,7 @@ const l2dGroups = {
 
   'Old Tales': [
     ['c510', 'Grave: Abe Nikke', '', 'fb:0.22,0,-40'],
-    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5|re:1d3,1o10,2o9', 'fb:0.25,100,0|sc:0.25,0,40|co:0.55,10', 'ti:0.7,0.3'],
+    ['c511', 'Anachiro | Cinderella', 'ac:3o6,6o3,7o5|re:1d3,1o10,2o9', 'fb:0.25,100,0|sc:0.25,0,40|co:0.55,10', 'srl'],
     ['c511_01', 'Anachiro | Cinderella Glass Princess', '', 'fb:0.23,0,20|sc:0.22,0,20'],
     ['c511_02', 'Anachiro | Cinderella Beautiful Me', 'ac:2d6,3d4', 'fb:0.21'],
     ['c511_03', 'Anachiro | Cinderella Glass Curtsy', 'ac:1d5,2d5,3d3', 'fb:0.22,30|sc:0.3,60,120'],
@@ -1164,7 +1170,6 @@ const voiceGroupOverrides = {
   'c072': ['c072_01', 'c072_02', 'c072_04'],
   'c080': ['c080_01', 'c080_02'],
   'c090': ['c090_02'],
-  'c091': ['c091_01'],
   'c093': ['c093_01'],
   'c095': ['c095_01'],
   'c102': ['c102_01'],
@@ -1368,10 +1373,13 @@ const skillcutConfig = {
 
 //cover mode skin other than default
 export const characterSkins = {
+  c094: 'part_1',
+  c094_01: 'part_1',
   c220: 'weapon_1',
   c220_01: 'weapon_1',
   c223: 'part_1',
   c223_01: 'part_1',
+  c233: 'part_1',
   c570: 'part_0',
 }
 

@@ -13,8 +13,9 @@ import spine41 from '@/utils/spine/spine-player4.1'
 
 import { globalParams, messagesEnum } from '@/utils/enum/globalParams'
 import type { AttachmentInterface, AttachmentItemColorInterface } from '@/utils/interfaces/live2d'
-import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterFullbodySkins, characterDefaultAnimations } from '@/utils/json/l2d'
-import { preloadCoverModeAssets, isPreloaded } from '@/utils/spine/preloadManager'
+import { specialClickAnimations, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, characterSkins, characterFullbodySkins, characterDefaultAnimations, voiceGroupOverrides } from '@/utils/json/l2d'
+import { preloadCoverModeAssets, preloadSkillcutModeAssets, isPreloaded } from '@/utils/spine/preloadManager'
+import { preloadFullbodyModeAssets } from '@/utils/spine/preloadManager'
 
 let canvas: HTMLCanvasElement | null = null
 let spineCanvas: any = null
@@ -44,6 +45,8 @@ let lastAimClickTime = 0  // Track last aim click time for debouncing
 let currentFireLoopTimer: NodeJS.Timeout | null = null  // Track fire loop so we can stop it on click
 let currentGaugeupFlag = ''  // Track which gaugeup flag (r or e) is used for this hold session
 let currentAudioMode = ''  // Track audio mode (m for ramping)
+let customGaugeupMode = false  // Track if using custom character gaugeup (s flag)
+let customGaugeupPlayed = false  // Track if custom gaugeup has already played (s flag)
 let rampingFireTimeouts: NodeJS.Timeout[] = []  // Track ramping fire timeouts so we can clear them
 let rampingStarted = false  // Track if ramping sequence has already been started
 let currentWebAudioSource: any = null  // Track Web Audio BufferSource for fire_loop
@@ -114,10 +117,19 @@ watch(
   (newPose) => {
     if (newPose === 'cover') {
       const charId = market.live2d.current_id
+      // Get character config to check for gaugeup flag
+      const charConfig = l2dData.find(c => c.id === charId)
       console.log(`[Cover Mode] Preloading assets for ${charId}...`)
       // Preload in background, don't wait for it
-      preloadCoverModeAssets(charId, true).catch(e => {
+      preloadCoverModeAssets(charId, true, charConfig).catch(e => {
         console.warn('[Cover Mode] Preload failed:', e)
+      })
+    } else if (newPose === 'fb') {
+      const charId = market.live2d.current_id
+      console.log(`[Fullbody Mode] Preloading assets for ${charId}...`)
+      // Preload in background, don't wait for it
+      preloadFullbodyModeAssets(charId, true, voiceGroupOverrides).catch(e => {
+        console.warn('[Fullbody Mode] Preload failed:', e)
       })
     }
   }
@@ -200,12 +212,14 @@ const handleActionStart = async (e?: MouseEvent) => {
     // Set holding flag
     isAimHolding = true
     rampingStarted = false  // Reset ramping flag for new hold
+    customGaugeupPlayed = false  // Reset custom gaugeup flag for new hold
     
     // Set gaugeup flag and audio mode from character config
     const charId = market.live2d.current_id
     const charConfig = l2dData.find(c => c.id === charId)
     currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
     currentAudioMode = charConfig?.timing?.audioMode || ''
+    customGaugeupMode = charConfig?.timing?.customGaugeup || false
     
     // Stop only FX timeouts (let voice play to end)
     stopReloadFxOnly()
@@ -465,13 +479,20 @@ const handleActionStart = async (e?: MouseEvent) => {
                   playAimFireSound(charId, targetAnim)
                 } else if (playGaugeUp && !isFirstCycle) {
                   // For subsequent cycles: keep playing gaugeup if currentGaugeupFlag is set
-                  console.log(`[Loop] Playing gaugeup + fire (cycle ${cycleCount}, flag=${currentGaugeupFlag})`)
-                  playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
-                    console.log(`[Loop] Gaugeup complete, now playing fire`)
-                    if (isAimHolding) {
-                      playAimFireSound(charId, targetAnim)
-                    }
-                  })
+                  // BUT: if customGaugeupMode (s flag), only play gaugeup once on first cycle
+                  if (!customGaugeupMode) {
+                    console.log(`[Loop] Playing gaugeup + fire (cycle ${cycleCount}, flag=${currentGaugeupFlag})`)
+                    playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
+                      console.log(`[Loop] Gaugeup complete, now playing fire`)
+                      if (isAimHolding) {
+                        playAimFireSound(charId, targetAnim)
+                      }
+                    })
+                  } else {
+                    // Custom gaugeup mode: just play fire on subsequent cycles
+                    console.log(`[Loop] Playing fire only (custom gaugeup already played)`)
+                    playAimFireSound(charId, targetAnim)
+                  }
                 }
               }
               
@@ -563,12 +584,14 @@ const handleActionStart = async (e?: MouseEvent) => {
 
     isAimHolding = true
     rampingStarted = false  // Reset ramping flag for new hold
+    customGaugeupPlayed = false  // Reset custom gaugeup flag for new hold
     
     // Set gaugeup flag and audio mode from character config
     const charId = market.live2d.current_id
     const charConfig = l2dData.find(c => c.id === charId)
     currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
     currentAudioMode = charConfig?.timing?.audioMode || ''
+    customGaugeupMode = charConfig?.timing?.customGaugeup || false
     
     spinePlayer.animationState.setAnimation(0, 'aim_hit', true) // true = loop
     return
@@ -1191,6 +1214,42 @@ const stopAimSounds = () => {
 }
 
 const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onComplete?: () => void) => {
+  // If custom gaugeup mode (s flag), play custom character gaugeup only
+  if (customGaugeupMode) {
+    const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
+    const audio = new Audio()
+    audio.volume = 0.5
+    audio.src = customGaugeUpPath
+    currentAimGaugeUpAudio = audio
+    allAimGaugeUpAudios.push(audio)
+    
+    audio.onloadeddata = () => {
+      console.log(`[Gaugeup] Custom s-flag gaugeup loaded, playing...`)
+      audio.play().catch((err) => {
+        console.log(`[Gaugeup] Custom s-flag gaugeup play failed:`, err)
+      })
+    }
+    
+    audio.onended = () => {
+      console.log(`[Gaugeup] Custom s-flag gaugeup ended, calling onComplete`)
+      currentAimGaugeUpAudio = null
+      if (onComplete) onComplete()
+    }
+    
+    // Safety timeout
+    setTimeout(() => {
+      if (currentAimGaugeUpAudio === audio) {
+        console.log(`[Gaugeup] Custom s-flag gaugeup timeout, calling onComplete`)
+        currentAimGaugeUpAudio = null
+        if (onComplete) onComplete()
+      }
+    }, 3000)
+    
+    audio.load()
+    return
+  }
+  
+  // Original behavior for r/e flags or no flag
   // First check if character has custom gaugeup in their fx folder
   const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
   
@@ -1307,25 +1366,12 @@ const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDur
     waitTime -= stepSize
   }
   
-  // After ramping fires finish (fire 6 sequence), animation continues looping
-  const fire6StartTiming = cumulativeTime
-  const fire6Interval = 50
-  for (let i = 0; i < 5; i++) {
-    const timing = fire6StartTiming + (i * fire6Interval)
-    const timeout = setTimeout(() => {
-      if (!isAimHolding) return
-      aimState.setAnimation(0, targetAnim, false)
-      console.log(`[RampAnim] Restarting ${targetAnim} (fire 6 #${i + 1}) at ${timing}ms`)
-    }, timing)
-    
-    rampingFireTimeouts.push(timeout)
-  }
+  // After ramping finishes, start continuous loop based on animDuration
+  const loopStartTime = cumulativeTime  // Start right after last ramping fire (1400ms)
   
-  // After fire_loop starts (1600ms), loop animation continuously at faster speed
   // Get animation duration to know how often to restart
   const targetAnimObj = aimState.data.skeletonData.animations.find((a: any) => a.name === targetAnim)
   const animDuration = targetAnimObj?.duration || 0.3  // Default ~300ms per loop
-  const loopStartTime = fire6StartTiming + (4 * fire6Interval)  // ~1600ms
   
   let loopAnimTimeout: NodeJS.Timeout | null = null
   const loopAnimation = () => {
@@ -3382,7 +3428,7 @@ const isValidSkeletonFileResponse = (response: Response): boolean => {
   return true
 }
 
-import l2dData, { voiceMap, voiceGroupOverrides, setCustomZoom, actionSoundConfig, reloadSoundConfig } from '@/utils/json/l2d.js'
+import l2dData, { voiceMap, setCustomZoom, actionSoundConfig, reloadSoundConfig } from '@/utils/json/l2d.js'
 
 let currentVoice = null as null | HTMLAudioElement
 let currentReloadSound = null as null | HTMLAudioElement
