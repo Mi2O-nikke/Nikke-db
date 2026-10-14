@@ -105,33 +105,53 @@ const getSpineViewport = (pose?: string) => {
 
 const spineScale = 1.2
 
+// Preload assets based on current pose and character
+const preloadForCurrentState = (): Promise<void> => {
+  const currentPose = market.live2d.current_pose
+  const charId = market.live2d.current_id
+  const charConfig = l2dData.find(c => c.id === charId)
+  
+  if (currentPose === 'cover') {
+    console.log(`[Preload] Starting cover mode preload for ${charId}...`)
+    return preloadCoverModeAssets(charId, true, charConfig)
+  } else if (currentPose === 'fb') {
+    console.log(`[Preload] Starting fullbody mode preload for ${charId}...`)
+    return preloadFullbodyModeAssets(charId, true, voiceGroupOverrides)
+  } else if (currentPose === 'skillcut') {
+    console.log(`[Preload] Starting skillcut mode preload for ${charId}...`)
+    return preloadSkillcutModeAssets(charId, true)
+  }
+  
+  // If no matching pose, return resolved promise
+  return Promise.resolve()
+}
+
 onMounted(() => {
   market.load.beginLoad()
   spineLoader()
   setupClickListener()
 })
 
-// Watch for pose changes - preload cover mode assets
+// Watch for character ID changes - preload assets for new character BEFORE showing
+watch(
+  () => market.live2d.current_id,
+  async () => {
+    // Start preload and WAIT for it to complete before continuing
+    console.log(`[Preload] Waiting for preload before showing character...`)
+    try {
+      await preloadForCurrentState()
+      console.log(`[Preload] ✅ Preload complete, character ready to display`)
+    } catch (e) {
+      console.warn('[Preload] Preload error, continuing anyway:', e)
+    }
+  }
+)
+
+// Watch for pose changes - preload assets
 watch(
   () => market.live2d.current_pose,
-  (newPose) => {
-    if (newPose === 'cover') {
-      const charId = market.live2d.current_id
-      // Get character config to check for gaugeup flag
-      const charConfig = l2dData.find(c => c.id === charId)
-      console.log(`[Cover Mode] Preloading assets for ${charId}...`)
-      // Preload in background, don't wait for it
-      preloadCoverModeAssets(charId, true, charConfig).catch(e => {
-        console.warn('[Cover Mode] Preload failed:', e)
-      })
-    } else if (newPose === 'fb') {
-      const charId = market.live2d.current_id
-      console.log(`[Fullbody Mode] Preloading assets for ${charId}...`)
-      // Preload in background, don't wait for it
-      preloadFullbodyModeAssets(charId, true, voiceGroupOverrides).catch(e => {
-        console.warn('[Fullbody Mode] Preload failed:', e)
-      })
-    }
+  () => {
+    preloadForCurrentState()
   }
 )
 
@@ -2337,9 +2357,13 @@ function loadOverlaySkeletons() {
       
 
       // Characters known to have fg/bg overlays (most don't)
-      // For cover mode, always load overlays (for all characters with aim folders)
-      // For other poses, only load if character is in the list
-      if (market.live2d.current_pose !== 'cover' && !charactersWithFgBgOverlays.includes(characterId)) {
+      // In cover mode: only load aim overlay, skip bg/fg
+      // In other poses: only load bg/fg if character is in the list
+      const isInOverlayList = charactersWithFgBgOverlays.includes(characterId)
+      const isCoverMode = market.live2d.current_pose === 'cover'
+      
+      // Skip if: (not cover mode AND not in list) OR (cover mode with no characters to support)
+      if (!isInOverlayList && !isCoverMode) {
         resolve()
         return
       }
@@ -2364,6 +2388,11 @@ function loadOverlaySkeletons() {
 
       // Helper function to load overlay with detected suffix
       const tryLoadOverlay = async (overlayType: 'bg' | 'fg' | 'aim'): Promise<boolean> => {
+        // In cover mode, skip bg/fg overlays entirely - only load aim
+        if (isCoverMode && (overlayType === 'bg' || overlayType === 'fg')) {
+          return false
+        }
+        
         // Determine suffix for overlays based on character ID pattern
         // Characters with _01, _02, etc don't have _00 suffix for overlays
         // Characters without variant suffix use _00 for overlays
