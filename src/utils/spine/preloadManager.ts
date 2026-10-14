@@ -38,7 +38,6 @@ const getCacheKey = (charId: string, type: 'cover' | 'aim' | 'fb', extension: 's
 const fetchAndCacheWithFallback = async (primaryUrl: string, fallbackUrl: string | null, cacheKey: string): Promise<ArrayBuffer> => {
   // Check if already cached
   if (preloadCache[cacheKey]) {
-    console.log(`[Preload] Using cached: ${cacheKey}`)
     return preloadCache[cacheKey].buffer
   }
 
@@ -56,8 +55,6 @@ const fetchAndCacheWithFallback = async (primaryUrl: string, fallbackUrl: string
       buffer,
       timestamp: Date.now()
     }
-    
-    console.log(`[Preload] Cached: ${cacheKey} (${(buffer.byteLength / 1024).toFixed(1)}KB)`)
     return buffer
   } catch (error) {
     // Try fallback if available
@@ -75,16 +72,11 @@ const fetchAndCacheWithFallback = async (primaryUrl: string, fallbackUrl: string
           buffer,
           timestamp: Date.now()
         }
-        
-        console.log(`[Preload] Cached (fallback): ${cacheKey} (${(buffer.byteLength / 1024).toFixed(1)}KB)`)
         return buffer
       } catch (fallbackError) {
-        console.error(`[Preload] Failed to fetch ${primaryUrl} and fallback ${fallbackUrl}:`, fallbackError)
         throw fallbackError
       }
     }
-    
-    console.error(`[Preload] Failed to fetch ${primaryUrl}:`, error)
     throw error
   }
 }
@@ -95,7 +87,6 @@ const fetchAndCacheWithFallback = async (primaryUrl: string, fallbackUrl: string
 const fetchAndCache = async (url: string, cacheKey: string): Promise<ArrayBuffer> => {
   // Check if already cached
   if (preloadCache[cacheKey]) {
-    console.log(`[Preload] Using cached: ${cacheKey}`)
     return preloadCache[cacheKey].buffer
   }
 
@@ -112,11 +103,8 @@ const fetchAndCache = async (url: string, cacheKey: string): Promise<ArrayBuffer
       buffer,
       timestamp: Date.now()
     }
-    
-    console.log(`[Preload] Cached: ${cacheKey} (${(buffer.byteLength / 1024).toFixed(1)}KB)`)
     return buffer
   } catch (error) {
-    console.error(`[Preload] Failed to fetch ${url}:`, error)
     throw error
   }
 }
@@ -124,11 +112,13 @@ const fetchAndCache = async (url: string, cacheKey: string): Promise<ArrayBuffer
 /**
  * Detect how many action_* files exist for a character
  * Uses quick HEAD requests to find the highest numbered file
+ * Stops after 1 missing file (no gaps expected)
  */
 const detectActionCount = async (baseCharId: string): Promise<number> => {
-  let count = 0
+  let maxCount = 0
+  let consecutiveMisses = 0  // Track consecutive misses
   
-  // Try up to 20 variations (most characters have 3-6)
+  // Try up to 20 variations to find all files
   for (let i = 1; i <= 20; i++) {
     const fileName = `${baseCharId}_00_action_${i}.ogg`
     const fxPath = `/assets/l2d/${baseCharId}/voice/fx/${fileName}`
@@ -136,20 +126,25 @@ const detectActionCount = async (baseCharId: string): Promise<number> => {
     try {
       // Use HEAD request for faster detection (no body needed)
       const response = await fetch(fxPath, { method: 'HEAD' })
-      if (response.ok) {
-        count = i  // Update count if file exists
+      
+      // 200 or 304 = file exists
+      if (response.status === 200 || response.status === 304) {
+        maxCount = i  // Track the highest number found
+        consecutiveMisses = 0  // Reset miss counter
       } else {
-        // Got response but not OK (like 404), stop looking
-        break
+        // 404 or other error = file doesn't exist
+        consecutiveMisses++
+        // Stop after 1 miss (no gaps)
+        if (consecutiveMisses >= 1) {
+          break
+        }
       }
     } catch (e) {
       // Network error or timeout, stop looking
       break
     }
   }
-  
-  console.log(`[Preload] Detected ${count} action_* files for ${baseCharId}`)
-  return count
+  return maxCount
 }
 
 /**
@@ -172,9 +167,6 @@ const preloadFullbodyVoiceFiles = async (charId: string, voiceGroupOverrides?: a
   // Check if this character shares voice with base (using imported voiceGroupOverrides)
   if (voiceGroupOverrides && voiceGroupOverrides[baseCharId]?.includes(charId)) {
     voiceCharId = baseCharId
-    console.log(`[Preload] ${charId} shares voice with ${baseCharId}`)
-  } else {
-    console.log(`[Preload] ${charId} has its own voice files`)
   }
   
   const voicePromises: Promise<void>[] = []
@@ -237,11 +229,13 @@ const preloadFullbodyVoiceFiles = async (charId: string, voiceGroupOverrides?: a
 /**
  * Detect how many reload_* files exist for a character
  * Uses quick HEAD requests to find the highest numbered file
+ * Stops after 1 missing file (no gaps expected)
  */
 const detectReloadCount = async (baseCharId: string): Promise<number> => {
-  let count = 0
+  let maxCount = 0
+  let consecutiveMisses = 0  // Track consecutive misses
   
-  // Try up to 10 variations (most characters have 2-6)
+  // Try up to 10 variations to find all files
   for (let i = 1; i <= 10; i++) {
     const fileName = `${baseCharId}_reload_${i}.ogg`
     const fxPath = `/assets/l2d/${baseCharId}/voice/fx/${fileName}`
@@ -249,20 +243,25 @@ const detectReloadCount = async (baseCharId: string): Promise<number> => {
     try {
       // Use HEAD request for faster detection (no body needed)
       const response = await fetch(fxPath, { method: 'HEAD' })
-      if (response.ok) {
-        count = i  // Update count if file exists
+      
+      // 200 or 304 = file exists
+      if (response.status === 200 || response.status === 304) {
+        maxCount = i  // Track the highest number found
+        consecutiveMisses = 0  // Reset miss counter
       } else {
-        // Got response but not OK (like 404), stop looking
-        break
+        // 404 or other error = file doesn't exist
+        consecutiveMisses++
+        // Stop after 1 miss (no gaps)
+        if (consecutiveMisses >= 1) {
+          break
+        }
       }
     } catch (e) {
       // Network error or timeout, stop looking
       break
     }
   }
-  
-  console.log(`[Preload] Detected ${count} reload_* files for ${baseCharId}`)
-  return count
+  return maxCount
 }
 
 /**
@@ -316,6 +315,11 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
         const cacheKey = getCacheKey(charId, 'cover', 'ogg', `fx_${fileName}`)
         
         try {
+          // Try to fetch with a HEAD request first to check if it exists
+          const headResponse = await fetch(fxPath, { method: 'HEAD' })
+          if (!headResponse.ok) {
+            return
+          }
           await fetchAndCache(fxPath, cacheKey)
         } catch (e) {
           // Reload FX file doesn't exist, skip silently
@@ -346,13 +350,12 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
 
   // Category 4: Gaugeup Files - Conditional based on flags
   if (gaugeupFlag === 'r') {
-    // 'r' flag: load gaugeup_1 and gaugeup_max
-    console.log(`[Preload] Character has 'r' flag - preloading gaugeup_1 + gaugeup_max`)
+    // 'r' flag: load gaugeup_1 and gaugeup_max (shared files, no character prefix)
     const gaugeupVariations = ['1', 'max']
     for (const variation of gaugeupVariations) {
       voicePromises.push(
         (async () => {
-          const fileName = `${baseCharId}_gaugeup_${variation}.ogg`
+          const fileName = `gaugeup_${variation}.ogg`
           const voicePath = `/assets/l2d/${baseCharId}/voice/${fileName}`
           const cacheKey = getCacheKey(charId, 'cover', 'ogg', `gaugeup_${fileName}`)
           
@@ -365,13 +368,12 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
       )
     }
   } else if (gaugeupFlag === 'e') {
-    // 'e' flag: load gaugeup_2 and gaugeup_max
-    console.log(`[Preload] Character has 'e' flag - preloading gaugeup_2 + gaugeup_max`)
+    // 'e' flag: load gaugeup_2 and gaugeup_max (shared files, no character prefix)
     const gaugeupVariations = ['2', 'max']
     for (const variation of gaugeupVariations) {
       voicePromises.push(
         (async () => {
-          const fileName = `${baseCharId}_gaugeup_${variation}.ogg`
+          const fileName = `gaugeup_${variation}.ogg`
           const voicePath = `/assets/l2d/${baseCharId}/voice/${fileName}`
           const cacheKey = getCacheKey(charId, 'cover', 'ogg', `gaugeup_${fileName}`)
           
@@ -384,11 +386,10 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
       )
     }
   } else if (repeatFlag === 's') {
-    // 's' flag: load gaugeup only (no number suffix)
-    console.log(`[Preload] Character has 's' flag - preloading gaugeup`)
+    // 's' flag: load gaugeup only (shared file, no character prefix)
     voicePromises.push(
       (async () => {
-        const fileName = `${baseCharId}_gaugeup.ogg`
+        const fileName = `gaugeup.ogg`
         const voicePath = `/assets/l2d/${baseCharId}/voice/${fileName}`
         const cacheKey = getCacheKey(charId, 'cover', 'ogg', `gaugeup_${fileName}`)
         
@@ -414,10 +415,17 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
  * Variant: c270_01_00.skel, c270_01_00.atlas, c270_01_00.png
  */
 export const preloadFullbodyModeAssets = async (charId: string, includeVoice: boolean = true, voiceGroupOverrides?: any): Promise<void> => {
+  console.log(`[preloadFullbodyModeAssets] Called with charId=${charId}, includeVoice=${includeVoice}`)
+  
+  // ALWAYS delete old promise - don't reuse them
+  if (ongoingPreloads[charId]) {
+    console.log(`[preloadFullbodyModeAssets] Deleting old promise for ${charId}`)
+    delete ongoingPreloads[charId]
+  }
   
   const preloadPromise = (async () => {
     try {
-      console.log(`[Preload] Starting fullbody mode preload for ${charId}`)
+      console.log(`[preloadFullbodyModeAssets] Starting preload for ${charId}`)
       const startTime = performance.now()
 
       // Load fullbody skeleton + texture in parallel
@@ -438,23 +446,27 @@ export const preloadFullbodyModeAssets = async (charId: string, includeVoice: bo
       ]
 
       // Wait for all fullbody files to load
+      console.log(`[preloadFullbodyModeAssets] Waiting for skeleton files`)
       await Promise.all(fbPromises)
 
       const skelTime = performance.now() - startTime
-      console.log(`[Preload] Fullbody skeleton files cached in ${skelTime.toFixed(0)}ms`)
+      console.log(`[preloadFullbodyModeAssets] Skeleton files loaded in ${skelTime.toFixed(0)}ms`)
 
-      // Optionally preload voice files in background (non-blocking)
+      // Preload voice files - WAIT for them to complete
       if (includeVoice) {
-        preloadFullbodyVoiceFiles(charId, voiceGroupOverrides).catch(e => {
-          console.warn('[Preload] Fullbody voice preload had errors:', e)
-        })
+        console.log(`[preloadFullbodyModeAssets] Starting voice file preload for ${charId}`)
+        await preloadFullbodyVoiceFiles(charId, voiceGroupOverrides)
+        console.log(`[preloadFullbodyModeAssets] Voice files preload complete`)
       }
 
       const totalTime = performance.now() - startTime
-      console.log(`[Preload] ✅ Fullbody preload complete for ${charId} (${totalTime.toFixed(0)}ms)`)
+      console.log(`[preloadFullbodyModeAssets] Total preload time: ${totalTime.toFixed(0)}ms`)
     } catch (error) {
-      console.error('[Preload] ❌ Fullbody preload failed:', error)
+      console.error(`[preloadFullbodyModeAssets] Error: ${error}`)
       throw error
+    } finally {
+      console.log(`[preloadFullbodyModeAssets] Clearing cache for ${charId}`)
+      delete ongoingPreloads[charId]
     }
   })()
 
@@ -475,7 +487,6 @@ export const preloadCoverModeAssets = async (charId: string, includeVoice: boole
   
   const preloadPromise = (async () => {
     try {
-      console.log(`[Preload] Starting cover mode preload for ${charId}`)
       const startTime = performance.now()
 
       const baseCharId = charId.split('_')[0]
@@ -518,7 +529,6 @@ export const preloadCoverModeAssets = async (charId: string, includeVoice: boole
       await Promise.all(skelPromises)
 
       const skelTime = performance.now() - startTime
-      console.log(`[Preload] Skeleton files cached in ${skelTime.toFixed(0)}ms`)
 
       // Optionally preload voice files in background (non-blocking)
       if (includeVoice) {
@@ -528,14 +538,11 @@ export const preloadCoverModeAssets = async (charId: string, includeVoice: boole
         const repeatFlag = charConfig?.timing?.repeatFlag || ''  // 's', 'r', 'e', 'm'
         
         preloadVoiceFiles(charId, audioMode, gaugeupFlag, repeatFlag).catch(e => {
-          console.warn('[Preload] Voice preload had errors:', e)
         })
       }
 
       const totalTime = performance.now() - startTime
-      console.log(`[Preload] ✅ Preload complete for ${charId} (${totalTime.toFixed(0)}ms)`)
     } catch (error) {
-      console.error('[Preload] ❌ Preload failed:', error)
       throw error
     }
   })()
@@ -546,25 +553,23 @@ export const preloadCoverModeAssets = async (charId: string, includeVoice: boole
 
 /**
  * Detect count of Ult_Skill voice files (e.g., Ult_Skill_1, Ult_Skill_2...)
- * Returns the highest number found
+ * Most characters only have 1, some rare ones might have 2-3
+ * Stops at first missing file
  */
 const detectUltSkillCount = async (charId: string): Promise<number> => {
-  // Try 1-5 to be safe
-  let count = 1
-  for (let i = 2; i <= 5; i++) {
-    const testUrl = `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_${i}.ogg`
-    try {
-      const response = await fetch(testUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
-      if (response.ok) {
-        count = i
-      } else {
-        break
-      }
-    } catch {
-      break
+  let maxCount = 1  // Always at least 1
+  
+  // Only check for 2nd file, if not found, just use 1
+  const testUrl = `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_2.ogg`
+  try {
+    const response = await fetch(testUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    if (response.status === 200 || response.status === 304) {
+      maxCount = 2
     }
+  } catch {
+    // File doesn't exist, use 1
   }
-  return count
+  return maxCount
 }
 
 /**
@@ -573,19 +578,17 @@ const detectUltSkillCount = async (charId: string): Promise<number> => {
  * Voice files: Ult_Skill_N and ult_cutscene (always ogg, not mp3)
  */
 export const preloadSkillcutModeAssets = async (charId: string, includeVoice: boolean = true): Promise<void> => {
-  // Return if already preloading
+  // ALWAYS delete old promise - don't reuse them
   if (ongoingPreloads[charId]) {
-    return ongoingPreloads[charId]
+    delete ongoingPreloads[charId]
   }
 
   const preloadPromise = (async () => {
     try {
-      console.log(`[Preload] Starting skillcut mode for ${charId}`)
 
       // Extract variant and base character
       const match = charId.match(/^(c\d+)(?:_(\d+))?$/)
       if (!match) {
-        console.warn(`[Preload] Invalid character ID format: ${charId}`)
         return
       }
       const baseCharId = match[1]
@@ -607,9 +610,9 @@ export const preloadSkillcutModeAssets = async (charId: string, includeVoice: bo
             // Variant doesn't have its own skillcut spine, use base
             spineCharId = `${baseCharId}_00`
             useVariantSpine = false
-            console.log(`[Preload] ${charId} has no skillcut spine, using base ${spineCharId}`)
           }
-        } catch {
+        } catch (e) {
+          console.log(`[preloadSkillcutModeAssets] Variant check failed for ${charId}, using base`)
           spineCharId = `${baseCharId}_00`
           useVariantSpine = false
         }
@@ -640,35 +643,39 @@ export const preloadSkillcutModeAssets = async (charId: string, includeVoice: bo
           // Check if variant has its own Ult_Skill_1 voice
           const variantVoiceUrl = `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg`
           try {
-            const response = await fetch(variantVoiceUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+            const response = await fetch(variantVoiceUrl, { method: 'HEAD', signal: AbortSignal.timeout(2000) })
             if (!response.ok) {
-              // Variant doesn't have its own voice, use base
               voiceCharId = baseCharId
-              console.log(`[Preload] ${charId} has no Ult_Skill voice, using base ${voiceCharId}`)
             }
-          } catch {
+          } catch (e) {
             voiceCharId = baseCharId
           }
         }
 
-        // Detect Ult_Skill count for this character
-        const ultSkillCount = await detectUltSkillCount(voiceCharId)
-
-        // Preload all Ult_Skill voice files
-        for (let i = 1; i <= ultSkillCount; i++) {
-          const voiceUrl = `/assets/l2d/${voiceCharId}/voice/${voiceCharId}_Ult_Skill_${i}.ogg`
-          promises.push(fetchAndCache(voiceUrl, getCacheKey(charId, 'fb', 'ogg', `Ult_Skill_${i}`)))
-        }
-
-        // Preload ult_cutscene voice file
-        const cutsceneUrl = `/assets/l2d/${voiceCharId}/voice/${voiceCharId}_ult_cutscene.ogg`
-        promises.push(fetchAndCache(cutsceneUrl, getCacheKey(charId, 'fb', 'ogg', 'ult_cutscene')))
+        // Just try to fetch Ult_Skill_1 and ult_cutscene, don't overthink it
+        
+        promises.push(
+          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/${voiceCharId}_Ult_Skill_1.ogg`, getCacheKey(charId, 'fb', 'ogg', `Ult_Skill_1`)).catch((e) => {
+            // Voice file doesn't exist, skip silently
+            return Promise.resolve()
+          })
+        )
+        
+        // ult_cutscene is in the fx folder
+        promises.push(
+          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/fx/${voiceCharId}_ult_cutscene.ogg`, getCacheKey(charId, 'fb', 'ogg', 'ult_cutscene')).catch((e) => {
+            // ult_cutscene doesn't exist, skip silently
+            return Promise.resolve()
+          })
+        )
       }
 
       await Promise.all(promises)
-      console.log(`[Preload] Skillcut mode preload complete for ${charId}`)
     } catch (error) {
-      console.error(`[Preload] Error preloading skillcut mode for ${charId}:`, error)
+      throw error
+    } finally {
+      // Clear the ongoing preload flag when done
+      delete ongoingPreloads[charId]
     }
   })()
 
@@ -702,7 +709,6 @@ export const clearCharacterCache = (charId: string): void => {
     }
   })
   delete ongoingPreloads[charId]
-  console.log(`[Preload] Cache cleared for ${charId}`)
 }
 
 /**
