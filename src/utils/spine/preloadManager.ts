@@ -115,36 +115,10 @@ const fetchAndCache = async (url: string, cacheKey: string): Promise<ArrayBuffer
  * Stops after 1 missing file (no gaps expected)
  */
 const detectActionCount = async (baseCharId: string): Promise<number> => {
-  let maxCount = 0
-  let consecutiveMisses = 0  // Track consecutive misses
-  
-  // Try up to 20 variations to find all files
-  for (let i = 1; i <= 20; i++) {
-    const fileName = `${baseCharId}_00_action_${i}.ogg`
-    const fxPath = `/assets/l2d/${baseCharId}/voice/fx/${fileName}`
-    
-    try {
-      // Use HEAD request for faster detection (no body needed)
-      const response = await fetch(fxPath, { method: 'HEAD' })
-      
-      // 200 or 304 = file exists
-      if (response.status === 200 || response.status === 304) {
-        maxCount = i  // Track the highest number found
-        consecutiveMisses = 0  // Reset miss counter
-      } else {
-        // 404 or other error = file doesn't exist
-        consecutiveMisses++
-        // Stop after 1 miss (no gaps)
-        if (consecutiveMisses >= 1) {
-          break
-        }
-      }
-    } catch (e) {
-      // Network error or timeout, stop looking
-      break
-    }
-  }
-  return maxCount
+  // Most characters have 3-5 action files max
+  // Limit to 5 instead of HEAD request checks
+  // This avoids Vercel's quirky HEAD response behavior
+  return 5
 }
 
 /**
@@ -655,18 +629,12 @@ export const preloadSkillcutModeAssets = async (charId: string, includeVoice: bo
         // Just try to fetch Ult_Skill_1 and ult_cutscene, don't overthink it
         
         promises.push(
-          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/${voiceCharId}_Ult_Skill_1.ogg`, getCacheKey(charId, 'fb', 'ogg', `Ult_Skill_1`)).catch((e) => {
-            // Voice file doesn't exist, skip silently
-            return Promise.resolve()
-          })
+          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/${voiceCharId}_Ult_Skill_1.ogg`, getCacheKey(charId, 'fb', 'ogg', `Ult_Skill_1`)).catch(() => Promise.resolve())
         )
         
         // ult_cutscene is in the fx folder
         promises.push(
-          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/fx/${voiceCharId}_ult_cutscene.ogg`, getCacheKey(charId, 'fb', 'ogg', 'ult_cutscene')).catch((e) => {
-            // ult_cutscene doesn't exist, skip silently
-            return Promise.resolve()
-          })
+          fetchAndCache(`/assets/l2d/${voiceCharId}/voice/fx/${voiceCharId}_ult_cutscene.ogg`, getCacheKey(charId, 'fb', 'ogg', 'ult_cutscene')).catch(() => Promise.resolve())
         )
       }
 

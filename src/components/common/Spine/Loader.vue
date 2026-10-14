@@ -2056,51 +2056,15 @@ const playSkillcutSound = async () => {
     return true
   }
 
-  // Helper function to get skillcut voice path with fallback
-  const getSkillcutVoicePath = async (charId, soundType) => {
+  // Helper function to get skillcut voice path with fallback (no HEAD checks - instant)
+  const getSkillcutVoicePath = (charId: string, soundType: string): string => {
     // First try the character itself
     const selfPath = soundType === 'main' ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg` : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
-
-    try {
-      const response = await fetch(selfPath, { method: 'HEAD' })
-      if (isValidAudioResponse(response)) return selfPath
-    } catch (e) {
-      // Continue to fallback
-    }
-
-    // Try base character fallback (for variants like c514_01 -> c514)
-    if (charId.includes('_')) {
-      const baseId = charId.split('_')[0]
-      const basePath = soundType === 'main' ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
-
-      try {
-        const response = await fetch(basePath, { method: 'HEAD' })
-        if (isValidAudioResponse(response)) return basePath
-      } catch (e) {
-        // Continue
-      }
-    }
-
-    // Try voiceGroupOverrides fallback
-    for (const [baseId, variants] of Object.entries(voiceGroupOverrides)) {
-      if (Array.isArray(variants) && variants.includes(charId)) {
-        const overridePath = soundType === 'main' ? `/assets/l2d/${baseId}/voice/${baseId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseId}/voice/fx/${baseId}_ult_cutscene.ogg`
-
-        try {
-          const response = await fetch(overridePath, { method: 'HEAD' })
-          if (isValidAudioResponse(response)) return overridePath
-        } catch (e) {
-          // Continue
-        }
-      }
-    }
-
-    // Return self as last resort (will fail gracefully with .catch())
     return selfPath
   }
 
   // Play main sound (Ult_Skill_1) with fallback
-  const mainPath = await getSkillcutVoicePath(characterId, 'main')
+  const mainPath = getSkillcutVoicePath(characterId, 'main')
 
   console.debug(`Playing skillcut main sound: ${mainPath}`)
   currentActionSound = new Audio(mainPath)
@@ -2109,7 +2073,7 @@ const playSkillcutSound = async () => {
   })
 
   // Play overlay sound (ult_cutscene) with fallback
-  const overlayPath = await getSkillcutVoicePath(characterId, 'overlay')
+  const overlayPath = getSkillcutVoicePath(characterId, 'overlay')
 
   console.debug(`Playing skillcut overlay sound: ${overlayPath}`)
   currentSkillcutOverlaySound = new Audio(overlayPath)
