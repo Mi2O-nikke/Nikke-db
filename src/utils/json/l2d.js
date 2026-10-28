@@ -288,6 +288,9 @@ const l2dGroups = {
     ['c017_01', 'Anis: Starlight', 'ac:1o5,3o8', 'fb:0.26,0,-80|sc:0.27,60,-50'],
     ['c017_02', 'Anis: Star T.T.STAR', 'ac:1o1,6d3,7d5', 'fb:0.21'],
     ['c018', 'Neon: Vision Eye', 'ac:2o5,3o4,4o6,6d35o2,7o3|re:2o5', 'fb:0.23|sc:0.25'],
+    ['c018_01', 'Neon: Vision z', '', 'fb:0.22,120'],
+    ['c019', 'Modernia', '', 'fb:0.23,60,-10|sc:0.35,0,30'],
+    ['c019_01', 'Modernia Wedding', '', 'fb:0.24,0,-40|sc:0.6,0,-30'],
     ['c989', 'Rapi: Red'],
     ['c990', 'Rapi: Minor'],
     ['c992', 'Rapi: Child'],
@@ -530,10 +533,12 @@ const l2dGroups = {
     ['c222_01', 'Scarlet Racer\'s High', 'ac:1d3,1o18,3d3,6d3', 'fb:0.25|sc:1.0,0,550'],
     ['c223', 'Nayuta', 'ac:1d3,2o8,3o8,5d8,6d1,7d1,8d3,9d1,10d1|re:1o3,2o5', 'fb:0.22,0,-20|sc:0.36,0,10'],
     ['c223_01', 'Nayuta Wu Wei', 'ac:1d5,1o10,2o8,4o5', 'fb:0.32,0,-80|sc:0.35,80'],
+    ['c223_02', 'Nayuta wz', '', 'fb:0.22'],
     ['c227', 'Pinocchio', '', 'fb:0.24'],
     ['c471', 'Snow White: Heavy Arms', 'ac:1o7,2o5,3o8,4o8,5o5|re:1o3,2o8,3o6', 'fb:0.29,0,-70|sc:0.3,60,60'],
-    ['c472', 'Scarlet: Upgrade'],
-    ['c473', 'Rapunzel: Upgrade', '', 'fb:0.27,0,-100'],
+    ['c471_01', 'Snow White: Heavy', '', 'fb:0.25,30,10|sc:0.35,0,100'],
+    ['c472', 'Scarlet: Upgrade', '', 'fb:0.24,150,-20|sc:0.26,60,-40'],
+    ['c473', 'Rapunzel: Upgrade', '', 'fb:0.27,30,-50|sc:0.3,60'],
     ['c9008', 'Nayuta Clone', '', 'fb:0.22,0,-20'],
   ],
 
@@ -1231,8 +1236,7 @@ const specialClickAnimations = {
   'c371': ['angry'],
   'c412_01': ['expression_0'],
   'c440': ['shy'],
-  'c472': ['pain'],
-  'c473': ['idle2'],
+  'c472': ['expression_0'],
   'c480': ['special'],
   'c481': ['shy'],
   'c490': ['smile'],
@@ -1338,9 +1342,10 @@ const specialClickAnimations = {
 
 //chara have foreground and background
 const charactersWithFgBgOverlays = [
+  'c019_01',
   'c103', 'c105', 'c017_01', 'c017_02', 
-  'c262_01',
-  'c441', 'c450_03', 'c451_03',
+  'c223_02', 'c262_01',
+  'c441', 'c450_03', 'c451_03', 'c471_01',
   'c511_03', 'c513_03', 'c515', 'c580_01', 'c582_01',
   'c600', 'c601',
   'c870_02', 'c871', 'c871_01', 'c871_02', 'c872',
@@ -1351,6 +1356,7 @@ const skillcutConfig = {
   c015: {animations: ['skillcut_2']},
   c016: {animations: ['skillcut_2']},
   c016_03: {animations: ['skillcut_2']},
+  c019_01: {animations: ['skillcut_01']},
   c073: {animations: ['skillcut_2']},
   c094: {animations: ['skillcut_2_OFF_MOVE_BIG']},
   c094_01: {animations: ['skillcut_2_OFF_MOVE_BIG']},
@@ -1379,6 +1385,7 @@ export const characterSkins = {
   c220_01: 'weapon_1',
   c223: 'part_1',
   c223_01: 'part_1',
+  c223_02: 'part_1',
   c233: 'part_1',
   c570: 'part_0',
 }
@@ -1388,10 +1395,11 @@ export const characterFullbodySkins = {
   c260: 'default',
 }
 
-//fullbody other than idle
+// Character default idle animations - FULLBODY MODE ONLY
+// Only affects FB (fullbody) pose. Aim, cover, and skillcut modes have separate animation pipelines.
 export const characterDefaultAnimations = {
   mbg004_appearance: 'mbg004_appearance',
-  c473: 'smile',
+  c472: 'idle_02',
   c944: 'special_02',
   c994: 'idle_02', 
   c996: 'idle_02',
@@ -1672,6 +1680,12 @@ const charactersWithDualLayer = {
     layers: [
       { idle: 'idle', skillcut: 'skillcut_1', zIndex: 0 },
       { idle: 'idle2', skillcut: 'skillcut_2', zIndex: 1000 },
+    ]
+  },
+  'c473': {
+    layers: [
+      { idle: 'idle', skillcut: 'skillcut_1', zIndex: 1 },
+      { idle: 'idle1', skillcut: 'skillcut_2', zIndex: 1000 },
     ]
   },
   'c513_01': {

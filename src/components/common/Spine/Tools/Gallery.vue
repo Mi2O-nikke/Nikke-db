@@ -217,6 +217,7 @@ import story7 from '@/utils/json/Gallery/story7.json'
 import story8 from '@/utils/json/Gallery/story8.json'
 import story9 from '@/utils/json/Gallery/story9.json'
 import story13 from '@/utils/json/Gallery/story13.json'
+import story14 from '@/utils/json/Gallery/story14.json'
 import persona from '@/utils/json/Gallery/persona.json'
 import terminusticket from '@/utils/json/Gallery/terminusticket.json'
 import unbreakablesphere from '@/utils/json/Gallery/unbreakablesphere.json'
@@ -427,7 +428,8 @@ const buttonListStory = [
   { data: story10 },
   { data: story11 },
   { data: story12 },
-  { data: story13 }
+  { data: story13 },
+  { data: story14 }
 ] as buttonInterface[]
 
 const buttonListSideStory = [

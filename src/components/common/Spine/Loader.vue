@@ -1,5 +1,11 @@
 <template>
-  <div id="player-container" :class="[checkMobile() ? 'mobile' : 'computer', { 'spine-hidden': isSpineHidden, 'cover': market.live2d.current_pose === 'cover' }]"></div>
+  <div id="player-container" :class="[checkMobile() ? 'mobile' : 'computer', { 'spine-hidden': isSpineHidden, 'cover': market.live2d.current_pose === 'cover' }]">
+    <!-- Background image for fullbody mode only -->
+    <img v-if="backgroundImageUrl && market.live2d.current_pose === 'fb'" 
+         :src="backgroundImageUrl" 
+         class="character-background" 
+         :alt="`Background for ${market.live2d.current_id}`" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -23,6 +29,9 @@ const market = useMarket()
 
 // Track spine visibility - hide until position is applied (reactive)
 const isSpineHidden = ref(true)
+
+// Background image URL for fullbody mode (reactive)
+const backgroundImageUrl = ref<string | null>(null)
 
 // Track alternating animations per character
 const animationIndex: { [key: string]: number } = {}
@@ -2056,15 +2065,36 @@ const playSkillcutSound = async () => {
     return true
   }
 
-  // Helper function to get skillcut voice path with fallback (no HEAD checks - instant)
-  const getSkillcutVoicePath = (charId: string, soundType: string): string => {
+  // Helper function to get skillcut voice path with fallback to base character if skill folder doesn't exist
+  const getSkillcutVoicePath = async (charId: string, soundType: string): Promise<string> => {
+    // Check if this is a variant (c223_02 → c223)
+    const baseCharMatch = charId.match(/^(.+?)_(\d+|0[0-9a-z]+|old|80)$/)
+    const baseCharId = baseCharMatch ? baseCharMatch[1] : charId
+    
     // First try the character itself
     const selfPath = soundType === 'main' ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg` : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
+    
+    // If this is a variant, check if it has its own skill voice file
+    if (baseCharId !== charId) {
+      try {
+        const response = await fetch(selfPath, { method: 'HEAD' })
+        if (response.ok) {
+          return selfPath // Has its own file, use it
+        }
+      } catch (e) {
+        // File doesn't exist, will fall back below
+      }
+      
+      // Doesn't have own file, use base character's
+      const basePath = soundType === 'main' ? `/assets/l2d/${baseCharId}/voice/${baseCharId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_ult_cutscene.ogg`
+      return basePath
+    }
+    
     return selfPath
   }
 
   // Play main sound (Ult_Skill_1) with fallback
-  const mainPath = getSkillcutVoicePath(characterId, 'main')
+  const mainPath = await getSkillcutVoicePath(characterId, 'main')
 
   console.debug(`Playing skillcut main sound: ${mainPath}`)
   currentActionSound = new Audio(mainPath)
@@ -2073,7 +2103,7 @@ const playSkillcutSound = async () => {
   })
 
   // Play overlay sound (ult_cutscene) with fallback
-  const overlayPath = getSkillcutVoicePath(characterId, 'overlay')
+  const overlayPath = await getSkillcutVoicePath(characterId, 'overlay')
 
   console.debug(`Playing skillcut overlay sound: ${overlayPath}`)
   currentSkillcutOverlaySound = new Audio(overlayPath)
@@ -3244,17 +3274,36 @@ const getSkillcutPathing = (extension: string) => {
   return route
 }
 
-const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
-  // Check character-specific overrides first
-  const charId = market.live2d.current_id
-  if (characterDefaultAnimations[charId]) {
-    return characterDefaultAnimations[charId]
+// Detect and load background PNG for fullbody mode only
+const detectAndLoadBackground = async (characterId: string): Promise<void> => {
+  // Only load background in fullbody mode
+  if (market.live2d.current_pose !== 'fb') {
+    backgroundImageUrl.value = null
+    return
   }
 
-  // Favorite characters default to idle_merged (unless overridden above)
-  if (charId.includes('favorite')) return 'idle_merged'
+  try {
+    // Check if CB_cxxx_00.png exists
+    const bgPath = `/assets/l2d/${characterId}/CB_${characterId}_00.png`
+    const response = await fetch(bgPath, { method: 'HEAD' })
+    
+    if (response.ok) {
+      backgroundImageUrl.value = bgPath
+      console.debug(`Background loaded for ${characterId}: ${bgPath}`)
+    } else {
+      backgroundImageUrl.value = null
+    }
+  } catch (error) {
+    backgroundImageUrl.value = null
+    console.debug(`No background found for ${characterId}`)
+  }
+}
 
-  // Pose-specific defaults
+const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
+  const charId = market.live2d.current_id
+
+  // Check pose-specific defaults FIRST (aim, cover, skillcut need their own idles)
+  // characterDefaultAnimations only applies to fullbody
   switch (market.live2d.current_pose) {
     case 'aim':
       return 'aim_idle'
@@ -3262,7 +3311,16 @@ const getDefaultAnimation = (availableAnimations?: Array<{ name: string }>) => {
       return 'cover_idle'
     case 'skillcut':
       return 'idle' // fallback to idle for skillcut
+    case 'fb':
     default:
+      // Only check characterDefaultAnimations in fullbody mode
+      if (characterDefaultAnimations[charId]) {
+        return characterDefaultAnimations[charId]
+      }
+
+      // Favorite characters default to idle_merged (unless overridden above)
+      if (charId.includes('favorite')) return 'idle_merged'
+
       return 'idle'
   }
 }
@@ -3427,6 +3485,8 @@ const handleAction = () => {
   let idleAnimation = 'idle'
   
   // Check characterDefaultAnimations first (for characters with custom idle states like ce009_char_01)
+  // NOTE: This only applies to FULLBODY mode (handleAction is only called in FB)
+  // Aim, cover, and skillcut modes have their own animation pipelines
   if (characterDefaultAnimations[market.live2d.current_id]) {
     idleAnimation = characterDefaultAnimations[market.live2d.current_id]
   } 
@@ -3466,6 +3526,9 @@ const handleAction = () => {
 const successfullyLoaded = () => {
   market.load.endLoad()
   // market.message.getMessage().success(messagesEnum.MESSAGE_ASSET_LOADED, market.message.short_message)
+
+  // Detect and load background image for fullbody mode
+  detectAndLoadBackground(market.live2d.current_id)
 
   // Apply custom zoom after spine loads successfully
   // Only apply if user hasn't manually zoomed
@@ -4280,6 +4343,7 @@ const triggerPreview1 = () => {
 #player-container {
   //height: calc(100vh - 100px);
   overflow: hidden;
+  position: relative;
 
   &.spine-hidden {
     visibility: hidden;
@@ -4289,6 +4353,19 @@ const triggerPreview1 = () => {
     overflow: visible;
   }
 }
+
+.character-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .mobile {
   height: -webkit-fill-available;
   width: 100%;

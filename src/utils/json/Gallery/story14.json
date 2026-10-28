@@ -1,0 +1,404 @@
+{
+  "path": "story14/",
+  "type": "large",
+  "id": "story14",
+  "title": "Chapter 49 to 50",
+  "content": [
+    {
+      "name": "EventScene_Chap_49_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_6.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_02_7.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_05_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_05_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_49_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_11_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_11_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_11_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_12.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_13_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_13_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_14_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_14_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_15_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_15_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_16.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_18_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_18_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_18_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_20_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_21_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_21_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_22.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_23.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_24.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_25.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_27_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_27_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_29_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_29_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_30_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_30_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_31.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_32.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_33.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_34.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_36.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_37.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_38_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_38_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_39.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_40_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_41.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_42.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_43.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_45_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_47_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_47_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_47_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_48_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_48_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_48_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_49.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_51.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_52.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_53.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_54_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_54_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_55.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_56.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_57.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_58.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_59.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_60.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_61.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_62_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_62_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_64.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_65_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_65_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_66.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_67.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_68.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_69.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_70.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_71_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_71_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_50_71_3.png",
+      "text": ""
+    }
+  ]
+}
