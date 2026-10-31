@@ -10,7 +10,8 @@
         placement="right"
         default-width="300"
         :mask-closable="false"
-        :show-mask="false">
+        :show-mask="false"
+        :style="{ zIndex: 1000 }">
       <n-drawer-content closable :native-scrollbar="false" resizable>
 
         <template #header>
@@ -180,6 +181,7 @@ import littlewitchtrick from '@/utils/json/Gallery/littlewitchtrick.json'
 import liarsend from '@/utils/json/Gallery/liarsend.json'
 import liecauserecoil from '@/utils/json/Gallery/liecauserecoil.json'
 import madeinrush from '@/utils/json/Gallery/madeinrush.json'
+import marian from '@/utils/json/Gallery/marian.json'
 import memoriesteller from '@/utils/json/Gallery/memoriesteller.json'
 import miraclesnow from '@/utils/json/Gallery/miraclesnow.json'
 import neverland from '@/utils/json/Gallery/neverland.json'
@@ -251,6 +253,32 @@ interface buttonInterface {
 
 const openDrawer = () => {
   isDrawerVisible.value = true
+  // Add document click listener when drawer opens
+  document.addEventListener('click', handleDocumentClick)
+}
+
+const closeDrawerManually = () => {
+  isDrawerVisible.value = false
+  // Remove listener when drawer closes
+  document.removeEventListener('click', handleDocumentClick)
+}
+
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  
+  // Check if clicking on drawer or gallery button
+  const isClickOnDrawer = target.closest('.n-drawer') || target.closest('.triggerButton')
+  
+  // Check if clicking on gallery grid modal or its content
+  const isClickOnGalleryModal = target.closest('.modal-overlay') && target.closest('.modal-content')
+  
+  // Check if clicking on image viewer
+  const isClickOnImageViewer = target.closest('.image-viewer-overlay')
+  
+  // Only close drawer if clicking outside ALL of these
+  if (!isClickOnDrawer && !isClickOnGalleryModal && !isClickOnImageViewer && isDrawerVisible.value) {
+    closeDrawerManually()
+  }
 }
 
 const closeGridModal = () => {
@@ -268,6 +296,9 @@ const closeImageModal = () => {
 }
 
 const handleOverlayClick = (event: MouseEvent) => {
+  // Stop event from bubbling to document click listener
+  event.stopPropagation()
+  
   // Only close if clicking directly on the overlay background and no dragging occurred
   if (event.target === event.currentTarget && dragDistance < 5) {
     closeImageModal()
@@ -478,6 +509,7 @@ const buttonListEvents = [
   { data: littlewitchtrick },
   { data: liarsend },
   { data: liecauserecoil },
+  { data: marian },
   { data: memoriesteller },
   { data: miraclesnow },
   { data: neverland },
@@ -557,7 +589,7 @@ const updateIndex = (newIndex: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 1001;
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -674,8 +706,9 @@ const updateIndex = (newIndex: number) => {
 }
 
 .floating-image {
-  max-width: 90vw;
+  max-width: 100%;
   max-height: 90vh;
+  width: auto;
   object-fit: contain;
   user-select: none;
   -webkit-user-select: none;

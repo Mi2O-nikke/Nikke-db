@@ -4,7 +4,10 @@
     <img v-if="backgroundImageUrl && market.live2d.current_pose === 'fb'" 
          :src="backgroundImageUrl" 
          class="character-background" 
-         :alt="`Background for ${market.live2d.current_id}`" />
+         alt=""
+         @error="() => { backgroundImageUrl = null }"
+         style="display: none !important;" 
+         @load="(e) => { (e.target as HTMLElement).style.display = ''; }" />
   </div>
 </template>
 
@@ -55,7 +58,11 @@ let currentFireLoopTimer: NodeJS.Timeout | null = null  // Track fire loop so we
 let currentGaugeupFlag = ''  // Track which gaugeup flag (r or e) is used for this hold session
 let currentAudioMode = ''  // Track audio mode (m for ramping)
 let customGaugeupMode = false  // Track if using custom character gaugeup (s flag)
+let customGaugeupRepeatMode = false  // Track if using custom character gaugeup that repeats (x flag)
+let customGaugeupR2Mode = false  // Track if using custom character gaugeup + max (r2 flag)
+let animationDelayMode = false  // Track if animation should have 0.1s extra delay (g flag)
 let customGaugeupPlayed = false  // Track if custom gaugeup has already played (s flag)
+let gaugeupPlayedImmediately = false  // Track if gaugeup was played immediately on click (x flag with delay)
 let rampingFireTimeouts: NodeJS.Timeout[] = []  // Track ramping fire timeouts so we can clear them
 let rampingStarted = false  // Track if ramping sequence has already been started
 let currentWebAudioSource: any = null  // Track Web Audio BufferSource for fire_loop
@@ -249,6 +256,7 @@ const handleActionStart = async (e?: MouseEvent) => {
     isAimHolding = true
     rampingStarted = false  // Reset ramping flag for new hold
     customGaugeupPlayed = false  // Reset custom gaugeup flag for new hold
+    gaugeupPlayedImmediately = false  // Reset immediate gaugeup flag for new hold
     
     // Set gaugeup flag and audio mode from character config
     const charId = market.live2d.current_id
@@ -256,6 +264,9 @@ const handleActionStart = async (e?: MouseEvent) => {
     currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
     currentAudioMode = charConfig?.timing?.audioMode || ''
     customGaugeupMode = charConfig?.timing?.customGaugeup || false
+    customGaugeupRepeatMode = charConfig?.timing?.customGaugeupRepeat || false
+    customGaugeupR2Mode = charConfig?.timing?.customGaugeupR2 || false
+    animationDelayMode = charConfig?.timing?.animationDelay || false
     
     // Stop only FX timeouts (let voice play to end)
     stopReloadFxOnly()
@@ -352,6 +363,14 @@ const handleActionStart = async (e?: MouseEvent) => {
       const charConfig = l2dData.find(c => c.id === charId)
       const useAimHit = charConfig?.zoomAnimationType === 'hit'
       const targetAnim = useAimHit && hasAimHit ? 'aim_hit' : (hasAimFire ? 'aim_fire' : (hasAimHit ? 'aim_hit' : null))
+      
+      // Initialize audio/animation flags from config BEFORE using them
+      currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
+      currentAudioMode = charConfig?.timing?.audioMode || ''
+      customGaugeupMode = charConfig?.timing?.customGaugeup || false
+      customGaugeupRepeatMode = charConfig?.timing?.customGaugeupRepeat || false
+      customGaugeupR2Mode = charConfig?.timing?.customGaugeupR2 || false
+      animationDelayMode = charConfig?.timing?.animationDelay || false
     
       
       if (hasToAim) {
@@ -413,12 +432,16 @@ const handleActionStart = async (e?: MouseEvent) => {
               const loopAnimation = () => {
                 if (isAimHolding) {
                   aimState.setAnimation(0, targetAnim, false, 0)
-                  animLoopTimer = setTimeout(loopAnimation, loopDuration * 1000)
+                  // If g flag is set, animation loops every 0.1s instead of loopDuration
+                  const nextAnimDelay = animationDelayMode ? 0.1 : loopDuration
+                  animLoopTimer = setTimeout(loopAnimation, nextAnimDelay * 1000)
                 } else if (animLoopTimer) {
                   clearTimeout(animLoopTimer)
                 }
               }
-              setTimeout(loopAnimation, toAimDuration * 1000)
+              // Add animation delay on first call if g flag is set
+              const initialAnimDelay = animationDelayMode ? 0.1 : 0
+              setTimeout(loopAnimation, (toAimDuration + initialAnimDelay) * 1000)
             }
           }
           
@@ -458,7 +481,27 @@ const handleActionStart = async (e?: MouseEvent) => {
                 animToPlay = isFirstCycle ? 'aim_idle' : 'aim_hit'
               }
               
-              aimState.setAnimation(0, animToPlay, false)
+              // Add delay on first cycle only - delay the animation start
+              // If g flag is set, animation delay is always 0.1s (ignores configured delay)
+              // Otherwise, use configured delay
+              let animDelay = 0
+              if (isFirstCycle) {
+                if (animationDelayMode) {
+                  animDelay = 0.1  // g flag always sets 0.1s
+                } else {
+                  animDelay = delay
+                }
+              }
+              
+              if (animDelay > 0) {
+                setTimeout(() => {
+                  if (isAimHolding) {
+                    aimState.setAnimation(0, animToPlay, false)
+                  }
+                }, animDelay * 1000)
+              } else {
+                aimState.setAnimation(0, animToPlay, false)
+              }
               
               // Play voice for this cycle
               // Skip gaugeup on first cycle for non-alternating (already played immediately on click)
@@ -472,12 +515,15 @@ const handleActionStart = async (e?: MouseEvent) => {
                     }
                   })
                 } else if (playGaugeUp && isFirstCycle && !shouldAlternate && currentGaugeupFlag !== '') {
-                  // For gaugeup flag (e): play gaugeup on first cycle too
+                  // For gaugeup flag (r/e/x) on first cycle: play gaugeup, fire will follow via callback
                   playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
                     if (isAimHolding) {
                       playAimFireSound(charId, targetAnim)
                     }
                   })
+                } else if (playGaugeUp && isFirstCycle && !shouldAlternate && currentGaugeupFlag === '') {
+                  // For non-alternating (c511 with NO gaugeup flag): just play fire
+                  playAimFireSound(charId, targetAnim)
                 } else if (!playGaugeUp) {
                   // No gaugeup, just play fire sound after delay
                   
@@ -497,21 +543,20 @@ const handleActionStart = async (e?: MouseEvent) => {
                     }, fireStartDelay * 1000)
                   }
                   // If ramping mode and already started, don't do anything (fire_loop is playing)
-                } else if (playGaugeUp && isFirstCycle && !shouldAlternate) {
-                  // For non-alternating (c511): gaugeup already played, just play fire
-                  playAimFireSound(charId, targetAnim)
                 } else if (playGaugeUp && !isFirstCycle) {
                   // For subsequent cycles: keep playing gaugeup if currentGaugeupFlag is set
-                  // BUT: if customGaugeupMode (s flag), only play gaugeup once on first cycle
-                  if (!customGaugeupMode) {
+                  // EXCEPT: if customGaugeupMode (s flag), only play gaugeup once on first cycle
+                  // NOTE: customGaugeupRepeatMode (x flag) plays gaugeup every cycle (so don't skip)
+                  if (customGaugeupMode && !customGaugeupRepeatMode) {
+                    // Custom gaugeup mode (s flag): just play fire on subsequent cycles
+                    playAimFireSound(charId, targetAnim)
+                  } else {
+                    // All other modes (including x flag): play gaugeup every cycle
                     playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
                       if (isAimHolding) {
                         playAimFireSound(charId, targetAnim)
                       }
                     })
-                  } else {
-                    // Custom gaugeup mode: just play fire on subsequent cycles
-                    playAimFireSound(charId, targetAnim)
                   }
                 }
               }
@@ -519,27 +564,24 @@ const handleActionStart = async (e?: MouseEvent) => {
               cycleCount++
               
               // Determine next cycle time
+              // If g flag is set, animation ALWAYS loops every 0.1s (not loopDuration)
               let nextCycleTime = loopDuration
-              if (shouldAlternate && useAimHit) {
+              if (animationDelayMode) {
+                nextCycleTime = 0.1  // g flag: animation always 0.1s
+              } else if (shouldAlternate && useAimHit) {
                 // For alternating (c272): first cycle uses delay, then always use loopDuration
                 nextCycleTime = isFirstCycle ? delay : loopDuration
-                isFirstCycle = false
               } else {
                 // For non-alternating (c511): always use loopDuration after first cycle
-                // (delay was already added before first startLooping call)
                 nextCycleTime = loopDuration
-                isFirstCycle = false
               }
+              isFirstCycle = false
               
               loopTimer = setTimeout(startLooping, nextCycleTime * 1000)
             }
-      // For non-alternating with gaugeup AND delay (like c511): play gaugeup sound immediately when holding
-      // Sound plays immediately before loop starts, but only if there's an actual delay
-      if (playGaugeUp && !shouldAlternate && loopDuration > 0 && delay > 0 && currentGaugeupFlag === '') {
-        playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
-          // Fire sound will be played when animation loop starts
-        })
-      }
+      // For non-alternating with gaugeup AND delay (like c511): 
+      // Don't play gaugeup immediately - let the loop handle it on first cycle
+      // This ensures proper sequencing: gaugeup → (callback) → fire
       
             // Start loop after to_aim finishes (for alternating case)
             if (useAimHit && shouldAlternate) {
@@ -550,9 +592,8 @@ const handleActionStart = async (e?: MouseEvent) => {
               // For normal case, start after to_aim finishes
               const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
               const toAimDuration = toAimAnim?.duration || 0.5
-              // Only add delay if no gaugeup flag (c511 style that plays gaugeup immediately)
-              const initialDelay = (isFirstCycle && delay > 0 && currentGaugeupFlag === '') ? delay : 0
-              setTimeout(startLooping, (toAimDuration + initialDelay) * 1000)
+              // Start loop after to_aim, delay will be handled by the loop on first cycle
+              setTimeout(startLooping, toAimDuration * 1000)
             }
           } else {
             // No loop duration set, just loop normally
@@ -603,6 +644,7 @@ const handleActionStart = async (e?: MouseEvent) => {
     isAimHolding = true
     rampingStarted = false  // Reset ramping flag for new hold
     customGaugeupPlayed = false  // Reset custom gaugeup flag for new hold
+    gaugeupPlayedImmediately = false  // Reset immediate gaugeup flag for new hold
     
     // Set gaugeup flag and audio mode from character config
     const charId = market.live2d.current_id
@@ -610,6 +652,9 @@ const handleActionStart = async (e?: MouseEvent) => {
     currentGaugeupFlag = charConfig?.timing?.gaugeupFlag || ''
     currentAudioMode = charConfig?.timing?.audioMode || ''
     customGaugeupMode = charConfig?.timing?.customGaugeup || false
+    customGaugeupRepeatMode = charConfig?.timing?.customGaugeupRepeat || false
+    customGaugeupR2Mode = charConfig?.timing?.customGaugeupR2 || false
+    animationDelayMode = charConfig?.timing?.animationDelay || false
     
     spinePlayer.animationState.setAnimation(0, 'aim_hit', true) // true = loop
     return
@@ -1215,6 +1260,143 @@ const stopAimSounds = () => {
 }
 
 const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onComplete?: () => void) => {
+  // If custom gaugeup r2 mode (r2 flag), play custom character gaugeup + max (repeats every cycle like r)
+  if (customGaugeupR2Mode) {
+    const baseCharId = characterId.match(/^(.+?)_\d+$/) ? characterId.match(/^(.+?)_\d+$/)[1] : characterId
+    const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
+    const customMaxPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_max.ogg`
+    const baseCustGaugeUpPath = `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_gaugeup.ogg`
+    const baseCustMaxPath = `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_max.ogg`
+    
+    const audio1 = new Audio()
+    audio1.volume = 0.5
+    currentAimGaugeUpAudio = audio1
+    allAimGaugeUpAudios.push(audio1)
+    isGaugeUpStopped = false
+    
+    // Try variant gaugeup first
+    audio1.src = customGaugeUpPath
+    audio1.play().catch(() => {
+      // Try base gaugeup
+      if (characterId !== baseCharId) {
+        audio1.src = baseCustGaugeUpPath
+        audio1.play().catch(() => {
+          // Fall back to generic
+          playGenericGaugeUpSequence()
+        })
+      } else {
+        playGenericGaugeUpSequence()
+      }
+    })
+    
+    // Then play custom max after gaugeup ends
+    audio1.onended = () => {
+      if (isGaugeUpStopped) {
+        return
+      }
+      const audio2 = new Audio()
+      audio2.volume = 0.5
+      currentAimGaugeUpAudio = audio2
+      allAimGaugeUpAudios.push(audio2)
+      
+      // Try variant max first
+      audio2.src = customMaxPath
+      audio2.play().catch(() => {
+        // Try base max
+        if (characterId !== baseCharId) {
+          audio2.src = baseCustMaxPath
+          audio2.play().catch(() => {
+            // Fall back to generic gaugeup_max
+            const audio3 = new Audio()
+            audio3.volume = 0.5
+            audio3.src = `/assets/l2d/_/gaugeup_max.ogg`
+            currentAimGaugeUpAudio = audio3
+            allAimGaugeUpAudios.push(audio3)
+            audio3.play().catch(() => {})
+            
+            audio3.onended = () => {
+              currentAimGaugeUpAudio = null
+              if (onComplete) onComplete()
+            }
+          })
+        } else {
+          // Fall back to generic gaugeup_max
+          const audio3 = new Audio()
+          audio3.volume = 0.5
+          audio3.src = `/assets/l2d/_/gaugeup_max.ogg`
+          currentAimGaugeUpAudio = audio3
+          allAimGaugeUpAudios.push(audio3)
+          audio3.play().catch(() => {})
+          
+          audio3.onended = () => {
+            currentAimGaugeUpAudio = null
+            if (onComplete) onComplete()
+          }
+        }
+      })
+      
+      // Call completion callback after max ends
+      audio2.onended = () => {
+        currentAimGaugeUpAudio = null
+        if (onComplete) onComplete()
+      }
+    }
+    
+    return
+  }
+  
+  if (customGaugeupRepeatMode) {
+    // Try variant first (c018_01_gaugeup), then base character (c018_gaugeup)
+    const baseCharId = characterId.match(/^(.+?)_\d+$/) ? characterId.match(/^(.+?)_\d+$/)[1] : characterId
+    const variantPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
+    const basePath = `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_gaugeup.ogg`
+    
+    const audio1 = new Audio()
+    audio1.volume = 0.5
+    currentAimGaugeUpAudio = audio1
+    allAimGaugeUpAudios.push(audio1)
+    
+    audio1.onended = () => {
+      currentAimGaugeUpAudio = null
+      if (onComplete) onComplete()
+    }
+    
+    // Safety timeout in case onended doesn't fire
+    setTimeout(() => {
+      if (currentAimGaugeUpAudio === audio1) {
+        currentAimGaugeUpAudio = null
+        if (onComplete) onComplete()
+      }
+    }, 3000)
+    
+    // Try variant first
+    audio1.src = variantPath
+    let playPromise = audio1.play()
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Variant failed, try base character
+        if (characterId !== baseCharId) {
+          audio1.src = basePath
+          const basePlayPromise = audio1.play()
+          if (basePlayPromise !== undefined) {
+            basePlayPromise.catch(() => {
+              // Base also failed, fall back to generic
+              currentAimGaugeUpAudio = null
+              playGenericGaugeUpSequence()
+            })
+          }
+        } else {
+          // Already at base, fall back to generic
+          currentAimGaugeUpAudio = null
+          playGenericGaugeUpSequence()
+        }
+      })
+    }
+    
+    return
+  }
+  
   // If custom gaugeup mode (s flag), play custom character gaugeup only
   if (customGaugeupMode) {
     const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
@@ -1224,25 +1406,29 @@ const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onCo
     currentAimGaugeUpAudio = audio
     allAimGaugeUpAudios.push(audio)
     
-    audio.onloadeddata = () => {
-      audio.play().catch((err) => {
-      })
-    }
-    
     audio.onended = () => {
       currentAimGaugeUpAudio = null
       if (onComplete) onComplete()
     }
     
     // Safety timeout
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (currentAimGaugeUpAudio === audio) {
         currentAimGaugeUpAudio = null
         if (onComplete) onComplete()
       }
     }, 3000)
     
-    audio.load()
+    // Try to play immediately; browser will load if needed
+    const playPromise = audio.play()
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        clearTimeout(timeoutId)
+        // Fall back to generic if custom fails
+        playGenericGaugeUpSequence()
+      })
+    }
+    
     return
   }
   
@@ -3283,19 +3469,21 @@ const detectAndLoadBackground = async (characterId: string): Promise<void> => {
   }
 
   try {
-    // Check if CB_cxxx_00.png exists
+    // Check if CB_cxxx_00.png exists using GET request
+    // (HEAD requests may behave differently in production vs local)
     const bgPath = `/assets/l2d/${characterId}/CB_${characterId}_00.png`
-    const response = await fetch(bgPath, { method: 'HEAD' })
+    const response = await fetch(bgPath, { method: 'GET' })
     
     if (response.ok) {
       backgroundImageUrl.value = bgPath
       console.debug(`Background loaded for ${characterId}: ${bgPath}`)
     } else {
       backgroundImageUrl.value = null
+      console.debug(`Background file not found (404) for ${characterId}: ${bgPath}`)
     }
   } catch (error) {
     backgroundImageUrl.value = null
-    console.debug(`No background found for ${characterId}`)
+    console.debug(`No background found for ${characterId}:`, error)
   }
 }
 

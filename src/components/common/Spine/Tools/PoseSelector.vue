@@ -2,6 +2,7 @@
   <div class="poseButtonGroup">
     <n-button
       v-for="pose in poses"
+      v-show="!hideAimButton || pose.value !== 'aim'"
       :key="pose.value"
       :type="market.live2d.current_pose === pose.value ? 'success' : 'default'"
       :disabled="!poseAvailability[pose.value]"
@@ -25,6 +26,9 @@ import { h, ref, watch } from 'vue'
 import ManageProtection from '@vicons/carbon/ManageProtection'
 import { globalParams } from '@/utils/enum/globalParams'
 const market = useMarket()
+
+// HIDE AIM BUTTON: Set to true to hide, false to show
+const hideAimButton = ref(true)
 
 const poseAvailability = ref<Record<string, boolean>>({
   aim: true,

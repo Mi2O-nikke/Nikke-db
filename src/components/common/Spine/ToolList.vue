@@ -9,11 +9,11 @@
           <PoseSelector />
         </div>
 
-        <div class="toolListDiv">
+        <div class="toolListDiv" style="display: none;">
           <Yapping />
         </div>
 
-        <div class="toolListDiv">
+        <div class="toolListDiv" style="display: none;">
           <ChangeQualityMode />
           <span class="routerLinkSpan">
             <RouterLink :to="{ name: 'HQvqLQAssets' }" class="routerLink"> Learn More </RouterLink>

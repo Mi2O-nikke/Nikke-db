@@ -1,10 +1,13 @@
 const timingAliases = {
   'smg': '',
   'ar': 'ti:0,0.1',
+  'xar': 'ti:0,0.7',
   'sg': 'ti:0,0.7',
   'mg': 'ti:0,0.5,m',
+  'xrl': 'ti:1,1,x',
   'srl': 'ti:0.7,0.3,s',
   'rl': 'ti:1.3,1.3,e|hit',
+  'xsr': 'ti:1.3,1.3,r2',
   'sr': 'ti:1.3,1.3,r|hit',
 }
 
@@ -38,21 +41,41 @@ const convertL2dData = (groups) => {
           
           if (pose === 'ti') {
             // Timing format: ti:delay,loopDuration,repeatFlag
-            // repeatFlag can be 'r' or 'e' (these control both animation AND gaugeup)
             let repeatFlag = valueParts[2] || ''
             let gaugeupFlag = ''
+            let audioMode = ''
+            let customGaugeup = false
+            let customGaugeupRepeat = false
+            let customGaugeupR2 = false
+            let animationDelay = false
             
-            // If flag is r or e, it's used for both animation and gaugeup
+            // Parse all flag types
             if (repeatFlag === 'r' || repeatFlag === 'e') {
               gaugeupFlag = repeatFlag
-              // Keep repeatFlag as-is for animation alternation
+            } else if (repeatFlag === 'm') {
+              audioMode = 'm'
+            } else if (repeatFlag === 's') {
+              customGaugeup = true
+            } else if (repeatFlag === 'x') {
+              gaugeupFlag = 'x'
+              customGaugeupRepeat = true
+            } else if (repeatFlag === 'r2') {
+              gaugeupFlag = 'r2'
+              customGaugeupR2 = true
+            } else if (repeatFlag === 'g') {
+              animationDelay = true
             }
             
             timingConfig = {
               delay: parseFloat(valueParts[0]) || 0,
               loopDuration: parseFloat(valueParts[1]) || 0,
               repeatFlag: repeatFlag,
-              gaugeupFlag: gaugeupFlag
+              gaugeupFlag: gaugeupFlag,
+              audioMode: audioMode,
+              customGaugeup: customGaugeup,
+              customGaugeupRepeat: customGaugeupRepeat,
+              customGaugeupR2: customGaugeupR2,
+              animationDelay: animationDelay
             }
           } else {
             // Zoom format: co/sc/fb/a:zoom,offsetX,offsetY[,delay,loopDuration,repeatFlag]
@@ -99,17 +122,31 @@ const convertL2dData = (groups) => {
         let repeatFlag = valueParts[2] || ''
         let gaugeupFlag = ''
         let audioMode = ''  // 'm' for ramping mode
-        let customGaugeup = false  // 's' for custom character gaugeup
+        let customGaugeup = false  // 's' for custom character gaugeup (plays once)
+        let customGaugeupRepeat = false  // 'x' for custom character gaugeup (repeats every cycle)
+        let customGaugeupR2 = false  // 'r2' for custom character gaugeup + max (repeats like r)
+        let animationDelay = false  // 'g' for extra 0.1s animation delay
         
         // r and e are gaugeup flags
         // m is audio ramping mode
-        // s is custom character gaugeup
+        // s is custom character gaugeup (once only)
+        // x is custom character gaugeup (repeats every cycle like e)
+        // r2 is custom character gaugeup + max (repeats like r but uses custom files)
+        // g is animation delay (0.1s extra)
         if (repeatFlag === 'r' || repeatFlag === 'e') {
           gaugeupFlag = repeatFlag
         } else if (repeatFlag === 'm') {
           audioMode = 'm'
         } else if (repeatFlag === 's') {
           customGaugeup = true
+        } else if (repeatFlag === 'x') {
+          gaugeupFlag = 'x'  // Set gaugeupFlag so playGaugeUp is true
+          customGaugeupRepeat = true
+        } else if (repeatFlag === 'r2') {
+          gaugeupFlag = 'r2'  // Set gaugeupFlag so playGaugeUp is true
+          customGaugeupR2 = true
+        } else if (repeatFlag === 'g') {
+          animationDelay = true
         }
         
         obj.timing = {
@@ -118,7 +155,10 @@ const convertL2dData = (groups) => {
           repeatFlag: repeatFlag,
           gaugeupFlag: gaugeupFlag,
           audioMode: audioMode,
-          customGaugeup: customGaugeup
+          customGaugeup: customGaugeup,
+          customGaugeupRepeat: customGaugeupRepeat,
+          customGaugeupR2: customGaugeupR2,
+          animationDelay: animationDelay
         }
       }
       
@@ -170,8 +210,8 @@ const l2dGroups = {
     ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,20', 'sg'],
     ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5', 'co:0.45,-100,10'],
     ['c271_02', 'Noir Baseball Cheerleader', '', 'co:0.4,-160'],
-    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,60,10', 'sr'],
-    ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50|co:0.5,60,-15'],
+    ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,0,10', 'sr'],
+    ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50|co:0.5,0,-15'],
   ],
 
   'A.C.P.U.': [
@@ -287,11 +327,12 @@ const l2dGroups = {
     ['c017', 'Anis: Star', 'ac:2o5,4o5|re:2o5', 'fb:0.23,0,-50|sc:0.3,0,200'],
     ['c017_01', 'Anis: Starlight', 'ac:1o5,3o8', 'fb:0.26,0,-80|sc:0.27,60,-50'],
     ['c017_02', 'Anis: Star T.T.STAR', 'ac:1o1,6d3,7d5', 'fb:0.21'],
-    ['c018', 'Neon: Vision Eye', 'ac:2o5,3o4,4o6,6d35o2,7o3|re:2o5', 'fb:0.23|sc:0.25'],
-    ['c018_01', 'Neon: Vision z', '', 'fb:0.22,120'],
-    ['c019', 'Modernia', '', 'fb:0.23,60,-10|sc:0.35,0,30'],
-    ['c019_01', 'Modernia Wedding', '', 'fb:0.24,0,-40|sc:0.6,0,-30'],
-    ['c989', 'Rapi: Red'],
+    ['c018', 'Neon: Vision Eye', 'ac:2o5,3o4,4o6,6d35o2,7o3|re:2o5', 'fb:0.23|sc:0.25|co:0.65,-60,-60', 'xrl'],
+    ['c018_01', 'Neon: Vision Eye Dear Grace', 'ac:1d3,2d13,3d5,3o12', 'fb:0.22,120|co:0.54,-200,-60'],
+    ['c019', 'Modernia | Marian: Queen', 'ac:1d5,1o13,2o6,3o6|re:1d3,1o8,2o5', 'fb:0.23,20,-10|sc:0.35,0,30|co:0.62,-30,30', 'mg'],
+    ['c019_01', 'Modernia | Marian: Queen Last Affection', 'ac:1d3,2o9,4d3,4o7', 'fb:0.24,0,-40|sc:0.6,0,-30|co:0.59,-10,40'],
+    ['c986', 'Rapi Red Hood '],
+    ['c989', 'Rapi: Red Hood Outdated'],
     ['c990', 'Rapi: Minor'],
     ['c992', 'Rapi: Child'],
     ['c994', 'Rapi: Origin'],
@@ -362,8 +403,15 @@ const l2dGroups = {
     ['c470', 'Red Hood', 'ac:4d13|re:1d3,2d3', 'fb:0.22,0,-10|sc:0.71,900'],
     ['c470_01', 'Red Hood Nonsense Red', '', 'sc:0.25'],
     ['c470_02', 'Red Hood Retro Days', 'ac:1d3,2d3,2o15', 'sc:0.25,-150,60'],
+    ['c471', 'Snow White: Heavy Arms', 'ac:1o7,2o5,3o8,4o8,5o5|re:1o3,2o8,3o6', 'fb:0.29,0,-70|sc:0.3,60,60|co:0.5,-160,-55', 'xsr'],
+    ['c471_01', 'Snow White: Heavy Arms Lacrimosa', 'ac:1d3,1o10,2o5,5d60', 'fb:0.25,30,8|sc:0.35,0,100|co:0.64,-30,-10'],
+    ['c472', 'Scarlet: Goddeath', 'ac:1d3,1o4,2o8,3o7|re:1o7,2o6', 'fb:0.24,150,-25|sc:0.26,60,-40|co:0.8', 'xar'],
+    ['c473', 'Rapunzel: Sanctuary', 'ac:1o3,2o6,4d3,4o13|re:1d3,1o9', 'fb:0.27,30,-50|sc:0.3,60'],
+    ['c474', 'Dorothy: Upgrade', '', 'fb:0.27,0,-110'],
     ['c943', 'Liliweiss'],
+    ['c943_01', 'Liliweiss: Queen'],
     ['c966', 'Rapunzel: Pure'],
+    ['c9027', 'Dorothy: Heretic'],
   ],
 
   'Hammer & Drill': [
@@ -409,6 +457,9 @@ const l2dGroups = {
     ['c231', 'Isabel', 'ac:2o3,3o8,4o8|re:2d3', 'fb:0.25'],
     ['c231_01', 'Isabel Honeymoon Party', 'ac:1d5,3d5,5d5', 'fb:0.21'],
     ['c232', 'Noah', 'ac:4d3'],
+    ['c235', 'Noah: Upgrade', '', 'fb:0.23,0,-30'],
+    ['c236', 'Papillon: Upgrade', '', 'fb:0.26,60,-40'],
+    ['c908', 'Papillon'],
   ],
 
   'Liaozhai': [
@@ -531,14 +582,10 @@ const l2dGroups = {
     ['c221', 'Rapunzel', 'ac:1o7,2o8|re:2o8', 'fb:0.23,0,-50|sc:0.22,0,30'],
     ['c222', 'Scarlet', 'ac:1d3,3d1,3o11,5o8', 'fb:0.23,0,-10|sc:0.24,0,50'],
     ['c222_01', 'Scarlet Racer\'s High', 'ac:1d3,1o18,3d3,6d3', 'fb:0.25|sc:1.0,0,550'],
-    ['c223', 'Nayuta', 'ac:1d3,2o8,3o8,5d8,6d1,7d1,8d3,9d1,10d1|re:1o3,2o5', 'fb:0.22,0,-20|sc:0.36,0,10'],
-    ['c223_01', 'Nayuta Wu Wei', 'ac:1d5,1o10,2o8,4o5', 'fb:0.32,0,-80|sc:0.35,80'],
-    ['c223_02', 'Nayuta wz', '', 'fb:0.22'],
+    ['c223', 'Nayuta', 'ac:1d3,2o8,3o8,5d8,6d1,7d1,8d3,9d1,10d1|re:1o3,2o5', 'fb:0.225,90,-30|sc:0.36,0,10|co:0.45,-120,30', 'ti:0,0.49,g'],
+    ['c223_01', 'Nayuta Wu Wei', 'ac:1d5,1o10,2o8,4o3', 'fb:0.33,0,-100|sc:0.35,80|co:0.46,-120,20'],
+    ['c223_02', 'Nayuta Trivisa', 'ac:1d5,1o5', 'fb:0.21|co:0.55,-65,40'],
     ['c227', 'Pinocchio', '', 'fb:0.24'],
-    ['c471', 'Snow White: Heavy Arms', 'ac:1o7,2o5,3o8,4o8,5o5|re:1o3,2o8,3o6', 'fb:0.29,0,-70|sc:0.3,60,60'],
-    ['c471_01', 'Snow White: Heavy', '', 'fb:0.25,30,10|sc:0.35,0,100'],
-    ['c472', 'Scarlet: Upgrade', '', 'fb:0.24,150,-20|sc:0.26,60,-40'],
-    ['c473', 'Rapunzel: Upgrade', '', 'fb:0.27,30,-50|sc:0.3,60'],
     ['c9008', 'Nayuta Clone', '', 'fb:0.22,0,-20'],
   ],
 
@@ -642,6 +689,7 @@ const l2dGroups = {
     ['c022', 'Signal', 'ac:1d3,2d5', 'fb:0.25,25,-80|sc:0.25,0,30'],
     ['c022_01', 'Signal Dramatic Chocolate', 'ac:4d5,5d3', 'fb:0.25,0,-80'],
     ['c023', 'Delta: Ninja Thief', 'ac:2d5,3o3|re:2d5', 'fb:0,60|sc:0.28,0,-20'],
+    ['c023_01', 'Delta: Ninja Thief Christmas'],
   ],
 
   'Triangle': [
@@ -716,7 +764,7 @@ const l2dGroups = {
     ['c905', 'Rian', '', 'fb:0,30'],
     ['c907', 'Shifty', 'ac:1d20,1o35,5d3', 'fb:0,20|sc:0.42,0,200'],
     ['c907_01', 'Shifty_old'],
-    ['c908', 'Papillon'],
+    ['c9041', 'Maria'],
   ],
 
   _CEO: [
@@ -736,6 +784,7 @@ const l2dGroups = {
     ['c914', 'Burningum'],
     ['c939', 'Doban'],
     ['c942', 'Andersen: Commander'],
+    ['c942_01', 'Andersen: Commander Age'],
     ['c961', 'Oswald'],
     ['c961_01', 'Oswald Casual'],
   ],
@@ -746,7 +795,7 @@ const l2dGroups = {
   ],
 
   _Heretic: [
-    ['c013', 'Modernia: Marian', 're:1d3,2d2', 'sc:0.25,0,60'],
+    ['c013', 'Modernia: Maria-n', 're:1d3,2d2', 'sc:0.25,0,60'],
     ['c260', 'Modernia', 'ac:1d3,2d38|re:1o5,2o8,3o8', 'sc:0.23,30,-10'],
     ['c260_01', 'Modernia First Affection', 'ac:2d3', 'fb:0.23,0,35|sc:0.21'],
     ['c260_02', 'Modernia Second Affection', 'ac:2o8,3o6', 'fb:0.22,0,10|sc:0.34,30,160'],
@@ -875,7 +924,6 @@ const l2dGroups = {
     ['ce009_enemy_phantom', 'Smol: Phantom'],
     ['ce009_enemy_poli', 'Smol: Poli'],
     ['ce009_enemy_quency', 'Smol: Quency'],
-    ['smol_anis', 'Smol: Anis'],
     ['smol_ade', 'Smol: Ade'],
     ['smol_anchor', 'Smol: Anchor'],
     ['smol_anchor_pirate', 'Smol: Anchor Pirate'],
@@ -888,9 +936,7 @@ const l2dGroups = {
     ['smol_mast', 'Smol: Mast'],
     ['smol_mast_pirate', 'Smol: Mast Pirate'],
     ['smol_mpriv', 'Smol: Maid Privaty'],
-    ['smol_mint', 'Smol: Mint'],
     ['smol_pepper', 'Smol: Pepper'],
-    ['smol_prika', 'Smol: Prika'],
     ['smol_ram', 'Smol: Ram'],
     ['smol_rapi', 'Smol: Rapi'],
     ['smol_rem', 'Smol: Rem'],
@@ -909,6 +955,15 @@ const l2dGroups = {
     ['tcr_monster_normal_4', 'Smol: Mob 4', '', 'fb:0,40'],
     ['tcr_monster_normal_5', 'Smol: Mob 5', '', 'fb:0,40'],
     ['tcr_monster_soda', 'Smol: Soda', '', 'fb:0,60'],
+    ['tts_c017_02', 'tts Anis'],
+    ['tts_c322', 'tts Marciana'],
+    ['tts_c450_03', 'tts Naga'],
+    ['tts_c451_03', 'tts Tia'],
+    ['tts_c600', 'tts Mint'],
+    ['tts_c601', 'tts Prika'],
+    ['tts_c850', 'tts EVE'],
+    ['tts_c851', 'tts Raven'],
+    ['tts_c852', 'tts Lily'],
   ],
 
   '__Collab Airborne Squad': [
@@ -1109,6 +1164,9 @@ const l2dGroups = {
     ['greatvillainunion', 'Great Villain Union', '', 'fb:0.29,0,80'],
     ['coinrushshowdown', 'Coin Rush Showdown', '', 'fb:0.29,100'],
     ['littlewitchtrick', 'Little Witch Trick', '', 'fb:0.32'],
+    ['marian_01', 'MARIA-n 1', '', 'fb:0.4,-60,-20'],
+    ['marian_16_3', 'MARIA-n 2'],
+    ['fadingaffection_01', 'MARIA-n 3'],
   ],
 
   '__Story': [
@@ -1166,6 +1224,7 @@ const voiceGroupOverrides = {
   'c010': ['c010_01', 'c010_02', 'c010_03'],
   'c011': ['c011_01'],
   'c016': ['c016_03'],
+  'c018': ['c018_01'],
   'c022': ['c022_01'],
   'c030': ['c030_01', 'c030_02'],
   'c032': ['c032_01'],
@@ -1228,6 +1287,8 @@ const specialClickAnimations = {
   'c011': ['expression_0'],
   'c016_01': ['expression_1'],
   'c227': ['smile'],
+  'c235': ['surprise'],
+  'c236': ['surprise'],
   'c263': ['surprise'],
   'c281_98': ['angry'],
   'c282_01': ['expression_1'],
@@ -1237,12 +1298,12 @@ const specialClickAnimations = {
   'c412_01': ['expression_0'],
   'c440': ['shy'],
   'c472': ['expression_0'],
+  'c474': ['go_2'],
   'c480': ['special'],
   'c481': ['shy'],
   'c490': ['smile'],
   'c491': ['angry'],
   'c513_03': ['expression_0'],
-  'c530': ['angry2'],
   'c531': ['delight'],
   'c560': ['special'],
   'c561': ['delight'],
@@ -1268,6 +1329,7 @@ const specialClickAnimations = {
   'c939': ['delight'],
   'c940': ['sad'],
   'c942': ['angry'],
+  'c942_01': ['surprise'],
   'c943': ['surprise'],
   'c944': ['special_02'],
   'c961': ['angry'],
@@ -1300,6 +1362,7 @@ const specialClickAnimations = {
   'c9023': ['pain'],
   'c9024': ['delight'],
   'c9025': ['delight'],
+  'c9027': ['angry'],
   'c9028': ['special'],
   'c9029': ['delight'],
   'c9030': ['delight'],
@@ -1307,6 +1370,7 @@ const specialClickAnimations = {
   'c9032': ['smile'],
   'c9038': ['special'],
   'c9039': ['special'],
+  'c9041': ['worry'],
   'c9042': ['smile'],
   'ce009_char_01': ['down_move'],
   'ce009_char_02': ['down_move'],
@@ -1387,6 +1451,8 @@ export const characterSkins = {
   c223_01: 'part_1',
   c223_02: 'part_1',
   c233: 'part_1',
+  c471: 'part_2',
+  c471_01: 'part_2',
   c570: 'part_0',
 }
 
@@ -1400,6 +1466,8 @@ export const characterFullbodySkins = {
 export const characterDefaultAnimations = {
   mbg004_appearance: 'mbg004_appearance',
   c472: 'idle_02',
+  c474: 'idle_2',
+  c943_01: 'etc',
   c944: 'special_02',
   c994: 'idle_02', 
   c996: 'idle_02',
@@ -1418,9 +1486,6 @@ export const characterDefaultAnimations = {
   smol_mast_pirate: 'idle_front',
   smol_anchor_pirate: 'idle_front',
   smol_sin_pirate: 'idle_front',
-  smol_anis: 'pose_idle',
-  smol_prika: 'pose_idle',
-  smol_mint: 'pose_idle',
   ce009_char_01: 'down_idle',
   ce009_char_02: 'down_idle',
   ce009_char_03: 'down_idle',
@@ -1443,6 +1508,15 @@ export const characterDefaultAnimations = {
   tcr_monster_normal_4: 'move',
   tcr_monster_normal_5: 'move',
   tcr_monster_soda: 'move',
+  tts_c017_02: 'pose_idle',
+  tts_c322: 'pose_idle',
+  tts_c450_03: 'pose_idle',
+  tts_c451_03: 'pose_idle',
+  tts_c600: 'pose_idle',
+  tts_c601: 'pose_idle',
+  tts_c850: 'pose_idle',
+  tts_c851: 'pose_idle',
+  tts_c852: 'pose_idle',
 }
 
 //skillcut special default motion other than "idle"
@@ -1776,7 +1850,18 @@ const charactersWithDualLayer = {
 }
 
 const l2dData = convertL2dData(l2dGroups)
-const customZoomSettings = Object.fromEntries(l2dData.filter(c => c.zoom).map(c => [c.id, c.zoom]))
+
+// Deep copy zoom settings to prevent variants from sharing references
+const deepCopyZoom = (zoom) => {
+  if (!zoom) return undefined
+  const copy = {}
+  for (const [pose, config] of Object.entries(zoom)) {
+    copy[pose] = { ...config }
+  }
+  return copy
+}
+
+const customZoomSettings = Object.fromEntries(l2dData.filter(c => c.zoom).map(c => [c.id, deepCopyZoom(c.zoom)]))
 
 //action overlap or delay
 const actionSoundConfig = {}

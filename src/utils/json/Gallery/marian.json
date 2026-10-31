@@ -1,0 +1,460 @@
+{
+  "path": "marian/",
+  "type": "large",
+  "id": "marian",
+  "title": "MARIA-n",
+  "content": [
+    {
+      "name": "_01.png",
+      "text": ""
+    },
+    {
+      "name": "_02.png",
+      "text": ""
+    },
+    {
+      "name": "_03.png",
+      "text": ""
+    },
+    {
+      "name": "_04.png",
+      "text": ""
+    },
+    {
+      "name": "_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_03_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_03_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_06_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_07_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_07_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_07_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_11_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_11_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_11_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_12.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_13_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_13_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_13_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_13_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_13_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_6.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_7.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_8.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_9.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_12.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_14_13.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_15_6.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_16_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Marian_16_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_CorruptionEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_DeathEnd_12.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_HiddenEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_1_TrueEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_CorruptionEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_CorruptionEnd_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_CorruptionEnd_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_CorruptionEnd_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_CorruptionEnd_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_DeathEnd_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_HiddenEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_2_TrueEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_DeathEnd_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_FadingAffection_3_TrueEnd_01.png",
+      "text": ""
+    }
+  ]
+}
