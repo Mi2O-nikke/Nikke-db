@@ -61,6 +61,7 @@ let customGaugeupMode = false  // Track if using custom character gaugeup (s fla
 let customGaugeupRepeatMode = false  // Track if using custom character gaugeup that repeats (x flag)
 let customGaugeupR2Mode = false  // Track if using custom character gaugeup + max (r2 flag)
 let animationDelayMode = false  // Track if animation should have 0.1s extra delay (g flag)
+let isFirePlayToCompletion = false  // Track if fire should play until end (sr tag)
 let customGaugeupPlayed = false  // Track if custom gaugeup has already played (s flag)
 let gaugeupPlayedImmediately = false  // Track if gaugeup was played immediately on click (x flag with delay)
 let rampingFireTimeouts: NodeJS.Timeout[] = []  // Track ramping fire timeouts so we can clear them
@@ -371,6 +372,11 @@ const handleActionStart = async (e?: MouseEvent) => {
       customGaugeupRepeatMode = charConfig?.timing?.customGaugeupRepeat || false
       customGaugeupR2Mode = charConfig?.timing?.customGaugeupR2 || false
       animationDelayMode = charConfig?.timing?.animationDelay || false
+      
+      // Check if sr/rl/xsr/xrl tags - fire should play to completion
+      // sr (r|hit), rl (e|hit), xsr (r2), xrl (x)
+      const repeatFlag = charConfig?.timing?.repeatFlag || ''
+      isFirePlayToCompletion = ((repeatFlag === 'r' || repeatFlag === 'e') && useAimHit) || (repeatFlag === 'r2') || (repeatFlag === 'x')
     
       
       if (hasToAim) {
@@ -1589,17 +1595,17 @@ const playRampingFireSequence = (characterId: string, animationType: string, loo
     waitTime -= stepSize
   }
   
-  // After last fire (fire 5), add fire 6 playing 5 times sequentially with 50ms spacing
-  // Fire 6 at 1400ms, 1450ms, 1500ms, 1550ms, 1600ms
-  const fire6StartTiming = cumulativeTime  // Start right after fire 5
-  const fire6Interval = 50  // 50ms between each fire 6
+  // After last fire (fire 5), add fire 6 playing 5 times sequentially with 100ms spacing
+  // Fire 6 at 1500ms, 1600ms, 1700ms, 1800ms, 1900ms
+  const fire6StartTiming = 1500  // Start at 1500ms
+  const fire6Interval = 100  // 100ms between each fire 6
   
   for (let i = 0; i < 5; i++) {
     rampTimings.push(fire6StartTiming + (i * fire6Interval))
   }
   
   // Total ramping duration (when to start fire_loop) - at the same time as last fire 6
-  const totalRampingDuration = fire6StartTiming + (4 * fire6Interval)  // Same time as fire 6 #5 (1600ms)
+  const totalRampingDuration = fire6StartTiming + (4 * fire6Interval)  // Same time as fire 6 #5 (1900ms)
   
   rampingFireTimeouts = []  // Clear any previous timeouts
   
@@ -1894,7 +1900,8 @@ const stopReloadFxOnly = () => {
   }
   
   // Also stop fire sound when clicking (fire FX should stop)
-  if (currentAimFireAudio) {
+  // UNLESS sr tag is active - then let fire play to completion
+  if (currentAimFireAudio && !isFirePlayToCompletion) {
     currentAimFireAudio.pause()
     currentAimFireAudio.currentTime = 0
     currentAimFireAudio.src = ''
@@ -2257,26 +2264,31 @@ const playSkillcutSound = async () => {
     const baseCharMatch = charId.match(/^(.+?)_(\d+|0[0-9a-z]+|old|80)$/)
     const baseCharId = baseCharMatch ? baseCharMatch[1] : charId
     
-    // First try the character itself
-    const selfPath = soundType === 'main' ? `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg` : `/assets/l2d/${charId}/voice/fx/${charId}_ult_cutscene.ogg`
-    
-    // If this is a variant, check if it has its own skill voice file
-    if (baseCharId !== charId) {
-      try {
-        const response = await fetch(selfPath, { method: 'HEAD' })
-        if (response.ok) {
-          return selfPath // Has its own file, use it
+    // For main sound (Ult_Skill_1), try the variant first, then fallback to base
+    if (soundType === 'main') {
+      const selfPath = `/assets/l2d/${charId}/voice/${charId}_Ult_Skill_1.ogg`
+      
+      if (baseCharId !== charId) {
+        try {
+          const response = await fetch(selfPath, { method: 'HEAD' })
+          if (response.ok) {
+            return selfPath // Has its own file, use it
+          }
+        } catch (e) {
+          // File doesn't exist, will fall back below
         }
-      } catch (e) {
-        // File doesn't exist, will fall back below
+        
+        // Doesn't have own file, use base character's
+        return `/assets/l2d/${baseCharId}/voice/${baseCharId}_Ult_Skill_1.ogg`
       }
       
-      // Doesn't have own file, use base character's
-      const basePath = soundType === 'main' ? `/assets/l2d/${baseCharId}/voice/${baseCharId}_Ult_Skill_1.ogg` : `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_ult_cutscene.ogg`
-      return basePath
+      return selfPath
     }
     
-    return selfPath
+    // For overlay sound (ult_cutscene), always use base character's FX
+    // FX files are shared and stored only in the base character's folder
+    const baseFxPath = `/assets/l2d/${baseCharId}/voice/fx/${baseCharId}_ult_cutscene.ogg`
+    return baseFxPath
   }
 
   // Play main sound (Ult_Skill_1) with fallback

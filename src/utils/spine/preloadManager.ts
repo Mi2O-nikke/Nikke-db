@@ -389,19 +389,13 @@ const preloadVoiceFiles = async (charId: string, audioMode: string = '', gaugeup
  * Variant: c270_01_00.skel, c270_01_00.atlas, c270_01_00.png
  */
 export const preloadFullbodyModeAssets = async (charId: string, includeVoice: boolean = true, voiceGroupOverrides?: any): Promise<void> => {
-  console.log(`[preloadFullbodyModeAssets] Called with charId=${charId}, includeVoice=${includeVoice}`)
-  
   // ALWAYS delete old promise - don't reuse them
   if (ongoingPreloads[charId]) {
-    console.log(`[preloadFullbodyModeAssets] Deleting old promise for ${charId}`)
     delete ongoingPreloads[charId]
   }
   
   const preloadPromise = (async () => {
     try {
-      console.log(`[preloadFullbodyModeAssets] Starting preload for ${charId}`)
-      const startTime = performance.now()
-
       // Load fullbody skeleton + texture in parallel
       // Fullbody files are in root folder with _00 suffix
       const fbPromises = [
@@ -420,26 +414,15 @@ export const preloadFullbodyModeAssets = async (charId: string, includeVoice: bo
       ]
 
       // Wait for all fullbody files to load
-      console.log(`[preloadFullbodyModeAssets] Waiting for skeleton files`)
       await Promise.all(fbPromises)
-
-      const skelTime = performance.now() - startTime
-      console.log(`[preloadFullbodyModeAssets] Skeleton files loaded in ${skelTime.toFixed(0)}ms`)
 
       // Preload voice files - WAIT for them to complete
       if (includeVoice) {
-        console.log(`[preloadFullbodyModeAssets] Starting voice file preload for ${charId}`)
         await preloadFullbodyVoiceFiles(charId, voiceGroupOverrides)
-        console.log(`[preloadFullbodyModeAssets] Voice files preload complete`)
       }
-
-      const totalTime = performance.now() - startTime
-      console.log(`[preloadFullbodyModeAssets] Total preload time: ${totalTime.toFixed(0)}ms`)
     } catch (error) {
-      console.error(`[preloadFullbodyModeAssets] Error: ${error}`)
       throw error
     } finally {
-      console.log(`[preloadFullbodyModeAssets] Clearing cache for ${charId}`)
       delete ongoingPreloads[charId]
     }
   })()
