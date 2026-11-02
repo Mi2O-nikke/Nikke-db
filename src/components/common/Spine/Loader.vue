@@ -375,7 +375,9 @@ const handleActionStart = async (e?: MouseEvent) => {
       customGaugeupR2Mode = charConfig?.timing?.customGaugeupR2 || false
       animationDelayMode = charConfig?.timing?.animationDelay || false
       
-      // Check if sr/rl/xsr/xrl tags - fire should play to completion
+      // Note: Bonus animations (aim_fire_hair, aim_fire_hip) are now automatically played for all characters
+      // so no special mg tag handling needed anymore
+      
       // sr (r|hit), rl (e|hit), xsr (r2), xrl (x)
       const repeatFlag = charConfig?.timing?.repeatFlag || ''
       isFirePlayToCompletion = ((repeatFlag === 'r' || repeatFlag === 'e') && useAimHit) || (repeatFlag === 'r2') || (repeatFlag === 'x')
@@ -451,6 +453,9 @@ const handleActionStart = async (e?: MouseEvent) => {
               // Add animation delay on first call if g flag is set
               const initialAnimDelay = animationDelayMode ? 0.1 : 0
               setTimeout(loopAnimation, (toAimDuration + initialAnimDelay) * 1000)
+              
+              // Also start bonus animation loops for this path
+              setTimeout(() => startBonusAnimationLoops(aimState), (toAimDuration + initialAnimDelay) * 1000)
             }
           }
           
@@ -506,10 +511,14 @@ const handleActionStart = async (e?: MouseEvent) => {
                 setTimeout(() => {
                   if (isAimHolding) {
                     aimState.setAnimation(0, animToPlay, false)
+                    // Play all bonus animations that exist
+                    playBonusAnimations(aimState, animToPlay)
                   }
                 }, animDelay * 1000)
               } else {
                 aimState.setAnimation(0, animToPlay, false)
+                // Play all bonus animations that exist
+                playBonusAnimations(aimState, animToPlay)
               }
               
               // Play voice for this cycle
@@ -542,7 +551,8 @@ const handleActionStart = async (e?: MouseEvent) => {
                     playRampingFireSequence(charId, targetAnim, loopDuration)
                     
                     // Also sync animation with audio ramping timings
-                    playRampingAnimationSequence(aimState, targetAnim, loopDuration)
+                    // Pass 1900ms as the start time for animation loop (when fire_loop begins)
+                    playRampingAnimationSequence(aimState, targetAnim, loopDuration, 1900)
                   } else if (currentAudioMode !== 'm') {
                     // Normal fire mode (not ramping)
                     setTimeout(() => {
@@ -597,12 +607,16 @@ const handleActionStart = async (e?: MouseEvent) => {
               const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
               const toAimDuration = toAimAnim?.duration || 0.5
               setTimeout(startLooping, toAimDuration * 1000)
+              // Also start bonus animation loops
+              setTimeout(() => startBonusAnimationLoops(aimState), toAimDuration * 1000)
             } else {
               // For normal case, start after to_aim finishes
               const toAimAnim = aimAnimations.find((a: any) => a.name === 'to_aim')
               const toAimDuration = toAimAnim?.duration || 0.5
               // Start loop after to_aim, delay will be handled by the loop on first cycle
               setTimeout(startLooping, toAimDuration * 1000)
+              // Also start bonus animation loops
+              setTimeout(() => startBonusAnimationLoops(aimState), toAimDuration * 1000)
             }
           } else {
             // No loop duration set, just loop normally
@@ -620,6 +634,8 @@ const handleActionStart = async (e?: MouseEvent) => {
         }
         aimState.setAnimation(0, targetAnim, false, delay)
         aimState.addAnimation(0, targetAnim, true, loopDuration)  // loop with duration delay
+        // Also start bonus animation loops
+        startBonusAnimationLoops(aimState)
       } else {
       }
       
@@ -1560,11 +1576,66 @@ const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onCo
   tryCustomThenGeneric()
 }
 
-const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDuration: number) => {
+// Helper function to play bonus animations (aim_fire_hair only)
+const playBonusAnimations = (aimState: any, baseAnim: string) => {
+  if (!aimState) return
+  
+  // Only play aim_fire_hair
+  const bonusAnimName = 'aim_fire_hair'
+  const trackIndex = 1  // Track 1
+  
+  if (aimState.data.skeletonData.animations.some((a: any) => a.name === bonusAnimName)) {
+    // Use addAnimation instead of setAnimation to chain without overwriting
+    aimState.addAnimation(trackIndex, bonusAnimName, true, 0)
+  }
+}
+
+// Helper function to continuously loop bonus animations (aim_fire_hair only)
+const startBonusAnimationLoops = (aimState: any) => {
+  if (!aimState || !isAimHolding) return
+  
+  const bonusAnimName = 'aim_fire_hair'
+  const trackIndex = 1
+  let bonusLoopTimeout: NodeJS.Timeout | null = null
+  
+  // Check if animation exists
+  if (!aimState.data.skeletonData.animations.some((a: any) => a.name === bonusAnimName)) {
+    return  // Animation doesn't exist, skip
+  }
+  
+  const bonusAnimObj = aimState.data.skeletonData.animations.find((a: any) => a.name === bonusAnimName)
+  const bonusAnimDuration = bonusAnimObj?.duration || 0.3
+  
+  const loopBonusAnim = () => {
+    if (!isAimHolding) {
+      if (bonusLoopTimeout) clearTimeout(bonusLoopTimeout)
+      return
+    }
+    
+    // Use addAnimation to chain animations on the track
+    aimState.addAnimation(trackIndex, bonusAnimName, false, 0)
+    bonusLoopTimeout = setTimeout(loopBonusAnim, bonusAnimDuration * 1000)
+  }
+  
+  // Start the loop immediately
+  loopBonusAnim()
+}
+
+const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDuration: number, startLoopTime: number = 0) => {
   // Sync animation with audio ramping timings
   const stepSize = 0.1
   
-  // Calculate animation restart timings to match audio
+  // Detect bonus animations (aim_fire_hair and aim_fire_hip only)
+  const bonusAnimations: string[] = []
+  const bonusAnimNames = ['aim_fire_hair', 'aim_fire_hip']
+  
+  bonusAnimNames.forEach((bonusName) => {
+    if (aimState.data.skeletonData.animations.some((a: any) => a.name === bonusName)) {
+      bonusAnimations.push(bonusName)
+    }
+  })
+  
+  // Calculate animation restart timings to match audio (ramping phase only)
   let cumulativeTime = 0
   let waitTime = loopDuration
   
@@ -1574,6 +1645,12 @@ const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDur
     const timeout = setTimeout(() => {
       if (!isAimHolding) return
       aimState.setAnimation(0, targetAnim, false)
+      // On first timing, start all bonus animations
+      if (timing === 0) {
+        bonusAnimations.forEach((bonusAnim, trackIndex) => {
+          aimState.setAnimation(trackIndex + 1, bonusAnim, false)
+        })
+      }
     }, timing)
     
     rampingFireTimeouts.push(timeout)
@@ -1582,25 +1659,60 @@ const playRampingAnimationSequence = (aimState: any, targetAnim: string, loopDur
   }
   
   // After ramping finishes, start continuous loop based on animDuration
-  const loopStartTime = cumulativeTime  // Start right after last ramping fire (1400ms)
+  // Use provided startLoopTime if given (from playRampingFireSequence), otherwise use cumulativeTime
+  const loopStartTime = startLoopTime > 0 ? startLoopTime : cumulativeTime
   
   // Get animation duration to know how often to restart
   const targetAnimObj = aimState.data.skeletonData.animations.find((a: any) => a.name === targetAnim)
   const animDuration = targetAnimObj?.duration || 0.3  // Default ~300ms per loop
   
+  // Get bonus animation durations
+  const bonusAnimDurations: { [key: string]: number } = {}
+  bonusAnimations.forEach(bonusAnim => {
+    const bonusAnimObj = aimState.data.skeletonData.animations.find((a: any) => a.name === bonusAnim)
+    bonusAnimDurations[bonusAnim] = bonusAnimObj?.duration || 0.3
+  })
+  
   let loopAnimTimeout: NodeJS.Timeout | null = null
+  const loopAnimTimeouts: { [key: string]: NodeJS.Timeout | null } = {}
+  
   const loopAnimation = () => {
     if (!isAimHolding) {
       if (loopAnimTimeout) clearTimeout(loopAnimTimeout)
+      Object.values(loopAnimTimeouts).forEach(timeout => {
+        if (timeout) clearTimeout(timeout)
+      })
       return
     }
     
+    // Keep restarting the main animation on a loop
     aimState.setAnimation(0, targetAnim, false)
     loopAnimTimeout = setTimeout(loopAnimation, animDuration * 1000)
   }
   
+  // Create loop functions for each bonus animation
+  const bonusLoopAnimations: { [key: string]: () => void } = {}
+  bonusAnimations.forEach((bonusAnim, trackIndex) => {
+    bonusLoopAnimations[bonusAnim] = () => {
+      if (!isAimHolding) {
+        if (loopAnimTimeouts[bonusAnim]) clearTimeout(loopAnimTimeouts[bonusAnim] as NodeJS.Timeout)
+        return
+      }
+      
+      aimState.setAnimation(trackIndex + 1, bonusAnim, false)
+      loopAnimTimeouts[bonusAnim] = setTimeout(bonusLoopAnimations[bonusAnim], bonusAnimDurations[bonusAnim] * 1000)
+    }
+  })
+  
+  // Start animation loops after ramping phase ends
   const loopStartTimeout = setTimeout(loopAnimation, loopStartTime)
   rampingFireTimeouts.push(loopStartTimeout)
+  
+  // Start all bonus animation loops
+  bonusAnimations.forEach((bonusAnim) => {
+    const bonusLoopStartTimeout = setTimeout(bonusLoopAnimations[bonusAnim], loopStartTime)
+    rampingFireTimeouts.push(bonusLoopStartTimeout)
+  })
 }
 
 const playRampingFireSequence = (characterId: string, animationType: string, loopDuration: number = 1) => {

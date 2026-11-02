@@ -268,25 +268,25 @@ const l2dGroups = {
   ],
 
   'Ark Rangers': [
-    ['c570', 'Ark Ranger Black', 'ac:4o8,6d14|re:2o5', '', 'ar'],
-    ['c570_99', 'Ark Ranger Black: Hood'],
+    ['c570', 'Ark Ranger Black', 'ac:4o8,6d14|re:2o5', 'fb:0.21,-30|co:0.38,-90', 'ar'],
+    ['c570_99', 'Ark Ranger Black: Hood', '', 'fb:0.205,55,10'],
     ['c571', 'Ark Ranger Red', '', 'fb:0.23,0,-40'],
-    ['c572', 'Ark Ranger Blue'],
+    ['c572', 'Ark Ranger Blue', '', 'fb:0.20,0,10'],
   ],
 
   'Best Seller': [
-    ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60'],
-    ['c580_01', 'Phantom Saint Thief', 'ac:3d5,4d58', 'sc:0.47,50,120'],
-    ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90'],
-    ['c582', 'Label', '', 'sc:0.3,0,50'],
-    ['c582_01', 'Label Occultist', 'ac:1o5,2o8,5d3,6d3', 'fb:0,-35,-15'],
-    ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10'],
+    ['c580', 'Phantom', 'ac:1d5,1o13,3d5|re:2o5,3d2', 'sc:0.25,0,-60|co:0.6,90', 'ar'],
+    ['c580_01', 'Phantom Saint Thief', 'ac:3d5,4d58', 'sc:0.47,50,120|co:0.63,85,0'],
+    ['c581', 'Arcana', 'ac:2o5,6o8|re:3d1', 'sc:0.23,0,90|co:0.35,-60,30', 'rl'],
+    ['c582', 'Label', '', 'fb:0.21,50|sc:0.3,0,50|co:0.43,-60', 'ar'],
+    ['c582_01', 'Label Occultist', 'ac:1o5,2o8,5d3,6d3', 'fb:0,15,-15'],
+    ['c583', 'Arcana: Fortune Mate', 'ac:1d5,1o13,3o5|re:2o8,4d3', 'sc:0.27,0,10|co:0.55,-20,30', 'sg'],
     ['favorite_c580', 'Phantom@Favorite', 'ac:1d3,1o10,2o8', 'fb:0.23,-60,60'],
   ],
 
   'Botanic Garden': [
-    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100'],
-    ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40'],
+    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100|co:0.45,0,30', 'mg'],
+    ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40|co:0.44,5,-15'],
     ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
     ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
     ['favorite_c411', 'Flora@Favorite', 'ac:2d3,2o5,4o5', 'fb:0.35,60,-30'],
@@ -1773,6 +1773,12 @@ const charactersWithDualLayer = {
     ]
   }, 
   'c570': {
+    layers: [
+      { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
+      { idle: 'idle_1', skillcut: '', zIndex: 0 },
+    ]
+  },
+  'c570_99': {
     layers: [
       { idle: 'idle_0', skillcut: 'skillcut_0', zIndex: 1 },
       { idle: 'idle_1', skillcut: '', zIndex: 0 },

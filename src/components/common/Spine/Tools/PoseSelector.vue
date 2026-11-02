@@ -28,7 +28,7 @@ import { globalParams } from '@/utils/enum/globalParams'
 const market = useMarket()
 
 // HIDE AIM BUTTON: Set to true to hide, false to show
-const hideAimButton = ref(true)
+const hideAimButton = ref(false)
 
 const poseAvailability = ref<Record<string, boolean>>({
   aim: true,
