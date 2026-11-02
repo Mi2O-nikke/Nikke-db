@@ -61,7 +61,9 @@ let customGaugeupMode = false  // Track if using custom character gaugeup (s fla
 let customGaugeupRepeatMode = false  // Track if using custom character gaugeup that repeats (x flag)
 let customGaugeupR2Mode = false  // Track if using custom character gaugeup + max (r2 flag)
 let animationDelayMode = false  // Track if animation should have 0.1s extra delay (g flag)
+let trimmedFireMode = false  // Track if fire should be trimmed to 0.15s while holding (a flag)
 let isFirePlayToCompletion = false  // Track if fire should play until end (sr tag)
+let trimmedFireTimeout: NodeJS.Timeout | null = null  // Track trimmed fire loop timeout
 let customGaugeupPlayed = false  // Track if custom gaugeup has already played (s flag)
 let gaugeupPlayedImmediately = false  // Track if gaugeup was played immediately on click (x flag with delay)
 let rampingFireTimeouts: NodeJS.Timeout[] = []  // Track ramping fire timeouts so we can clear them
@@ -377,6 +379,7 @@ const handleActionStart = async (e?: MouseEvent) => {
       // sr (r|hit), rl (e|hit), xsr (r2), xrl (x)
       const repeatFlag = charConfig?.timing?.repeatFlag || ''
       isFirePlayToCompletion = ((repeatFlag === 'r' || repeatFlag === 'e') && useAimHit) || (repeatFlag === 'r2') || (repeatFlag === 'x')
+      trimmedFireMode = charConfig?.timing?.trimmedFireMode || false
     
       
       if (hasToAim) {
@@ -793,6 +796,44 @@ const handleActionEnd = async () => {
   // Stop any aim sounds immediately when releasing
   stopAimSounds()
   
+  // If trimmed fire mode (a flag), clear the trim loop and play full fire
+  if (trimmedFireTimeout) {
+    clearTimeout(trimmedFireTimeout)
+    trimmedFireTimeout = null
+  }
+  
+  if (trimmedFireMode) {
+    const charId = market.live2d.current_id
+    const baseCharacterId = charId.split('_')[0]
+    const primaryPath = `/assets/l2d/${charId}/voice/fx/${charId}_fire.ogg`
+    const fallbackPath = baseCharacterId !== charId 
+      ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire.ogg`
+      : primaryPath
+    const soundPath = baseCharacterId !== charId ? fallbackPath : primaryPath
+    
+    const audio = new Audio()
+    audio.volume = 1.0
+    audio.src = soundPath
+    audio.play().catch(() => {})
+  }
+  
+  // Play echo sound if g flag is active (overlaps with reload)
+  if (animationDelayMode) {
+    const charId = market.live2d.current_id
+    const baseCharacterId = charId.split('_')[0]
+    const echoPath = `/assets/l2d/${charId}/voice/fx/${charId}_echo.ogg`
+    const echoFallback = baseCharacterId !== charId 
+      ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_echo.ogg`
+      : echoPath
+    
+    const echoAudio = new Audio()
+    echoAudio.volume = 1.0
+    echoAudio.src = baseCharacterId !== charId ? echoFallback : echoPath
+    echoAudio.play().catch((err) => {
+      // Echo not found, continue anyway
+    })
+  }
+  
   // Play fire_echo if in ramping audio mode
   if (currentAudioMode === 'm') {
     const charId = market.live2d.current_id
@@ -803,7 +844,7 @@ const handleActionEnd = async () => {
       : echoPath
     
     const echoAudio = new Audio()
-    echoAudio.volume = 0.5
+    echoAudio.volume = 1.0
     echoAudio.src = baseCharacterId !== charId ? echoFallback : echoPath
     echoAudio.play().catch((err) => {
     })
@@ -1407,7 +1448,7 @@ const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onCo
   if (customGaugeupMode) {
     const customGaugeUpPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_gaugeup.ogg`
     const audio = new Audio()
-    audio.volume = 0.5
+    audio.volume = 1.0
     audio.src = customGaugeUpPath
     currentAimGaugeUpAudio = audio
     allAimGaugeUpAudios.push(audio)
@@ -1575,7 +1616,7 @@ const playRampingFireSequence = (characterId: string, animationType: string, loo
     : spinPath
   
   const spinAudio = new Audio()
-  spinAudio.volume = 0.5
+  spinAudio.volume = 1.0
   spinAudio.src = baseCharacterId !== characterId ? spinFallback : spinPath
   spinAudio.play().catch((err) => {
   })
@@ -1614,7 +1655,7 @@ const playRampingFireSequence = (characterId: string, animationType: string, loo
       if (!isAimHolding) return
       
       const fireAudio = new Audio()
-      fireAudio.volume = 0.5
+      fireAudio.volume = 1.0
       const firePath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire.ogg`
       const fireFallback = baseCharacterId !== characterId 
         ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire.ogg`
@@ -1675,7 +1716,7 @@ const playRampingFireSequence = (characterId: string, animationType: string, loo
         }, (error) => {
           // Fallback to HTML5 Audio if Web Audio fails
           const loopAudio = new Audio()
-          loopAudio.volume = 0.5
+          loopAudio.volume = 1.0
           loopAudio.loop = true
           loopAudio.src = baseCharacterId !== characterId ? loopFallback : loopPath
           currentAimFireAudio = loopAudio
@@ -1691,6 +1732,45 @@ const playRampingFireSequence = (characterId: string, animationType: string, loo
 }
 
 const playAimFireSound = (characterId: string, animationType: string) => {
+  // If trimmed fire mode (a flag), play 0.1s loop while holding
+  if (trimmedFireMode && isAimHolding) {
+    const baseCharacterId = characterId.split('_')[0]
+    const primaryPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire.ogg`
+    const fallbackPath = baseCharacterId !== characterId 
+      ? `/assets/l2d/${baseCharacterId}/voice/fx/${baseCharacterId}_fire.ogg`
+      : primaryPath
+    const soundPath = baseCharacterId !== characterId ? fallbackPath : primaryPath
+    
+    // Clear any existing trimmed fire loop
+    if (trimmedFireTimeout) {
+      clearTimeout(trimmedFireTimeout)
+    }
+    
+    const playTrimmedFire = () => {
+      if (!isAimHolding) return
+      
+      // Stop any previous fire audio to prevent overlap
+      if (currentAimFireAudio) {
+        currentAimFireAudio.pause()
+        currentAimFireAudio.currentTime = 0
+      }
+      
+      const audio = new Audio()
+      audio.volume = 1.0
+      audio.src = soundPath
+      currentAimFireAudio = audio
+      
+      // Play audio
+      audio.play().catch(() => {})
+      
+      // Schedule next trimmed fire play after 0.1s
+      trimmedFireTimeout = setTimeout(playTrimmedFire, 100)
+    }
+    
+    playTrimmedFire()
+    return
+  }
+  
   // Voice is always "fire", regardless of animation type (aim_hit vs aim_fire)
   const baseCharacterId = characterId.split('_')[0]
   const primaryPath = `/assets/l2d/${characterId}/voice/fx/${characterId}_fire.ogg`
@@ -1699,7 +1779,7 @@ const playAimFireSound = (characterId: string, animationType: string) => {
     : primaryPath
   
   const audio = new Audio()
-  audio.volume = 0.5
+  audio.volume = 1.0
   currentAimFireAudio = audio
   
   // For variants, default to fallback (base character fire sound)

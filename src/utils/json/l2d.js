@@ -1,6 +1,6 @@
 const timingAliases = {
-  'smg': '',
-  'ar': 'ti:0,0.1',
+  'smg': '', //self timing adjust better with 'g' flag
+  'ar': 'ti:0,0.1,a',
   'sg': 'ti:0,0.7',
   'mg': 'ti:0,0.5,m',
   'xrl': 'ti:1,1,x',
@@ -125,6 +125,7 @@ const convertL2dData = (groups) => {
         let customGaugeupRepeat = false  // 'x' for custom character gaugeup (repeats every cycle)
         let customGaugeupR2 = false  // 'r2' for custom character gaugeup + max (repeats like r)
         let animationDelay = false  // 'g' for extra 0.1s animation delay
+        let trimmedFireMode = false  // 'a' for trimmed fire loop (0.15s while holding, full on release)
         
         // r and e are gaugeup flags
         // m is audio ramping mode
@@ -132,6 +133,7 @@ const convertL2dData = (groups) => {
         // x is custom character gaugeup (repeats every cycle like e)
         // r2 is custom character gaugeup + max (repeats like r but uses custom files)
         // g is animation delay (0.1s extra)
+        // a is trimmed fire mode (0.15s loop while holding, full on release)
         if (repeatFlag === 'r' || repeatFlag === 'e') {
           gaugeupFlag = repeatFlag
         } else if (repeatFlag === 'm') {
@@ -146,6 +148,8 @@ const convertL2dData = (groups) => {
           customGaugeupR2 = true
         } else if (repeatFlag === 'g') {
           animationDelay = true
+        } else if (repeatFlag === 'a') {
+          trimmedFireMode = true
         }
         
         obj.timing = {
@@ -157,7 +161,8 @@ const convertL2dData = (groups) => {
           customGaugeup: customGaugeup,
           customGaugeupRepeat: customGaugeupRepeat,
           customGaugeupR2: customGaugeupR2,
-          animationDelay: animationDelay
+          animationDelay: animationDelay,
+          trimmedFireMode: trimmedFireMode
         }
       }
       
@@ -217,7 +222,7 @@ const l2dGroups = {
     ['c030', 'Poli', 're:1d4,2d2', 'fb:0,80|sc:0.36,0,30|co:0.4,-40,40', 'sg'],
     ['c030_01', 'Poli Sweet Holic', '', 'fb:0,0'],
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8', 'fb:0,-30'],
-    ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60|co:0.35,-160', 'smg'],
+    ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60|co:0.35,-160', 'ti:0,0.55,g'],
     ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9', 'fb:0.22,0,-20'],
     ['c033', 'Quiry', 'ac:2d4|re:1d5,3d1', 'sc:0.27,0,150|co:0.4,-60,10', 'rl'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.26,30'],
@@ -263,7 +268,7 @@ const l2dGroups = {
   ],
 
   'Ark Rangers': [
-    ['c570', 'Ark Ranger Black', 'ac:6d12|re:2o5'],
+    ['c570', 'Ark Ranger Black', 'ac:4o8,6d14|re:2o5', '', 'ar'],
     ['c570_99', 'Ark Ranger Black: Hood'],
     ['c571', 'Ark Ranger Red', '', 'fb:0.23,0,-40'],
     ['c572', 'Ark Ranger Blue'],
