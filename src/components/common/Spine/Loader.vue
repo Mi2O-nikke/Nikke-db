@@ -491,48 +491,67 @@ const handleActionStart = async (e?: MouseEvent) => {
               // Determine which animation to play
               let animToPlay = targetAnim
               if (useAimHit && shouldAlternate) {
-                // First cycle: idle, then all subsequent: hit
-                animToPlay = isFirstCycle ? 'aim_idle' : 'aim_hit'
+                // For alternating with e flag: aim_idle loops, then aim_hit fires
+                // Even cycles = loop aim_idle, odd cycles = fire aim_hit
+                animToPlay = (cycleCount % 2 === 0) ? 'aim_idle' : 'aim_hit'
               }
               
               // Add delay on first cycle only - delay the animation start
               // If g flag is set, animation delay is always 0.1s (ignores configured delay)
+              // For alternating (e flag) with aim_idle: NO delay, start immediately
               // Otherwise, use configured delay
               let animDelay = 0
               if (isFirstCycle) {
                 if (animationDelayMode) {
                   animDelay = 0.1  // g flag always sets 0.1s
-                } else {
+                } else if (!(useAimHit && shouldAlternate && animToPlay === 'aim_idle')) {
+                  // Only apply delay if NOT aim_idle on alternating mode
                   animDelay = delay
                 }
+                // For aim_idle on alternating (e flag): animDelay stays 0, starts immediately
               }
               
               if (animDelay > 0) {
                 setTimeout(() => {
                   if (isAimHolding) {
-                    aimState.setAnimation(0, animToPlay, false)
+                    // For alternating with e flag: aim_idle loops, aim_hit plays once
+                    if (useAimHit && shouldAlternate && animToPlay === 'aim_idle') {
+                      // Loop aim_idle
+                      aimState.setAnimation(0, animToPlay, true)
+                    } else {
+                      // Play aim_hit (or other) without looping
+                      aimState.setAnimation(0, animToPlay, false)
+                    }
                     // Play all bonus animations that exist
                     playBonusAnimations(aimState, animToPlay)
                   }
                 }, animDelay * 1000)
               } else {
-                aimState.setAnimation(0, animToPlay, false)
+                // For alternating with e flag: aim_idle loops, aim_hit plays once
+                if (useAimHit && shouldAlternate && animToPlay === 'aim_idle') {
+                  // Loop aim_idle
+                  aimState.setAnimation(0, animToPlay, true)
+                } else {
+                  // Play aim_hit (or other) without looping
+                  aimState.setAnimation(0, animToPlay, false)
+                }
                 // Play all bonus animations that exist
                 playBonusAnimations(aimState, animToPlay)
               }
               
               // Play voice for this cycle
-              // Skip gaugeup on first cycle for non-alternating (already played immediately on click)
-              if (shouldPlaySounds) {
-                
-                if (playGaugeUp && isFirstCycle && shouldAlternate) {
-                  // For alternating (c272): play gaugeup on first cycle
-                  playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
-                    if (isAimHolding) {
-                      playAimFireSound(charId, targetAnim)
-                    }
-                  })
-                } else if (playGaugeUp && isFirstCycle && !shouldAlternate && currentGaugeupFlag !== '') {
+              // For alternating mode with e flag: gaugeup on aim_idle, fire on aim_hit
+              if (shouldAlternate && useAimHit) {
+                if (animToPlay === 'aim_idle') {
+                  // aim_idle cycle: play gaugeup + gaugeup_max (NO fire callback)
+                  playAimGaugeUpSound(charId, currentGaugeupFlag)
+                } else if (animToPlay === 'aim_hit') {
+                  // aim_hit cycle: play ONLY fire (NO gaugeup)
+                  playAimFireSound(charId, targetAnim)
+                }
+              } else if (shouldPlaySounds) {
+                // Original logic for non-alternating modes
+                if (playGaugeUp && isFirstCycle && !shouldAlternate && currentGaugeupFlag !== '') {
                   // For gaugeup flag (r/e/x) on first cycle: play gaugeup, fire will follow via callback
                   playAimGaugeUpSound(charId, currentGaugeupFlag, () => {
                     if (isAimHolding) {
@@ -564,8 +583,6 @@ const handleActionStart = async (e?: MouseEvent) => {
                   // If ramping mode and already started, don't do anything (fire_loop is playing)
                 } else if (playGaugeUp && !isFirstCycle) {
                   // For subsequent cycles: keep playing gaugeup if currentGaugeupFlag is set
-                  // EXCEPT: if customGaugeupMode (s flag), only play gaugeup once on first cycle
-                  // NOTE: customGaugeupRepeatMode (x flag) plays gaugeup every cycle (so don't skip)
                   if (customGaugeupMode && !customGaugeupRepeatMode) {
                     // Custom gaugeup mode (s flag): just play fire on subsequent cycles
                     playAimFireSound(charId, targetAnim)
@@ -582,16 +599,21 @@ const handleActionStart = async (e?: MouseEvent) => {
               
               cycleCount++
               
-              // Determine next cycle time
-              // If g flag is set, animation ALWAYS loops every 0.1s (not loopDuration)
+              // Determine next cycle time based on which animation just played
               let nextCycleTime = loopDuration
               if (animationDelayMode) {
                 nextCycleTime = 0.1  // g flag: animation always 0.1s
               } else if (shouldAlternate && useAimHit) {
-                // For alternating (c272): first cycle uses delay, then always use loopDuration
-                nextCycleTime = isFirstCycle ? delay : loopDuration
+                // For alternating: wait for the actual animation to finish
+                if (animToPlay === 'aim_idle') {
+                  // aim_idle loops for loopDuration
+                  nextCycleTime = loopDuration
+                } else if (animToPlay === 'aim_hit') {
+                  // aim_hit plays once - wait for its duration
+                  const targetAnimObj = aimAnimations.find((a: any) => a.name === 'aim_hit')
+                  nextCycleTime = targetAnimObj?.duration || 0.5
+                }
               } else {
-                // For non-alternating (c511): always use loopDuration after first cycle
                 nextCycleTime = loopDuration
               }
               isFirstCycle = false
@@ -1580,6 +1602,13 @@ const playAimGaugeUpSound = (characterId: string, gaugeupFlag: string = '', onCo
 const playBonusAnimations = (aimState: any, baseAnim: string) => {
   if (!aimState) return
   
+  const charId = market.live2d.current_id
+  
+  // Skip if character is in the skipBonusAnimationCharacters list from l2d.js
+  if (skipBonusAnimationCharacters.includes(charId)) {
+    return
+  }
+  
   // Only play aim_fire_hair
   const bonusAnimName = 'aim_fire_hair'
   const trackIndex = 1  // Track 1
@@ -1593,6 +1622,13 @@ const playBonusAnimations = (aimState: any, baseAnim: string) => {
 // Helper function to continuously loop bonus animations (aim_fire_hair only)
 const startBonusAnimationLoops = (aimState: any) => {
   if (!aimState || !isAimHolding) return
+  
+  const charId = market.live2d.current_id
+  
+  // Skip if character is in the skipBonusAnimationCharacters list from l2d.js
+  if (skipBonusAnimationCharacters.includes(charId)) {
+    return
+  }
   
   const bonusAnimName = 'aim_fire_hair'
   const trackIndex = 1
@@ -3774,7 +3810,7 @@ const isValidSkeletonFileResponse = (response: Response): boolean => {
   return true
 }
 
-import l2dData, { voiceMap, setCustomZoom, actionSoundConfig, reloadSoundConfig } from '@/utils/json/l2d.js'
+import l2dData, { voiceMap, setCustomZoom, actionSoundConfig, reloadSoundConfig, skipBonusAnimationCharacters } from '@/utils/json/l2d.js'
 
 let currentVoice = null as null | HTMLAudioElement
 let currentReloadSound = null as null | HTMLAudioElement

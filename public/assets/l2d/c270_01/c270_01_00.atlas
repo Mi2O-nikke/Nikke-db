@@ -405,12 +405,12 @@ r_finger_5
 bounds:361,1183,23,28
 r_fingers
 bounds:1269,1232,59,86
+r_hand_acc_0
+bounds:1640,1591,299,297
+rotate:270
 r_hand_acc_1
 bounds:757,49,193,420
 rotate:90
-r_hand_acc_1 복사
-bounds:1640,1591,299,297
-rotate:270
 r_hand_acc_2
 bounds:1345,596,92,209
 rotate:90

@@ -10,6 +10,8 @@ const timingAliases = {
   'sr': 'ti:1.3,1.3,r|hit',
 }
 
+
+
 const convertL2dData = (groups) => {
   const allCharacters = Object.entries(groups).flatMap(([group, characters]) => characters.map(([id, name, soundStr, zoomStr, timingStr]) => {
     // Expand timing aliases
@@ -211,9 +213,9 @@ const l2dGroups = {
     ['c270_01', 'Blanc White Rabbit', 'ac:3d15', 'co:0.4,-150,60'],
     ['c270_02', 'Blanc No.77 Batter', 'ac:3d5,3o12', 'co:0.6,30,45'],
     ['c270_03', 'Blanc Fortune Express', 'ac:1d5,1o11,2o1,4d10', 'sc:0.2|co:0.6,-5,60'],
-    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,20', 'sg'],
-    ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5', 'co:0.45,-100,10'],
-    ['c271_02', 'Noir Baseball Cheerleader', '', 'co:0.4,-160'],
+    ['c271', 'Noir', 'ac:2d5|re:4d2', 'sc:0.34,0,100|co:0.4,-120,40', 'sg'],
+    ['c271_01', 'Noir Black Rabbit', 'ac:3d5,5d5', 'co:0.46,-100,30'],
+    ['c271_02', 'Noir Baseball Cheerleader', '', 'co:0.42,-160,20'],
     ['c272', 'Rouge', 'ac:1d5|re:1d5,2d5', 'fb:0,50|sc:0.24,0,50|co:0.5,60,10', 'sr'],
     ['c272_01', 'Rouge Unlucky Rabbit', 'ac:2d10,3d3', 'fb:0.28,0,50|sc:0.24,0,50|co:0.5,60,-15'],
   ],
@@ -224,24 +226,24 @@ const l2dGroups = {
     ['c030_02', 'Poli Cheer Up Police', 'ac:2o5,4o8', 'fb:0,-30'],
     ['c032', 'Miranda', 'ac:1d5|re:2d2', 'sc:0.23,0,60|co:0.35,-160', 'ti:0,0.55,g'],
     ['c032_01', 'Miranda Thief of Justice', 'ac:1d5,1o9', 'fb:0.22,0,-20'],
-    ['c033', 'Quiry', 'ac:2d4|re:1d5,3d1', 'sc:0.27,0,150|co:0.4,-60,10', 'rl'],
+    ['c033', 'Quiry', 'ac:2d4|re:1d5,3d1', 'sc:0.27,0,150|co:0.4,-60,30', 'rl'],
     ['favorite_c030', 'Poli@Favorite', '', 'fb:0.26,30'],
     ['favorite_c032', 'Miranda@Favorite', 'ac:2o5', 'fb:0.32,60'],
   ],
 
   'Absolute': [
-    ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50|co:0.38,-170,10', 'mg'],
+    ['c090', 'Emma', 're:2d8', 'sc:0.3,0,50|co:0.38,-170,50', 'mg'],
     ['c090_01', 'Emma Color Me Red', 'ac:1d5,2o5'],
-    ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10', 'fb:0.205,30,10|co:0.37,-170,25'],
+    ['c090_02', 'Emma Office Therapy', 'ac:3d5,3o10', 'fb:0.205,30,10|co:0.37,-170,65'],
     ['c091', 'Vesti', 're:1d8,2d4', 'sc:0.23,0,100|co:0.32,-160,30', 'rl'],
     ['c091_01', 'Vesti Ark Mage', 'ac:1d5,1o15,2o5,3o7', 'fb:0.245,45,-70|co:0.39,-180,15'],
-    ['c092', 'Eunhwa', 'ac:1d5|re:3d5,4d3', 'fb:0.23,0,-50|sc:0.3,0,80|co:0.56,90,0', 'sr'],
+    ['c092', 'Eunhwa', 'ac:1d5|re:3d5,4d3', 'fb:0.23,0,-50|sc:0.3,0,80|co:0.56,90,35', 'sr'],
     ['c093', 'Emma: Tactical Upgrade', 're:2o8', 'fb:0.215,30|sc:0.28|co:0.58,60,30', 'mg'],
     ['c093_01', 'Emma: Tactical Upgrade Secret Therapy', '', 'fb:0.22|co:0.61,60,30'],
     ['c094', 'Vesti: Tactical Upgrade', 'ac:1d5,1o10,2o5,4o5|re:1o5,2o8', 'co:0.55,-20,20', 'rl'],
     ['c094_01', 'Vesti: Tactical Upgrade Pure Beginner', '', 'fb:0.223,-140,-20'],
-    ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|re:3d3|sc:0.3,60|co:0.5,-160,100', 'sr'],
-    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30|co:0.45,-220,110'],
+    ['c095', 'Eunhwa: Tactical Upgrade', 'ac:1d5,1o15,3o5|re:2o2', 'fb:0,0,30|re:3d3|sc:0.3,60|co:0.5,-160,125', 'sr'],
+    ['c095_01', 'Eunhwa: Tactical Upgrade Day Off', 'ac:2o9', 'fb:0,0,30|co:0.45,-220,135'],
   ],
 
   'Academia': [
@@ -251,9 +253,9 @@ const l2dGroups = {
   ],
 
   'Aegis': [
-    ['c350', 'Mast', 'ac:2o5|re:3d5', 'sc:0.25,0,50|co:0.51,-90,-20', 'ti:0,0.76,g'],
-    ['c350_01', 'Mast A Pirate\'s Heart', 'ac:3d5,5d10', 'co:0.5,-95,30'],
-    ['c350_02', 'Mast the Driver', '', 'co:0.55,-30'],
+    ['c350', 'Mast', 'ac:2o5|re:3d5', 'sc:0.25,0,50|co:0.51,-90,20', 'ti:0,0.76,g'],
+    ['c350_01', 'Mast A Pirate\'s Heart', 'ac:3d5,5d10', 'co:0.5,-90,65'],
+    ['c350_02', 'Mast the Driver', '', 'co:0.55,-20,40'],
     ['c350_old', 'Mast: Outdated'],
     ['c351', 'Anchor', 're:2d3,3d3', 'sc:0.31|co:0.33,-150,-30', 'rl'],
     ['c351_01', 'Anchor the Diver', 'ac:1d5', 'fb:0.20,-10,30|co:0.365,-120'],
@@ -261,14 +263,14 @@ const l2dGroups = {
     ['c352_01', 'Helm Chandelier', 'ac:3d10', 'fb:0.3,0,-180|co:0.52,-150,30'],
     ['c352_02', 'Helm Post-Shower Moment', 'ac:2d10,3d5', 'fb:0.24,0,-50|sc:0.2,0,30|co:0.488,-190,30'],
     ['c353', 'Helm: Aquamarine', 'ac:4o9', 'sc:0.66,-500,-30|co:0.33,-120', 'ar'],
-    ['c354', 'Mast: Romantic Maid', 're:2d5,3d3', 'sc:0.24,0,90|co:0.35,-100', 'mg'],
-    ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'fb:0.22,30,-20|sc:0.23,0,20|co:0.385,-60,20'],
-    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'fb:0.23,60,10|sc:0.3,0,100|co:0.36,-190,-20', 'rl'],
+    ['c354', 'Mast: Romantic Maid', 're:2d5,3d3', 'sc:0.24,0,90|co:0.35,-100,40', 'mg'],
+    ['c354_01', 'Mast: Romantic Maid Tea Service', 'ac:2o8,5d2', 'fb:0.22,30,-20|sc:0.23,0,20|co:0.385,-60,60'],
+    ['c355', 'Anchor: Innocent Maid', 'ac:6d5|re:2d2', 'fb:0.23,60,10|sc:0.3,0,100|co:0.36,-190,10', 'rl'],
     ['favorite_c352', 'Helm@Favorite', 'ac:1o5,3d5,4o5', 'fb:0.34,60'],
   ],
 
   'Ark Rangers': [
-    ['c570', 'Ark Ranger Black', 'ac:4o8,6d14|re:2o5', 'fb:0.21,-30|co:0.38,-90', 'ar'],
+    ['c570', 'Ark Ranger Black', 'ac:4o8,6d14|re:2o5', 'fb:0.21,-30|co:0.38,-90,20', 'ar'],
     ['c570_99', 'Ark Ranger Black: Hood', '', 'fb:0.205,55,10'],
     ['c571', 'Ark Ranger Red', '', 'fb:0.23,0,-40'],
     ['c572', 'Ark Ranger Blue', '', 'fb:0.20,0,10'],
@@ -285,10 +287,10 @@ const l2dGroups = {
   ],
 
   'Botanic Garden': [
-    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,0,-30|sc:0.56,-250,100|co:0.45,0,30', 'mg'],
-    ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-90,-40|co:0.44,5,-15'],
-    ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200'],
-    ['c412_01', 'Trina Natural White', 'ac:1o5,6o8'],
+    ['c411', 'Flora', 'ac:1o6,3d5|re:4d5', 'fb:0.23,30,-30|sc:0.56,-250,100|co:0.45,0,30', 'mg'],
+    ['c411_01', 'Flora Fairy Rabbit', 'ac:5d5', 'fb:0.23,-60,-40|co:0.44,5,-15'],
+    ['c412', 'Trina', 'ac:4d10|re:2d8,3d5,4d2', 'sc:0.37,200|co:0.55,-30,60', 'rl'],
+    ['c412_01', 'Trina Natural White', 'ac:1o5,6o8', 'co:0.54,-25,50'],
     ['favorite_c411', 'Flora@Favorite', 'ac:2d3,2o5,4o5', 'fb:0.35,60,-30'],
   ],
 
@@ -1859,6 +1861,11 @@ const charactersWithDualLayer = {
   },
 }
 
+// fix chara freeze motion bug for skip aim_fire_hair
+const skipBonusAnimationCharacters = [
+  'c270_01',
+]
+
 const l2dData = convertL2dData(l2dGroups)
 
 // Deep copy zoom settings to prevent variants from sharing references
@@ -2028,5 +2035,5 @@ l2dData.forEach((character) => {
   }
 })
 
-export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig }
+export { voiceMap, voiceGroupOverrides, setCustomZoom, customZoomSettings, specialClickAnimations, actionSoundConfig, reloadSoundConfig, charactersWithFgBgOverlays, charactersWithDualLayer, skillcutAnimationOverrides, skillcutConfig, skipBonusAnimationCharacters }
 export default l2dData
